@@ -161,7 +161,7 @@ export default function KlaroHome() {
           <span style={{ fontSize:13, color:"#94A3B8" }}>Klaro Tech · Financial tools for emerging markets</span>
         </div>
         <div style={{ display:"flex", gap:24 }}>
-          {["Privacy","Terms","Contact"].map(l => <a key={l} href="#" style={{ fontSize:13, color:"#94A3B8", textDecoration:"none" }}>{l}</a>)}
+          {([["Privacy","/privacy"],["Terms","/terms"],["Cookies","/cookies"],["Contact","mailto:hello@klaro.services"]]).map(([l,href]) => <a key={l} href={href} style={{ fontSize:13, color:"#94A3B8", textDecoration:"none" }}>{l}</a>)}
         </div>
       </footer>
 

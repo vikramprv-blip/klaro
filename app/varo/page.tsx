@@ -117,7 +117,7 @@ export default function VaroLanding() {
           <span style={{ fontSize:13, color:"#94A3B8" }}>Varo by Klaro — AI Collections</span>
         </div>
         <div style={{ display:"flex", gap:20 }}>
-          {["Privacy","Terms","Contact"].map(l => <a key={l} href="#" style={{ fontSize:13, color:"#94A3B8", textDecoration:"none" }}>{l}</a>)}
+          {([["Privacy","/privacy"],["Terms","/terms"],["Cookies","/cookies"],["Contact","mailto:hello@klaro.services"]]).map(([l,href]) => <a key={l} href={href} style={{ fontSize:13, color:"#94A3B8", textDecoration:"none" }}>{l}</a>)}
         </div>
       </footer>
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>

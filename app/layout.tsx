@@ -1,10 +1,10 @@
-
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
+import CookieBanner from "../components/CookieBanner"
 
 export const metadata: Metadata = {
-  title: "Klaro — Smart Payment Links",
-  description: "Create payment links that pass card fees to your client. Keep 100% of what you earn.",
+  title: "Klaro — Smart Financial Tools",
+  description: "Financial tools built for freelancers and small businesses in India and Southeast Asia.",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Klaro" },
 }
@@ -23,7 +23,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <CookieBanner />
+      </body>
     </html>
   )
 }
