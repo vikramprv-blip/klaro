@@ -1,20 +1,15 @@
-
 "use client"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import KlaroSidebar from "../../components/KlaroSidebar"
 import { getMerchantStats, getMerchantLinks, getMerchantTransactions } from "../../lib/actions"
 import type { Merchant, PaymentLink, Transaction } from "../../lib/types"
 import { CURRENCY_SYMBOLS } from "../../lib/types"
 
-const STATUS_COLOR: Record<string,string> = { active:"#6366F1", paid:"#10B981", expired:"#94A3B8", cancelled:"#EF4444" }
-
-const NAV = [
-  { href:"/dashboard",              icon:"⚡", label:"Overview" },
-  { href:"/dashboard/links",        icon:"🔗", label:"Payment Links" },
-  { href:"/dashboard/transactions", icon:"💰", label:"Transactions" },
-  { href:"/dashboard/settings",     icon:"⚙️", label:"Settings" },
-]
+const STATUS_COLOR: Record<string,string> = {
+  active:"#6366F1", paid:"#10B981", expired:"#94A3B8", cancelled:"#EF4444"
+}
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -39,33 +34,20 @@ export default function DashboardPage() {
     </div>
   )
 
-  const sym = CURRENCY_SYMBOLS[merchant.currency] ?? "₹"
+  const sym  = CURRENCY_SYMBOLS[merchant.currency] ?? "₹"
   const hour = new Date().getHours()
   const greeting = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening"
 
   return (
     <div style={{ minHeight:"100vh", background:"#0A0F1E", color:"#F1F5F9", display:"flex" }}>
-      <aside style={{ position:"fixed", top:0, left:0, bottom:0, width:220, background:"#111827", borderRight:"1px solid rgba(255,255,255,0.06)", padding:"24px 16px", display:"flex", flexDirection:"column", gap:4, zIndex:40 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:32, paddingLeft:8 }}>
-          <div style={{ width:30, height:30, borderRadius:8, background:"#6366F1", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:14, color:"#fff" }}>K</div>
-          <span style={{ fontSize:16, fontWeight:700 }}>klaro</span>
-        </div>
-        {NAV.map(n => (
-          <Link key={n.href} href={n.href} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", borderRadius:9, fontSize:14, color:"#94A3B8", textDecoration:"none" }}>
-            <span>{n.icon}</span><span>{n.label}</span>
-          </Link>
-        ))}
-        <div style={{ flex:1 }} />
-        <div style={{ padding:"12px", background:"rgba(99,102,241,0.1)", border:"1px solid rgba(99,102,241,0.2)", borderRadius:10 }}>
-          <p style={{ fontSize:11, fontFamily:"monospace", color:"#6366F1", marginBottom:4 }}>PLAN: {merchant.plan.toUpperCase()}</p>
-          <p style={{ fontSize:12, color:"#94A3B8" }}>{merchant.email}</p>
-        </div>
-      </aside>
-
+      <KlaroSidebar merchant={merchant} />
       <main style={{ marginLeft:220, padding:"32px", flex:1 }}>
+
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:28 }}>
           <div>
-            <h1 style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.02em", marginBottom:2 }}>Good {greeting}, {merchant.full_name.split(" ")[0]} 👋</h1>
+            <h1 style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.02em", marginBottom:2 }}>
+              Good {greeting}, {merchant.full_name.split(" ")[0]} 👋
+            </h1>
             <p style={{ fontSize:14, color:"#94A3B8" }}>Here is what is happening with your payments</p>
           </div>
           <Link href="/dashboard/links/new" style={{ background:"#6366F1", color:"#fff", fontWeight:700, fontSize:14, padding:"10px 22px", borderRadius:10, textDecoration:"none" }}>+ New Link</Link>
@@ -94,7 +76,7 @@ export default function DashboardPage() {
             {links.length === 0 ? (
               <div style={{ textAlign:"center", padding:"24px 0" }}>
                 <p style={{ color:"#94A3B8", fontSize:14, marginBottom:12 }}>No links yet</p>
-                <Link href="/dashboard/links/new" style={{ fontSize:13, color:"#6366F1" }}>Create your first link</Link>
+                <Link href="/dashboard/links/new" style={{ fontSize:13, color:"#6366F1" }}>Create your first link →</Link>
               </div>
             ) : links.map(l => (
               <div key={l.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
@@ -133,6 +115,19 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div style={{ marginTop:20, display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+          <Link href="/varo/app" style={{ background:"linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.05))", border:"1px solid rgba(139,92,246,0.25)", borderRadius:14, padding:20, textDecoration:"none", display:"block" }}>
+            <p style={{ fontSize:13, fontFamily:"monospace", color:"#8B5CF6", marginBottom:6 }}>VARO</p>
+            <p style={{ fontSize:16, fontWeight:700, color:"#F1F5F9", marginBottom:4 }}>AI Collections Agent</p>
+            <p style={{ fontSize:13, color:"#94A3B8" }}>Chase invoices automatically on WhatsApp →</p>
+          </Link>
+          <Link href="/dashboard/links/new" style={{ background:"linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.05))", border:"1px solid rgba(99,102,241,0.25)", borderRadius:14, padding:20, textDecoration:"none", display:"block" }}>
+            <p style={{ fontSize:13, fontFamily:"monospace", color:"#6366F1", marginBottom:6 }}>SPARO</p>
+            <p style={{ fontSize:16, fontWeight:700, color:"#F1F5F9", marginBottom:4 }}>New Payment Link</p>
+            <p style={{ fontSize:13, color:"#94A3B8" }}>Create a link and pass the fee to your client →</p>
+          </Link>
         </div>
       </main>
     </div>
