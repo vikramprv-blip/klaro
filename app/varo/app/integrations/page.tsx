@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import KlaroSidebar from "../../../../components/KlaroSidebar"
+import VaroSidebar from "../../../../components/VaroSidebar"
 import type { Merchant } from "../../../../lib/types"
 
 const PLATFORMS = [
@@ -143,7 +143,7 @@ export default function IntegrationsPage() {
 
   return (
     <div style={{ minHeight:"100vh", background:"#0A0F1E", color:"#F1F5F9", display:"flex" }}>
-      <KlaroSidebar merchant={merchant} />
+      <VaroSidebar merchant={merchant} />
       <main style={{ marginLeft:224, padding:"32px", flex:1 }}>
 
         <div style={{ marginBottom:28 }}>

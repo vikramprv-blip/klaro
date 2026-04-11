@@ -6,9 +6,9 @@ import { supabase } from "../lib/supabase"
 const NAV = [
   { section:"SPARO", items:[
     { href:"/sparo/app",              icon:"⚡", label:"Dashboard" },
-    { href:"/dashboard/links",        icon:"🔗", label:"Payment Links" },
-    { href:"/dashboard/links/new",    icon:"➕", label:"New Link" },
-    { href:"/dashboard/transactions", icon:"💰", label:"Transactions" },
+    { href:"/sparo/app/links",          icon:"🔗", label:"Payment Links" },
+    { href:"/sparo/app/links/new",      icon:"➕", label:"New Link" },
+    { href:"/sparo/app/transactions",   icon:"💰", label:"Transactions" },
   ]},
   { section:"ACCOUNT", items:[
     { href:"/sparo/app/settings",     icon:"⚙️", label:"Settings" },

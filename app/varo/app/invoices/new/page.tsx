@@ -1,5 +1,5 @@
 "use client"
-mport { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import type { Merchant } from "../../../../../lib/types"
