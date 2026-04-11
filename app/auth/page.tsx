@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "../../lib/supabase"
 import { createMerchant } from "../../lib/actions"
+import { createMerchant } from "../../lib/actions"
 
 const inp: React.CSSProperties = {
   width:"100%", background:"rgba(255,255,255,0.05)",
