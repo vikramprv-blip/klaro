@@ -69,7 +69,7 @@ function AuthForm() {
   }
 
   const verifyOTP = async () => {
-    if (otp.length < 6) return
+    if (otp.length < 4) return
     setLoading(true); setError(null)
 
     const { data, error } = await supabase.auth.verifyOtp({
@@ -285,10 +285,10 @@ function AuthForm() {
                   style={{ ...inp, fontSize:32, letterSpacing:"0.3em", textAlign:"center", fontFamily:"monospace", padding:"16px 14px" }}
                   type="text"
                   inputMode="numeric"
-                  maxLength={6}
+                  maxLength={8}
                   value={otp}
                   onChange={e => {
-                    const val = e.target.value.replace(/[^0-9]/g, "")
+                    const val = e.target.value.replace(/[^0-9]/g, "").slice(0,8)
                     setOtp(val)
                   }}
                   placeholder="000000"
@@ -304,7 +304,7 @@ function AuthForm() {
               )}
 
               <button onClick={verifyOTP}
-                disabled={loading || otp.length < 6}
+                disabled={loading || otp.length < 4}
                 style={{ width:"100%", padding:14, borderRadius:10, fontSize:15, fontWeight:700, background:"#6366F1", border:"none", color:"#fff", cursor:"pointer", opacity:loading||otp.length<6?0.4:1, marginBottom:10 }}>
                 {loading ? "Verifying..." : "Verify & continue →"}
               </button>
