@@ -143,7 +143,7 @@ function AuthForm() {
     }
 
     localStorage.setItem("klaro_merchant", JSON.stringify(merchant))
-    // Force full page reload so middleware picks up the new session cookie
+    await new Promise(r => setTimeout(r, 500))
     window.location.href = nextUrl
   }
 
