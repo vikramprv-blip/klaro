@@ -136,28 +136,24 @@ function AuthForm() {
       return
     }
 
-    const { data: merchant, error } = await supabaseAdmin
-      .from("merchants")
-      .insert({
-        email:             email.toLowerCase(),
-        full_name:         form.full_name,
-        business_name:     form.business_name || null,
-        business_type:     form.business_type,
-        country:           form.country,
-        currency:          CURRENCIES[form.country] ?? "USD",
-        auth_user_id:      user.id,
-        terms_accepted_at: new Date().toISOString(),
-        terms_version:     "1.0",
-        gdpr_consent:      true,
-        gdpr_consent_at:   new Date().toISOString(),
-      })
-      .select()
-      .single()
+    const { merchant, error } = await createMerchant({
+      email:             email.toLowerCase(),
+      full_name:         form.full_name,
+      business_name:     form.business_name || null,
+      business_type:     form.business_type,
+      country:           form.country,
+      currency:          CURRENCIES[form.country] ?? "USD",
+      auth_user_id:      user.id,
+      terms_accepted_at: new Date().toISOString(),
+      terms_version:     "1.0",
+      gdpr_consent:      true,
+      gdpr_consent_at:   new Date().toISOString(),
+    })
 
     setLoading(false)
 
     if (error || !merchant) {
-      setError(error?.message ?? "Failed to create account. Please try again.")
+      setError(error ?? "Failed to create account. Please try again.")
       return
     }
 
