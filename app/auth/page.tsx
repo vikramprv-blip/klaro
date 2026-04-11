@@ -84,7 +84,7 @@ function AuthForm() {
       return
     }
 
-    if (!data.user) {
+    if (!verifyData?.user) {
       setError("Could not verify. Please try again.")
       setLoading(false)
       return
