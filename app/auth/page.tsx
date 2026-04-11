@@ -74,12 +74,18 @@ function AuthForm() {
 
     // Try all token types
     let verifyData: any = null
+    const attempts: string[] = []
+
     for (const t of ["magiclink", "recovery", "email"] as const) {
-      const { data: d } = await supabase.auth.verifyOtp({ email, token: otp, type: t })
+      const { data: d, error: e } = await supabase.auth.verifyOtp({ email, token: otp, type: t })
+      attempts.push(`${t}: ${e ? e.message : "OK user="+!!d?.user}`)
       if (d?.user) { verifyData = d; break }
     }
+
+    console.log("OTP attempts:", attempts)
+
     if (!verifyData?.user) {
-      setError("Invalid or expired code. Please request a new one.")
+      setError("Code failed: " + attempts.join(" | "))
       setLoading(false)
       return
     }
