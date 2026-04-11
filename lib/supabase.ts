@@ -4,17 +4,8 @@ const url  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? "https://placeholder.supab
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder"
 const svc  = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "placeholder"
 
-export const supabase = createClient(url, anon, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  }
-})
+export const supabase = createClient(url, anon)
 
 export const supabaseAdmin = createClient<any>(url, svc, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  }
+  auth: { persistSession: false, autoRefreshToken: false }
 })

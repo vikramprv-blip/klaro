@@ -2,7 +2,8 @@
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { supabase } from "../../lib/supabase"
+import { createClient } from "../../lib/supabase-browser"
+const supabase = createClient()
 import { createMerchant } from "../../lib/actions"
 
 const inp: React.CSSProperties = {

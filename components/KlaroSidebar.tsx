@@ -1,7 +1,8 @@
 "use client"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { supabase } from "../lib/supabase"
+import { createClient } from "../lib/supabase-browser"
+const supabase = createClient()
 
 interface NavItem { href: string; icon: string; label: string }
 interface NavSection { section: string; color: string; items: NavItem[] }

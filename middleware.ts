@@ -3,12 +3,11 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 const PROTECTED = ["/dashboard", "/sparo/app", "/varo/app"]
-const ALWAYS_PUBLIC = ["/auth", "/auth/callback"]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Always allow public routes
+  // Public routes — skip auth check
   if (pathname.startsWith("/auth")) return NextResponse.next()
 
   const isProtected = PROTECTED.some(
