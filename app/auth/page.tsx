@@ -72,44 +72,38 @@ function AuthForm() {
     if (otp.length < 4) return
     setLoading(true); setError(null)
 
-    // Try all token types
-    let verifyData: any = null
-    const attempts: string[] = []
+    // Supabase OTP — try recovery first (existing users), then email (new signups)
+    let verified = false
+    let userData: any = null
 
-    for (const t of ["magiclink", "recovery", "email"] as const) {
-      const { data: d, error: e } = await supabase.auth.verifyOtp({ email, token: otp, type: t })
-      attempts.push(`${t}: ${e ? e.message : "OK user="+!!d?.user}`)
-      if (d?.user) { verifyData = d; break }
+    const { data: d1 } = await supabase.auth.verifyOtp({ email, token: otp, type: "recovery" })
+    if (d1?.user) { verified = true; userData = d1 }
+
+    if (!verified) {
+      const { data: d2 } = await supabase.auth.verifyOtp({ email, token: otp, type: "email" })
+      if (d2?.user) { verified = true; userData = d2 }
     }
 
-    console.log("OTP attempts:", attempts)
-
-    if (!verifyData?.user) {
-      setError("Code failed: " + attempts.join(" | "))
+    if (!verified) {
+      setError("Invalid or expired code. Please click Resend for a fresh code.")
       setLoading(false)
       return
     }
 
-    if (!verifyData?.user) {
-      setError("Could not verify. Please try again.")
-      setLoading(false)
-      return
-    }
-
-    // Check if merchant profile exists
+    // Check merchant profile
     const { data: merchant } = await supabase
       .from("merchants")
       .select("*")
       .eq("email", email.toLowerCase())
-      .single()
+      .maybeSingle()
 
     setLoading(false)
 
     if (merchant) {
       localStorage.setItem("klaro_merchant", JSON.stringify(merchant))
-      router.replace(nextUrl)
+      await new Promise(r => setTimeout(r, 500))
+      window.location.href = nextUrl
     } else {
-      // New user — need profile
       setStep("profile")
     }
   }
