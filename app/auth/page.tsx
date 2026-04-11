@@ -67,7 +67,10 @@ function AuthForm() {
     setLoading(true); setError(null)
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true }
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: undefined,
+      }
     })
     setLoading(false)
     if (error) { setError(error.message); return }
