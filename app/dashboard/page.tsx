@@ -11,7 +11,10 @@ const STATUS_COLOR: Record<string,string> = {
   active:"#6366F1", paid:"#10B981", expired:"#94A3B8", cancelled:"#EF4444"
 }
 
-const TOOLS = [
+// Filter tools based on merchant app subscriptions
+  const merchantApps = merchant?.apps || ["sparo", "varo"]
+  const TOOLS = ALL_TOOLS.filter(t => merchantApps.includes(t.id)) // default both for existing users
+  const ALL_TOOLS = [
   {
     href:"/sparo/app",
     label:"SPARO",

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import KlaroSidebar from "../../../components/KlaroSidebar"
+import SparoSidebar from "../../../components/SparoSidebar"
 import { getMerchantStats, getMerchantLinks } from "../../../lib/actions"
 import type { Merchant, PaymentLink } from "../../../lib/types"
 import { CURRENCY_SYMBOLS } from "../../../lib/types"
@@ -22,6 +22,7 @@ export default function SparoAppPage() {
     const stored = localStorage.getItem("klaro_merchant")
     if (!stored) { router.push("/auth"); return }
     const m = JSON.parse(stored) as Merchant
+    if (m.apps && !m.apps.includes('sparo')) { router.push('/auth'); return }
     setMerchant(m)
     Promise.all([getMerchantStats(m.id), getMerchantLinks(m.id)])
       .then(([s, l]) => { setStats(s); setLinks(l); setLoading(false) })
@@ -32,7 +33,7 @@ export default function SparoAppPage() {
 
   return (
     <div style={{ minHeight:"100vh", background:"#0A0F1E", color:"#F1F5F9", display:"flex" }}>
-      <KlaroSidebar merchant={merchant} />
+      <SparoSidebar merchant={merchant} />
       <main style={{ marginLeft:224, padding:"32px", flex:1 }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:28 }}>
           <div>

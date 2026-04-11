@@ -20,6 +20,7 @@ export interface Merchant {
   logo_url: string | null
   is_active: boolean
   onboarding_done: boolean
+  apps: string[] | null
   created_at: string
 }
 
