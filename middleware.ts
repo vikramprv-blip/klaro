@@ -2,45 +2,44 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
+const PROTECTED = ["/dashboard", "/sparo/app", "/varo/app"]
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const isProtected = PROTECTED.some(p => pathname === p || pathname.startsWith(p + "/"))
+  if (!isProtected) return NextResponse.next()
 
-  const response = NextResponse.next()
+  let response = NextResponse.next({
+    request: { headers: request.headers },
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            response.cookies.set(name, value, options)
-          })
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          response = NextResponse.next({ request: { headers: request.headers } })
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
         },
       },
     }
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!session) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/auth"
-    url.searchParams.set("next", pathname)
-    return NextResponse.redirect(url)
+  if (!user) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = "/auth"
+    redirectUrl.searchParams.set("next", pathname)
+    return NextResponse.redirect(redirectUrl)
   }
 
   return response
 }
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/sparo/app/:path*",
-    "/varo/app/:path*",
-  ],
+  matcher: ["/dashboard/:path*", "/sparo/app/:path*", "/varo/app/:path*"],
 }
