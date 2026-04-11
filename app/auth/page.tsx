@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "../../lib/supabase"
 import { createMerchant } from "../../lib/actions"
+import { COUNTRY_TO_CURRENCY } from "../../lib/types"
 
 const inp: React.CSSProperties = {
   width:"100%", background:"rgba(255,255,255,0.05)",
@@ -75,7 +76,8 @@ function AuthForm() {
   }
 
   const getRedirectUrl = (apps: string[], fallback: string) => {
-    if (fallback) return fallback
+    if (fallback && fallback !== "/" && fallback !== "/auth") return fallback
+    if (!apps || apps.length === 0) return "/dashboard"
     if (apps.length === 1) {
       return apps[0] === "sparo" ? "/sparo/app" : "/varo/app"
     }
@@ -146,7 +148,7 @@ function AuthForm() {
       business_name:     form.business_name || null,
       business_type:     form.business_type,
       country:           form.country,
-      currency:          CURRENCIES[form.country] ?? "USD",
+      currency:          COUNTRY_TO_CURRENCY[form.country] ?? "USD",
       auth_user_id:      user.id,
       terms_accepted_at: new Date().toISOString(),
       terms_version:     "1.0",
