@@ -45,14 +45,19 @@ function AuthForm() {
     business_type:"freelancer", country:"IN",
   })
 
-  // Check if already logged in
+  // Check if already logged in — with timeout fallback
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
+    const timer = setTimeout(() => setChecking(false), 2000)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timer)
+      if (session) {
         router.replace(nextUrl)
       } else {
         setChecking(false)
       }
+    }).catch(() => {
+      clearTimeout(timer)
+      setChecking(false)
     })
   }, [nextUrl, router])
 
