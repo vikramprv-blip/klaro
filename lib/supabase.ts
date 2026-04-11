@@ -4,21 +4,22 @@ const url  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? "https://placeholder.supab
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder"
 const svc  = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "placeholder"
 
-// Single shared client instance — prevents multiple GoTrueClient warning
+// Singleton pattern — prevents multiple GoTrueClient instances
 const globalForSupabase = globalThis as unknown as {
-  supabase: ReturnType<typeof createClient> | undefined
-  supabaseAdmin: ReturnType<typeof createClient> | undefined
+  _supabase: ReturnType<typeof createClient> | undefined
+  _supabaseAdmin: ReturnType<typeof createClient> | undefined
 }
 
-export const supabase = globalForSupabase.supabase ?? createClient(url, anon, {
+export const supabase = globalForSupabase._supabase ?? createClient(url, anon, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    storageKey: "klaro-auth",
   }
 })
 
-export const supabaseAdmin = globalForSupabase.supabaseAdmin ?? createClient(url, svc, {
+export const supabaseAdmin = globalForSupabase._supabaseAdmin ?? createClient(url, svc, {
   auth: {
     persistSession: false,
     autoRefreshToken: false,
@@ -26,6 +27,6 @@ export const supabaseAdmin = globalForSupabase.supabaseAdmin ?? createClient(url
 })
 
 if (process.env.NODE_ENV !== "production") {
-  globalForSupabase.supabase = supabase
-  globalForSupabase.supabaseAdmin = supabaseAdmin
+  globalForSupabase._supabase = supabase
+  globalForSupabase._supabaseAdmin = supabaseAdmin
 }

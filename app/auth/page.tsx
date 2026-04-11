@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { supabase } from "../../lib/supabase"
+import { supabase, supabaseAdmin } from "../../lib/supabase"
 
 const inp: React.CSSProperties = {
   width:"100%", background:"rgba(255,255,255,0.05)",
@@ -127,7 +127,7 @@ function AuthForm() {
       return
     }
 
-    const { data: merchant, error } = await supabase
+    const { data: merchant, error } = await supabaseAdmin
       .from("merchants")
       .insert({
         email:             email.toLowerCase(),
