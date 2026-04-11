@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import SparoSidebar from "../../../../components/SparoSidebar"
-import { getMerchantTransactions } from "../../../lib/actions"
-import type { Merchant, Transaction } from "../../../lib/types"
-import { CURRENCY_SYMBOLS } from "../../../lib/types"
+import { getMerchantTransactions } from "../../../../lib/actions"
+import type { Merchant, Transaction } from "../../../../lib/types"
+import { CURRENCY_SYMBOLS } from "../../../../lib/types"
 
 const STATUS_COLOR: Record<string,string> = {
   success:"#10B981", failed:"#EF4444", refunded:"#F59E0B", pending:"#6366F1", disputed:"#F59E0B"

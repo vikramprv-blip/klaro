@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { createPaymentLink } from "../../../../lib/actions"
-import type { Merchant } from "../../../../lib/types"
-import { CURRENCY_SYMBOLS } from "../../../../lib/types"
+import { createPaymentLink } from "../../../../../lib/actions"
+import type { Merchant } from "../../../../../lib/types"
+import { CURRENCY_SYMBOLS } from "../../../../../lib/types"
 
 const inp: React.CSSProperties = { width:"100%", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:9, padding:"12px 14px", fontSize:14, color:"#F1F5F9", outline:"none", boxSizing:"border-box" }
 const lbl: React.CSSProperties = { display:"block", fontSize:11, fontFamily:"monospace", letterSpacing:"0.06em", color:"#94A3B8", marginBottom:6 }

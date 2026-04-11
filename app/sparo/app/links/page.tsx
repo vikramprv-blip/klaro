@@ -3,9 +3,9 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import SparoSidebar from "../../../../components/SparoSidebar"
-import { getMerchantLinks } from "../../../lib/actions"
-import type { Merchant, PaymentLink } from "../../../lib/types"
-import { CURRENCY_SYMBOLS } from "../../../lib/types"
+import { getMerchantLinks } from "../../../../lib/actions"
+import type { Merchant, PaymentLink } from "../../../../lib/types"
+import { CURRENCY_SYMBOLS } from "../../../../lib/types"
 
 const STATUS_COLOR: Record<string,string> = {
   active:"#6366F1", paid:"#10B981", expired:"#94A3B8", cancelled:"#EF4444"
