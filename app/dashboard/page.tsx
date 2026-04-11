@@ -12,8 +12,7 @@ const STATUS_COLOR: Record<string,string> = {
 }
 
 // Filter tools based on merchant app subscriptions
-  const merchantApps = merchant?.apps || ["sparo", "varo"]
-  const TOOLS = ALL_TOOLS.filter(t => merchantApps.includes(t.id)) // default both for existing users
+  const merchantApps = merchant?.apps || ["sparo", "varo"] // default both for existing users
   const ALL_TOOLS = [
   {
     href:"/sparo/app",
@@ -81,7 +80,7 @@ export default function DashboardPage() {
 
         {/* Tool cards — prominent */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:28 }}>
-          {TOOLS.map(t => (
+          {(merchant?.apps?.length ? ALL_TOOLS.filter(t => (merchant.apps||[]).includes(t.id)) : ALL_TOOLS).map(t => (
             <Link key={t.href} href={t.href} style={{ background:t.bg, border:"1px solid "+t.border, borderRadius:16, padding:24, textDecoration:"none", display:"block", transition:"border-color 0.2s" }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
                 <div style={{ width:40, height:40, borderRadius:11, background:t.color+"22", border:"1px solid "+t.border, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>
