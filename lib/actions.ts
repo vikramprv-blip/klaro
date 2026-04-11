@@ -80,3 +80,24 @@ export async function getPaymentLink(ref: string) {
     .single()
   return data
 }
+
+export async function createMerchant(data: {
+  email: string
+  full_name: string
+  business_name?: string | null
+  business_type?: string
+  country?: string
+  currency?: string
+  auth_user_id?: string
+  terms_accepted_at?: string
+  terms_version?: string
+  gdpr_consent?: boolean
+  gdpr_consent_at?: string
+}) {
+  const { data: merchant, error } = await supabaseAdmin
+    .from("merchants")
+    .insert(data)
+    .select()
+    .single()
+  return { merchant, error: error?.message ?? null }
+}
