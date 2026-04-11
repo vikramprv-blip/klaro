@@ -101,8 +101,8 @@ function AuthForm() {
 
     if (merchant) {
       localStorage.setItem("klaro_merchant", JSON.stringify(merchant))
-      await new Promise(r => setTimeout(r, 500))
-      window.location.href = nextUrl
+      // Use callback page to ensure session cookie is set before middleware check
+      window.location.href = "/auth/callback?next=" + encodeURIComponent(nextUrl)
     } else {
       setStep("profile")
     }
@@ -143,8 +143,7 @@ function AuthForm() {
     }
 
     localStorage.setItem("klaro_merchant", JSON.stringify(merchant))
-    await new Promise(r => setTimeout(r, 500))
-    window.location.href = nextUrl
+    window.location.href = "/auth/callback?next=" + encodeURIComponent(nextUrl)
   }
 
 
