@@ -103,7 +103,7 @@ function AuthForm() {
     if (merchant) {
       localStorage.setItem("klaro_merchant", JSON.stringify(merchant))
       // Use callback page to ensure session cookie is set before middleware check
-      window.location.href = "/auth/callback?next=" + encodeURIComponent(nextUrl)
+      window.location.href = nextUrl
     } else {
       setStep("profile")
     }
@@ -144,7 +144,7 @@ function AuthForm() {
     }
 
     localStorage.setItem("klaro_merchant", JSON.stringify(merchant))
-    window.location.href = "/auth/callback?next=" + encodeURIComponent(nextUrl)
+    window.location.href = nextUrl
   }
 
 
