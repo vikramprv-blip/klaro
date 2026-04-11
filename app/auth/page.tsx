@@ -36,7 +36,7 @@ function AuthForm() {
   const [step, setStep]         = useState<Step>("email")
   const [mode, setMode]         = useState<"signup"|"login">("signup")
   const [loading, setLoading]   = useState(false)
-  const [checking, setChecking] = useState(true)
+  const [checking, setChecking] = useState(false)
   const [error, setError]       = useState<string|null>(null)
   const [email, setEmail]       = useState("")
   const [otp, setOtp]           = useState("")
@@ -46,27 +46,6 @@ function AuthForm() {
     business_type:"freelancer", country:"IN",
   })
 
-  // Check session with short timeout
-  useEffect(() => {
-    let done = false
-    const timer = setTimeout(() => {
-      if (!done) setChecking(false)
-    }, 800)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      done = true
-      clearTimeout(timer)
-      if (session?.user) {
-        router.replace(nextUrl)
-      } else {
-        setChecking(false)
-      }
-    }).catch(() => {
-      done = true
-      clearTimeout(timer)
-      setChecking(false)
-    })
-    return () => { done = true; clearTimeout(timer) }
-  }, [])
 
   const update = (k: string, v: string) => setForm(f => ({ ...f, [k]:v }))
 
@@ -167,13 +146,6 @@ function AuthForm() {
     router.replace(nextUrl)
   }
 
-  if (checking) {
-    return (
-      <div style={{ minHeight:"100vh", background:"#0A0F1E", display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <p style={{ color:"#94A3B8", fontFamily:"monospace" }}>Checking session...</p>
-      </div>
-    )
-  }
 
   return (
     <div style={{ minHeight:"100vh", background:"#0A0F1E", display:"flex", fontFamily:"system-ui,sans-serif" }}>
