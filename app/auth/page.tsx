@@ -72,14 +72,14 @@ function AuthForm() {
     if (otp.length < 4) return
     setLoading(true); setError(null)
 
-    const { data, error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: "email"
-    })
-
-    if (error) {
-      setError("Invalid or expired code. Please try again.")
+    // Try all token types
+    let verifyData: any = null
+    for (const t of ["magiclink", "recovery", "email"] as const) {
+      const { data: d } = await supabase.auth.verifyOtp({ email, token: otp, type: t })
+      if (d?.user) { verifyData = d; break }
+    }
+    if (!verifyData?.user) {
+      setError("Invalid or expired code. Please request a new one.")
       setLoading(false)
       return
     }
