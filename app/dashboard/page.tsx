@@ -13,6 +13,7 @@ const STATUS_COLOR: Record<string,string> = {
 
 const ALL_TOOLS = [
   {
+    id:"sparo",
     href:"/sparo/app",
     label:"SPARO",
     name:"Smart Payment Links",
@@ -24,6 +25,7 @@ const ALL_TOOLS = [
     icon:"⚡",
   },
   {
+    id:"varo",
     href:"/varo/app",
     label:"VARO",
     name:"AI Collections Agent",
