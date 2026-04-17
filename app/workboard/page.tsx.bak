@@ -1,7 +1,7 @@
 import { WorkItemFilters } from "@/components/work-items/work-item-filters"
 import { buildWorkItemsQuery } from "@/lib/work-item-query"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { prisma } from "@/lib/prisma";
 import WorkboardPage from "@/components/workboard/workboard-page";
