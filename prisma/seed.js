@@ -60,7 +60,8 @@ async function main() {
         dueDate: new Date(),
         clientId: client.id,
         createdById: admin.id,
-        priority: "high",
+        priority: "HIGH",
+      status: "PENDING",
         assignments: {
           create: [
             {

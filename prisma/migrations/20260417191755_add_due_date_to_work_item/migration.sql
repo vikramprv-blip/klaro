@@ -1,2 +1,1 @@
-ALTER TABLE "WorkItem"
-ADD COLUMN "dueDate" TIMESTAMP(3);
+-- dueDate already exists in the current schema/db state

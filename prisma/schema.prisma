@@ -8,128 +8,126 @@ datasource db {
 }
 
 model User {
-  id            String           @id @default(cuid())
-  name          String
-  email         String           @unique
-  role          String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   assignments   WorkAssignment[]
   createdItems  WorkItem[]       @relation("CreatedBy")
   reviewedItems WorkItem[]       @relation("ReviewedBy")
+  notifications Notification[]
 }
 
 model Client {
-  id            String      @id @default(cuid())
-  name          String
-  code          String?     @unique
-  email         String?
-  phone         String?
-  address       String?
-  gstin         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  code      String?  @unique
+  email     String?
+  phone     String?
+  address   String?
+  gstin     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  workItems     WorkItem[]
-  invoices      Invoice[]
+  workItems WorkItem[]
+  invoices  Invoice[]
 }
 
 model WorkItem {
-  activities WorkItemActivity[]
-  id                String           @id @default(cuid())
-  title             String
-  description       String?
-  filingType        String
-  periodLabel       String?
-  dueDate           DateTime?
-  completedAt       DateTime?
-  filedAt           DateTime?
+  activities  WorkItemActivity[]
+  id          String             @id @default(cuid())
+  title       String
+  description String?
+  filingType  String
+  periodLabel String?
+  dueDate     DateTime?
+  completedAt DateTime?
+  filedAt     DateTime?
 
-  status            String
-  position  Int      @default(0)
-  archivedAt DateTime?
-  priority          String?
-  invoiceTriggered  Boolean          @default(false)
+  status           String
+  position         Int       @default(0)
+  archivedAt       DateTime?
+  priority         String?
+  invoiceTriggered Boolean   @default(false)
 
-  clientId          String
-  client            Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  createdById       String?
-  createdBy         User?            @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById String?
+  createdBy   User?   @relation("CreatedBy", fields: [createdById], references: [id])
 
-  reviewedById      String?
-  reviewedBy        User?            @relation("ReviewedBy", fields: [reviewedById], references: [id])
+  reviewedById String?
+  reviewedBy   User?   @relation("ReviewedBy", fields: [reviewedById], references: [id])
 
-  documents         WorkDocument[]
-  assignments       WorkAssignment[]
-  invoice           Invoice?
+  documents   WorkDocument[]
+  assignments WorkAssignment[]
+  invoice     Invoice?
 
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clientId, status])
   @@index([dueDate])
   @@index([filingType])
-
-
   @@index([status, position])
 }
 
 model WorkDocument {
-  id            String       @id @default(cuid())
-  name          String
-  docType       String?
-  status        String       @default("MISSING")
-  fileUrl       String?
-  uploadedAt    DateTime?
-  notes         String?
+  id         String    @id @default(cuid())
+  name       String
+  docType    String?
+  status     String    @default("MISSING")
+  fileUrl    String?
+  uploadedAt DateTime?
+  notes      String?
 
-  workItemId    String
-  workItem      WorkItem     @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  workItemId String
+  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([workItemId, status])
 }
 
 model WorkAssignment {
-  id            String       @id @default(cuid())
-  role          String       @default("OWNER")
-  assignedAt    DateTime     @default(now())
-  unassignedAt  DateTime?
+  id           String    @id @default(cuid())
+  role         String    @default("OWNER")
+  assignedAt   DateTime  @default(now())
+  unassignedAt DateTime?
 
-  workItemId    String
-  workItem      WorkItem     @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  workItemId String
+  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
 
-  userId        String
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, workItemId])
 }
 
 model Invoice {
-  id            String       @id @default(cuid())
-  invoiceNo     String?      @unique
-  amount        Decimal?
-  status        String       @default("NOT_TRIGGERED")
-  triggeredAt   DateTime?
-  sentAt        DateTime?
-  paidAt        DateTime?
+  id          String    @id @default(cuid())
+  invoiceNo   String?   @unique
+  amount      Decimal?
+  status      String    @default("NOT_TRIGGERED")
+  triggeredAt DateTime?
+  sentAt      DateTime?
+  paidAt      DateTime?
 
-  clientId      String
-  client        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  workItemId    String       @unique
-  workItem      WorkItem     @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  workItemId String   @unique
+  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clientId, status])
 }
-
 
 model WorkItemActivity {
   id         String   @id @default(cuid())
@@ -139,7 +137,20 @@ model WorkItemActivity {
   meta       String?
   createdAt  DateTime @default(now())
 
-  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  workItem WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
 
   @@index([workItemId, createdAt(sort: Desc)])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
 }
