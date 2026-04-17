@@ -1,22 +1,46 @@
 "use client"
 
+import { WORK_ITEM_VIEW_PRESETS } from "@/lib/work-item-view-presets"
+import { WorkItemViewPresets } from "@/components/work-items/work-item-view-presets"
+
+import { DashboardMetrics } from "@/components/dashboard/dashboard-metrics"
+import { WorkItemActiveFilters } from "@/components/work-items/work-item-active-filters"
+import { WorkItemsLoading, WorkItemsEmpty } from "@/components/work-items/work-item-states"
 import { WorkItemFilters } from "@/components/work-items/work-item-filters"
 import { buildWorkItemsQuery } from "@/lib/work-item-query"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-export default function DashboardPage() {
-const router = useRouter()
-  const pathname = usePathname()
 
+type WorkItem = {
+  id: string
+  title: string
+  status: string
+  priority: string
+  client?: { name?: string | null } | null
+}
+
+type Metrics = {
+  totalOpen: number
+  backlog: number
+  todo: number
+  inProgress: number
+  done: number
+  highPriority: number
+  urgent: number
+}
+
+export default function DashboardPage() {
   const [q, setQ] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
   const [assigneeFilter, setAssigneeFilter] = useState("all")
+  const [activeView, setActiveView] = useState("all")
+  const [workItems, setWorkItems] = useState<WorkItem[] | null>(null)
+  const [metrics, setMetrics] = useState<Metrics | null>(null)
+
   const debouncedQ = useDebouncedValue(q, 300)
 
-useEffect(() => {
+  useEffect(() => {
     if (typeof window === "undefined") return
 
     const params = new URLSearchParams(window.location.search)
@@ -44,9 +68,28 @@ useEffect(() => {
     else params.delete("assigneeId")
 
     const next = params.toString()
-    const nextUrl = next ? `${pathname}?${next}` : pathname
+    const nextUrl = next ? `/dashboard?${next}` : "/dashboard"
     window.history.replaceState({}, "", nextUrl)
-  }, [assigneeFilter, debouncedQ, pathname, priorityFilter, statusFilter])
+  }, [assigneeFilter, debouncedQ, priorityFilter, statusFilter])
+
+  const handleSelectView = (viewId: string) => {
+  setActiveView(viewId)
+
+  const preset = WORK_ITEM_VIEW_PRESETS.find((item) => item.id === viewId)
+  if (!preset) return
+
+  setQ(preset.query.q || "")
+  setStatusFilter(preset.query.status || "all")
+  setPriorityFilter(preset.query.priority || "all")
+  setAssigneeFilter(preset.query.assigneeId || "all")
+}
+
+const handleClearFilters = () => {
+    setQ("")
+    setStatusFilter("all")
+    setPriorityFilter("all")
+    setAssigneeFilter("all")
+  }
 
   const workItemsApiUrl = useMemo(
     () =>
@@ -59,43 +102,94 @@ useEffect(() => {
     [assigneeFilter, debouncedQ, priorityFilter, statusFilter],
   )
 
+  useEffect(() => {
+    let active = true
+
+    async function loadWorkItems() {
+      const res = await fetch(workItemsApiUrl, { cache: "no-store" })
+      if (!res.ok) return
+      const data = await res.json()
+      if (active) setWorkItems(data)
+    }
+
+    loadWorkItems()
+
+    return () => {
+      active = false
+    }
+  }, [workItemsApiUrl])
+
+  useEffect(() => {
+    let active = true
+
+    async function loadMetrics() {
+      const res = await fetch("/api/dashboard/metrics", { cache: "no-store" })
+      if (!res.ok) return
+      const data = await res.json()
+      if (active) setMetrics(data)
+    }
+
+    loadMetrics()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#020617", color: "white" }}>
-      <aside style={{ width: 240, background: "#0f172a", borderRight: "1px solid #1e293b", padding: 16 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Klaro</h1>
-        <nav style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <a href="/dashboard" style={{ color: "white", textDecoration: "none", fontWeight: 700 }}>Dashboard</a>
-          <a href="/workboard" style={{ color: "#cbd5e1", textDecoration: "none" }}>Workboard</a>
-          <a href="/clients" style={{ color: "#cbd5e1", textDecoration: "none" }}>Clients</a>
-          <a href="/cashflow" style={{ color: "#cbd5e1", textDecoration: "none" }}>Cashflow</a>
-        </nav>
-      </aside>
+    <main style={{ flex: 1, padding: 32 }}>
+      <WorkItemViewPresets activeView={activeView} onSelect={handleSelectView} />
+      <WorkItemFilters
+        q={q}
+        status={statusFilter}
+        priority={priorityFilter}
+        assigneeId={assigneeFilter}
+        onQChange={setQ}
+        onStatusChange={setStatusFilter}
+        onPriorityChange={setPriorityFilter}
+        onAssigneeChange={setAssigneeFilter}
+        className="mb-2"
+      />
+      <WorkItemActiveFilters
+        q={q}
+        status={statusFilter}
+        priority={priorityFilter}
+        assigneeId={assigneeFilter}
+        onClear={handleClearFilters}
+      />
 
-      <main style={{ flex: 1, padding: 32 }}>
-        <WorkItemFilters q={q} status={statusFilter} priority={priorityFilter} assigneeId={assigneeFilter} onQChange={setQ} onStatusChange={setStatusFilter} onPriorityChange={setPriorityFilter} onAssigneeChange={setAssigneeFilter} className="mb-4" /><h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 24 }}>Dashboard</h1>
+      <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 24 }}>Dashboard</h1>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 16 }}>
-          <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 16, padding: 20 }}>
-            <div style={{ color: "#94a3b8", fontSize: 14 }}>Tasks today</div>
-            <div style={{ fontSize: 28, fontWeight: 700, marginTop: 8 }}>18</div>
+      <DashboardMetrics metrics={metrics} />
+
+      <div style={{ marginTop: 32 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 16 }}>Work Items</h2>
+
+        {!workItems ? (
+          <WorkItemsLoading />
+        ) : workItems.length === 0 ? (
+          <WorkItemsEmpty />
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            {workItems.slice(0, 12).map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  background: "#0f172a",
+                  border: "1px solid #1e293b",
+                  borderRadius: 16,
+                  padding: 16,
+                }}
+              >
+                <div style={{ fontSize: 16, fontWeight: 600 }}>{item.title}</div>
+                <div style={{ color: "#94a3b8", fontSize: 13, marginTop: 6 }}>
+                  {item.client?.name || "No client"} • {item.status} • {item.priority}
+                </div>
+              </div>
+            ))}
           </div>
-
-          <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 16, padding: 20 }}>
-            <div style={{ color: "#94a3b8", fontSize: 14 }}>Filings this week</div>
-            <div style={{ fontSize: 28, fontWeight: 700, marginTop: 8 }}>42</div>
-          </div>
-
-          <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 16, padding: 20 }}>
-            <div style={{ color: "#94a3b8", fontSize: 14 }}>Receivables</div>
-            <div style={{ fontSize: 28, fontWeight: 700, marginTop: 8 }}>₹320000</div>
-          </div>
-
-          <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 16, padding: 20 }}>
-            <div style={{ color: "#94a3b8", fontSize: 14 }}>Overdue clients</div>
-            <div style={{ fontSize: 28, fontWeight: 700, marginTop: 8 }}>11</div>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+        )}
+      </div>
+    </main>
+  )
 }
