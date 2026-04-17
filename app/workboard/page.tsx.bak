@@ -1,5 +1,7 @@
 "use client"
 
+import { useUsers } from "@/hooks/use-users"
+
 import { WorkItemDueDateBadge } from "@/components/workboard/work-item-due-date-badge"
 
 import { WORK_ITEM_VIEW_PRESETS } from "@/lib/work-item-view-presets"
