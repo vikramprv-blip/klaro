@@ -1,4 +1,3 @@
-"use client"
 
 import { WorkboardColumnCounts } from "@/components/workboard/workboard-column-counts"
 import { useUsers } from "@/hooks/use-users"
