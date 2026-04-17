@@ -1,5 +1,7 @@
 "use client"
 
+import { useUsers } from "@/hooks/use-users"
+
 import { WorkItemDueDateBadge } from "@/components/workboard/work-item-due-date-badge"
 
 import { OverdueWorkItems } from "@/components/workboard/overdue-work-items"
@@ -45,6 +47,7 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
 
   const debouncedQ = useDebouncedValue(q, 300)
+  const { users } = useUsers()
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -154,6 +157,7 @@ const handleClearFilters = () => {
         onStatusChange={setStatusFilter}
         onPriorityChange={setPriorityFilter}
         onAssigneeChange={setAssigneeFilter}
+        assignees={users}
         className="mb-2"
       />
       <WorkItemActiveFilters

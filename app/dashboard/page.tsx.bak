@@ -1,5 +1,6 @@
-import { WorkItemDueDateBadge } from "@/components/workboard/work-item-due-date-badge"
 "use client"
+
+import { WorkItemDueDateBadge } from "@/components/workboard/work-item-due-date-badge"
 
 import { OverdueWorkItems } from "@/components/workboard/overdue-work-items"
 
