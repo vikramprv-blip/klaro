@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 
 type WorkItem = {
@@ -82,13 +83,41 @@ export default function DashboardPage() {
   }, [data.workItems])
 
   const metrics = [
-    { label: "Open items", value: data.metrics.total - data.metrics.done },
-    { label: "Pending", value: data.metrics.pending },
-    { label: "In progress", value: data.metrics.inProgress },
-    { label: "Done", value: data.metrics.done },
-    { label: "Overdue", value: data.metrics.overdue },
-    { label: "High priority", value: data.metrics.highPriority ?? 0 },
-    { label: "Urgent", value: data.metrics.urgent ?? 0 },
+    {
+      label: "Open items",
+      value: data.metrics.total - data.metrics.done,
+      href: "/workboard",
+    },
+    {
+      label: "Pending",
+      value: data.metrics.pending,
+      href: "/workboard?status=PENDING",
+    },
+    {
+      label: "In progress",
+      value: data.metrics.inProgress,
+      href: "/workboard?status=IN_PROGRESS",
+    },
+    {
+      label: "Done",
+      value: data.metrics.done,
+      href: "/workboard?status=DONE",
+    },
+    {
+      label: "Overdue",
+      value: data.metrics.overdue,
+      href: "/workboard?overdue=true",
+    },
+    {
+      label: "High priority",
+      value: data.metrics.highPriority ?? 0,
+      href: "/workboard?priority=HIGH",
+    },
+    {
+      label: "Urgent",
+      value: data.metrics.urgent ?? 0,
+      href: "/workboard?priority=URGENT",
+    },
   ]
 
   return (
@@ -102,12 +131,16 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
-          <div key={metric.label} className="rounded-2xl border bg-white p-5 shadow-sm">
+          <Link
+            key={metric.label}
+            href={metric.href}
+            className="rounded-2xl border bg-white p-5 shadow-sm transition hover:border-black hover:shadow-md"
+          >
             <div className="text-sm text-neutral-500">{metric.label}</div>
             <div className="mt-3 text-4xl font-semibold tracking-tight">
               {loading ? "—" : metric.value}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
