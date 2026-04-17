@@ -1,20 +1,5 @@
 "use client"
 
-import { useUsers } from "@/hooks/use-users"
-
-import { WorkItemDueDateBadge } from "@/components/workboard/work-item-due-date-badge"
-
-import { OverdueWorkItems } from "@/components/workboard/overdue-work-items"
-
-import { WORK_ITEM_VIEW_PRESETS } from "@/lib/work-item-view-presets"
-import { WorkItemViewPresets } from "@/components/work-items/work-item-view-presets"
-
-import { DashboardMetrics } from "@/components/dashboard/dashboard-metrics"
-import { WorkItemActiveFilters } from "@/components/work-items/work-item-active-filters"
-import { WorkItemsLoading, WorkItemsEmpty } from "@/components/work-items/work-item-states"
-import { WorkItemFilters } from "@/components/work-items/work-item-filters"
-import { buildWorkItemsQuery } from "@/lib/work-item-query"
-import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useEffect, useMemo, useState } from "react"
 
 type WorkItem = {
@@ -22,189 +7,191 @@ type WorkItem = {
   title: string
   status: string
   priority: string
-  dueDate?: string | null
-  client?: { name?: string | null } | null
+  dueDate: string | null
+  client?: {
+    name: string
+  } | null
 }
 
-type Metrics = {
-  totalOpen: number
-  backlog: number
-  todo: number
-  inProgress: number
-  done: number
-  highPriority: number
-  urgent: number
-  overdue: number
+type DashboardResponse = {
+  metrics: {
+    total: number
+    pending: number
+    inProgress: number
+    done: number
+    overdue: number
+    highPriority?: number
+    urgent?: number
+  }
+  overdueItems: WorkItem[]
+  workItems: WorkItem[]
+}
+
+const emptyData: DashboardResponse = {
+  metrics: {
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    done: 0,
+    overdue: 0,
+    highPriority: 0,
+    urgent: 0,
+  },
+  overdueItems: [],
+  workItems: [],
 }
 
 export default function DashboardPage() {
-  const [q, setQ] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [priorityFilter, setPriorityFilter] = useState("all")
-  const [assigneeFilter, setAssigneeFilter] = useState("all")
-  const [activeView, setActiveView] = useState("all")
-  const [workItems, setWorkItems] = useState<WorkItem[] | null>(null)
-  const [metrics, setMetrics] = useState<Metrics | null>(null)
-
-  const debouncedQ = useDebouncedValue(q, 300)
-  const { users } = useUsers()
+  const [data, setData] = useState<DashboardResponse>(emptyData)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (typeof window === "undefined") return
+    async function load() {
+      try {
+        const res = await fetch("/api/dashboard/metrics", {
+          cache: "no-store",
+        })
+        const json = await res.json()
+        setData({
+          metrics: {
+            total: json.metrics?.total ?? 0,
+            pending: json.metrics?.pending ?? 0,
+            inProgress: json.metrics?.inProgress ?? 0,
+            done: json.metrics?.done ?? 0,
+            overdue: json.metrics?.overdue ?? 0,
+            highPriority: json.metrics?.highPriority ?? 0,
+            urgent: json.metrics?.urgent ?? 0,
+          },
+          overdueItems: Array.isArray(json.overdueItems) ? json.overdueItems : [],
+          workItems: Array.isArray(json.workItems) ? json.workItems : [],
+        })
+      } catch {
+        setData(emptyData)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-    const params = new URLSearchParams(window.location.search)
-    setQ(params.get("q") || "")
-    setStatusFilter(params.get("status") || "all")
-    setPriorityFilter(params.get("priority") || "all")
-    setAssigneeFilter(params.get("assigneeId") || "all")
+    load()
   }, [])
 
-  useEffect(() => {
-    if (typeof window === "undefined") return
+  const topOpenItems = useMemo(() => {
+    return data.workItems
+      .filter((item) => item.status !== "DONE")
+      .slice(0, 5)
+  }, [data.workItems])
 
-    const params = new URLSearchParams(window.location.search)
-
-    if (debouncedQ.trim()) params.set("q", debouncedQ.trim())
-    else params.delete("q")
-
-    if (statusFilter !== "all") params.set("status", statusFilter)
-    else params.delete("status")
-
-    if (priorityFilter !== "all") params.set("priority", priorityFilter)
-    else params.delete("priority")
-
-    if (assigneeFilter !== "all") params.set("assigneeId", assigneeFilter)
-    else params.delete("assigneeId")
-
-    const next = params.toString()
-    const nextUrl = next ? `/dashboard?${next}` : "/dashboard"
-    window.history.replaceState({}, "", nextUrl)
-  }, [assigneeFilter, debouncedQ, priorityFilter, statusFilter])
-
-  const handleSelectView = (viewId: string) => {
-  setActiveView(viewId)
-
-  const preset = WORK_ITEM_VIEW_PRESETS.find((item) => item.id === viewId)
-  if (!preset) return
-
-  setQ(preset.query.q || "")
-  setStatusFilter(preset.query.status || "all")
-  setPriorityFilter(preset.query.priority || "all")
-  setAssigneeFilter(preset.query.assigneeId || "all")
-}
-
-const handleClearFilters = () => {
-    setQ("")
-    setStatusFilter("all")
-    setPriorityFilter("all")
-    setAssigneeFilter("all")
-  }
-
-  const workItemsApiUrl = useMemo(
-    () =>
-      buildWorkItemsQuery({
-        q: debouncedQ,
-        status: statusFilter,
-        priority: priorityFilter,
-        assigneeId: assigneeFilter,
-      }),
-    [assigneeFilter, debouncedQ, priorityFilter, statusFilter],
-  )
-
-  useEffect(() => {
-    let active = true
-
-    async function loadWorkItems() {
-      const res = await fetch(workItemsApiUrl, { cache: "no-store" })
-      if (!res.ok) return
-      const data = await res.json()
-      if (active) setWorkItems(data)
-    }
-
-    loadWorkItems()
-
-    return () => {
-      active = false
-    }
-  }, [workItemsApiUrl])
-
-  useEffect(() => {
-    let active = true
-
-    async function loadMetrics() {
-      const res = await fetch("/api/dashboard/metrics", { cache: "no-store" })
-      if (!res.ok) return
-      const data = await res.json()
-      if (active) setMetrics(data)
-    }
-
-    loadMetrics()
-
-    return () => {
-      active = false
-    }
-  }, [])
+  const metrics = [
+    { label: "Open items", value: data.metrics.total - data.metrics.done },
+    { label: "Pending", value: data.metrics.pending },
+    { label: "In progress", value: data.metrics.inProgress },
+    { label: "Done", value: data.metrics.done },
+    { label: "Overdue", value: data.metrics.overdue },
+    { label: "High priority", value: data.metrics.highPriority ?? 0 },
+    { label: "Urgent", value: data.metrics.urgent ?? 0 },
+  ]
 
   return (
-    <main style={{ flex: 1, padding: 32 }}>
-      <WorkItemViewPresets activeView={activeView} onSelect={handleSelectView} />
-      <WorkItemFilters
-        q={q}
-        status={statusFilter}
-        priority={priorityFilter}
-        assigneeId={assigneeFilter}
-        onQChange={setQ}
-        onStatusChange={setStatusFilter}
-        onPriorityChange={setPriorityFilter}
-        onAssigneeChange={setAssigneeFilter}
-        assignees={users}
-        className="mb-2"
-      />
-      <WorkItemActiveFilters
-        q={q}
-        status={statusFilter}
-        priority={priorityFilter}
-        assigneeId={assigneeFilter}
-        onClear={handleClearFilters}
-      />
-
-      <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 24 }}>Dashboard</h1>
-
-      <DashboardMetrics metrics={metrics} />
-
-      <OverdueWorkItems />
-
-      <div style={{ marginTop: 32 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 16 }}>Work Items</h2>
-
-        {!workItems ? (
-          <WorkItemsLoading />
-        ) : workItems.length === 0 ? (
-          <WorkItemsEmpty />
-        ) : (
-          <div style={{ display: "grid", gap: 12 }}>
-            {workItems.slice(0, 12).map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  background: "#0f172a",
-                  border: "1px solid #1e293b",
-                  borderRadius: 16,
-                  padding: 16,
-                }}
-              >
-                <div style={{ fontSize: 16, fontWeight: 600 }}>{item.title}</div>
-                <div style={{ color: "#94a3b8", fontSize: 13, marginTop: 6 }}>
-                  {item.client?.name || "No client"} • {item.status} • {item.priority}
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  <WorkItemDueDateBadge dueDate={item.dueDate ?? null} />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+    <div className="p-6 space-y-8">
+      <div>
+        <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="mt-2 text-sm text-neutral-500">
+          Quick snapshot of work health, overdue items, and team focus.
+        </p>
       </div>
-    </main>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {metrics.map((metric) => (
+          <div key={metric.label} className="rounded-2xl border bg-white p-5 shadow-sm">
+            <div className="text-sm text-neutral-500">{metric.label}</div>
+            <div className="mt-3 text-4xl font-semibold tracking-tight">
+              {loading ? "—" : metric.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <section className="rounded-2xl border bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Overdue</h2>
+            <span className="text-sm text-neutral-500">
+              {data.overdueItems.length} item{data.overdueItems.length === 1 ? "" : "s"}
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {loading ? (
+              <div className="text-sm text-neutral-500">Loading overdue items...</div>
+            ) : data.overdueItems.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-4 text-sm text-neutral-500">
+                No overdue work items.
+              </div>
+            ) : (
+              data.overdueItems.map((item) => (
+                <div key={item.id} className="rounded-xl border p-4">
+                  <div className="font-medium">{item.title}</div>
+                  <div className="mt-1 text-sm text-neutral-600">
+                    {item.client?.name || "No client"} • {item.status} • {item.priority}
+                  </div>
+                  {item.dueDate ? (
+                    <div className="mt-2 text-sm text-red-600">
+                      Due {new Date(item.dueDate).toLocaleDateString()}
+                    </div>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Recent open work</h2>
+            <span className="text-sm text-neutral-500">
+              {topOpenItems.length} item{topOpenItems.length === 1 ? "" : "s"}
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {loading ? (
+              <div className="text-sm text-neutral-500">Loading work items...</div>
+            ) : topOpenItems.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-4 text-sm text-neutral-500">
+                No open work items.
+              </div>
+            ) : (
+              topOpenItems.map((item) => {
+                const overdue =
+                  item.dueDate &&
+                  new Date(item.dueDate) < new Date() &&
+                  item.status !== "DONE"
+
+                return (
+                  <div key={item.id} className="rounded-xl border p-4">
+                    <div className="font-medium">{item.title}</div>
+                    <div className="mt-1 text-sm text-neutral-600">
+                      {item.client?.name || "No client"} • {item.status} • {item.priority}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                      {item.dueDate ? (
+                        <span className="rounded-full border px-2 py-1">
+                          Due {new Date(item.dueDate).toLocaleDateString()}
+                        </span>
+                      ) : null}
+                      {overdue ? (
+                        <span className="rounded-full border px-2 py-1 text-red-600">
+                          Overdue
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
   )
 }
