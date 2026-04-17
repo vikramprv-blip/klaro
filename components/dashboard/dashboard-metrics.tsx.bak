@@ -8,7 +8,6 @@ type Metrics = {
   done: number
   highPriority: number
   urgent: number
-  overdue: number
 }
 
 type Props = {
@@ -61,7 +60,6 @@ export function DashboardMetrics({ metrics }: Props) {
       <Card label="Done" value={metrics.done} />
       <Card label="High Priority" value={metrics.highPriority} />
       <Card label="Urgent" value={metrics.urgent} />
-      <Card label="Overdue" value={metrics.overdue} />
     </div>
   )
 }

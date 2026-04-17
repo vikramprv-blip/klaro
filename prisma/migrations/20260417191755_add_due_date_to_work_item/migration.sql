@@ -1,0 +1,2 @@
+ALTER TABLE "WorkItem"
+ADD COLUMN "dueDate" TIMESTAMP(3);

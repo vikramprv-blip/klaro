@@ -1,5 +1,9 @@
 "use client"
 
+import { WorkItemDueDateBadge } from "@/components/workboard/work-item-due-date-badge"
+
+import { OverdueWorkItems } from "@/components/workboard/overdue-work-items"
+
 import { WORK_ITEM_VIEW_PRESETS } from "@/lib/work-item-view-presets"
 import { WorkItemViewPresets } from "@/components/work-items/work-item-view-presets"
 
@@ -16,6 +20,7 @@ type WorkItem = {
   title: string
   status: string
   priority: string
+  dueDate?: string | null
   client?: { name?: string | null } | null
 }
 
@@ -27,6 +32,7 @@ type Metrics = {
   done: number
   highPriority: number
   urgent: number
+  overdue: number
 }
 
 export default function DashboardPage() {
@@ -162,6 +168,8 @@ const handleClearFilters = () => {
 
       <DashboardMetrics metrics={metrics} />
 
+      <OverdueWorkItems />
+
       <div style={{ marginTop: 32 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 16 }}>Work Items</h2>
 
@@ -184,6 +192,9 @@ const handleClearFilters = () => {
                 <div style={{ fontSize: 16, fontWeight: 600 }}>{item.title}</div>
                 <div style={{ color: "#94a3b8", fontSize: 13, marginTop: 6 }}>
                   {item.client?.name || "No client"} • {item.status} • {item.priority}
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <WorkItemDueDateBadge dueDate={item.dueDate ?? null} />
                 </div>
               </div>
             ))}

@@ -1,0 +1,28 @@
+import { prisma } from "@/lib/prisma"
+
+type LogArgs = {
+  workItemId: string
+  type: string
+  message: string
+  meta?: Record<string, unknown>
+}
+
+export async function logWorkItemActivity({
+  workItemId,
+  type,
+  message,
+  meta,
+}: LogArgs) {
+  try {
+    await prisma.workItemActivity.create({
+      data: {
+        workItemId,
+        type,
+        message,
+        meta: meta ?? undefined,
+      },
+    })
+  } catch (error) {
+    console.error("Failed to log work item activity", error)
+  }
+}

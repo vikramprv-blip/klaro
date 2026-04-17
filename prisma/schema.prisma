@@ -36,6 +36,7 @@ model Client {
 }
 
 model WorkItem {
+  activities WorkItemActivity[]
   id                String           @id @default(cuid())
   title             String
   description       String?
@@ -127,4 +128,18 @@ model Invoice {
   updatedAt     DateTime     @updatedAt
 
   @@index([clientId, status])
+}
+
+
+model WorkItemActivity {
+  id         String   @id @default(cuid())
+  workItemId String
+  type       String
+  message    String
+  meta       String?
+  createdAt  DateTime @default(now())
+
+  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+
+  @@index([workItemId, createdAt(sort: Desc)])
 }
