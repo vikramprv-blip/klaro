@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from "react"
 import { prisma } from "@/lib/prisma";
 import WorkboardPage from "@/components/workboard/workboard-page";
 import AppTopbar from "@/components/layout/app-topbar";
+import { WorkboardBulkToolbar } from "@/components/workboard/workboard-bulk-toolbar"
 
 export default async function Workboard() {
   const [clients, users, items] = await Promise.all([
