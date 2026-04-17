@@ -1,3 +1,4 @@
+import { ClientSelect } from "@/components/work-items/client-select"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import NewWorkItemForm from "@/components/new-work-item-form"
