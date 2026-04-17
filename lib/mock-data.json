@@ -1,0 +1,123 @@
+{
+  "dashboard": {
+    "tasksDueToday": 18,
+    "filingsDueThisWeek": 42,
+    "pendingReceivables": 320000,
+    "overdueClients": 11
+  },
+  "clients": [
+    {
+      "id": "abc-pvt-ltd",
+      "name": "ABC Pvt Ltd",
+      "pan": "ABCDE1234F",
+      "gstin": "27ABCDE1234F1Z5",
+      "services": [
+        "GST",
+        "TDS"
+      ],
+      "manager": "Rahul",
+      "outstanding": 10000,
+      "nextDeadline": "2026-04-20"
+    },
+    {
+      "id": "xyz-traders",
+      "name": "XYZ Traders",
+      "pan": "XYZAB6789K",
+      "gstin": "29XYZAB6789K1Z2",
+      "services": [
+        "ITR"
+      ],
+      "manager": "Neha",
+      "outstanding": 7500,
+      "nextDeadline": "2026-04-25"
+    }
+  ],
+  "workboard": [
+    {
+      "id": "f1",
+      "client": "ABC Pvt Ltd",
+      "filing": "GST GSTR-3B",
+      "period": "Mar 2026",
+      "due": "2026-04-20",
+      "status": "Pending",
+      "assigned": "Rahul",
+      "missingDocs": 2,
+      "invoice": "Not Generated"
+    },
+    {
+      "id": "f2",
+      "client": "XYZ Traders",
+      "filing": "TDS Return",
+      "period": "Q4 FY25-26",
+      "due": "2026-04-25",
+      "status": "In Progress",
+      "assigned": "Neha",
+      "missingDocs": 1,
+      "invoice": "Pending"
+    },
+    {
+      "id": "f3",
+      "client": "MNO Foods",
+      "filing": "ITR Filing",
+      "period": "AY 2026-27",
+      "due": "2026-05-10",
+      "status": "Under Review",
+      "assigned": "Amit",
+      "missingDocs": 0,
+      "invoice": "Generated"
+    },
+    {
+      "id": "f4",
+      "client": "PQR Ventures",
+      "filing": "ROC Filing",
+      "period": "FY25-26",
+      "due": "2026-04-18",
+      "status": "Overdue",
+      "assigned": "Rahul",
+      "missingDocs": 3,
+      "invoice": "Pending"
+    },
+    {
+      "id": "f5",
+      "client": "LMN Services",
+      "filing": "GST GSTR-1",
+      "period": "Mar 2026",
+      "due": "2026-04-17",
+      "status": "Filed",
+      "assigned": "Neha",
+      "missingDocs": 0,
+      "invoice": "Paid"
+    }
+  ],
+  "timeline": [
+    "GST filing due",
+    "Documents requested",
+    "Assigned to Rahul",
+    "Filed",
+    "Invoice sent",
+    "Payment pending"
+  ],
+  "staff": [
+    {
+      "name": "Rahul",
+      "activeTasks": 12,
+      "overdue": 3,
+      "completedThisWeek": 8,
+      "reviewBacklog": 2
+    },
+    {
+      "name": "Neha",
+      "activeTasks": 9,
+      "overdue": 1,
+      "completedThisWeek": 11,
+      "reviewBacklog": 1
+    },
+    {
+      "name": "Amit",
+      "activeTasks": 7,
+      "overdue": 0,
+      "completedThisWeek": 6,
+      "reviewBacklog": 3
+    }
+  ]
+}
