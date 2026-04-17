@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 type ReorderItem = {
   id: string;
   status: string;
+
+  position?: number
 };
 
 export async function PATCH(req: Request) {
@@ -16,11 +18,12 @@ export async function PATCH(req: Request) {
     }
 
     await prisma.$transaction(
-      items.map((item) =>
+      items.map((item, index) =>
         prisma.workItem.update({
           where: { id: item.id },
           data: {
             status: item.status,
+            position: item.position ?? index,
           },
         })
       )

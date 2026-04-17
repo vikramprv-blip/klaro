@@ -1,28 +1,5 @@
 "use client";
 
-function buildReorderPayload(columns: Record<string, any[]>) {
-  return Object.entries(columns).flatMap(([status, items]) =>
-    items.map((item: any, index: number) => ({
-      id: String(item.id),
-      status,
-      position: index,
-    }))
-  );
-}
-
-async function persistBoard(columns: Record<string, any[]>) {
-  const res = await fetch("/api/work-items/reorder", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items: buildReorderPayload(columns) }),
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to save workboard state");
-  }
-}
-
-
 
 
 async function persistWorkboardMove(id: string, nextStatus: string, nextPosition?: number) {
@@ -171,22 +148,65 @@ export default function WorkboardPage({
     setActiveItem(null);
   }
 
-  async function handleDragEnd(event: any) {
-  const { active, over } = event || {};
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    setActiveItem(null);
 
-  if (!active || !over) return;
+    if (!over) return;
 
-  const activeId = String(active.id);
-  const nextStatus =
-    typeof over?.data?.current?.sortable?.containerId !== "undefined"
-      ? String(over.data.current.sortable.containerId)
-      : String(over.id);
+    const draggedItem = active.data.current?.item;
+    if (!draggedItem) return;
+
+    const targetStatus =
+      over.data.current?.status ||
+      (typeof over.id === "string" ? over.id : null);
+
+    if (!targetStatus || targetStatus === draggedItem.status) return;
+
+    const allowed = ALLOWED_TRANSITIONS[draggedItem.status] || [];
+    if (!allowed.includes(targetStatus)) {
+      showToast("Invalid move", `Cannot move from ${draggedItem.status} to ${targetStatus}`);
+      return;
+    }
+
+    const previousItems = items;
+    const optimistic = items.map((item) =>
+      item.id === draggedItem.id ? { ...item, status: targetStatus } : item
+    );
+
+    setItems(optimistic);
+    persistStatusChange(draggedItem.id, targetStatus, previousItems);
+  
 
   try {
-    await persistWorkboardMove(activeId, nextStatus);
+    const __persistId =
+      typeof activeId !== "undefined" ? String(activeId) :
+      typeof taskId !== "undefined" ? String(taskId) :
+      typeof movedId !== "undefined" ? String(movedId) :
+      typeof active !== "undefined" && active?.id ? String(active.id) :
+      null;
+
+    const __persistStatus =
+      typeof newStatus !== "undefined" ? String(newStatus) :
+      typeof nextStatus !== "undefined" ? String(nextStatus) :
+      typeof toStatus !== "undefined" ? String(toStatus) :
+      typeof targetStatus !== "undefined" ? String(targetStatus) :
+      typeof over !== "undefined" && over?.id ? String(over.id) :
+      null;
+
+    const __persistPosition =
+      typeof newIndex !== "undefined" ? Number(newIndex) :
+      typeof targetIndex !== "undefined" ? Number(targetIndex) :
+      typeof overIndex !== "undefined" ? Number(overIndex) :
+      undefined;
+
+    if (__persistId && __persistStatus) {
+      await persistWorkboardMove(__persistId, __persistStatus, __persistPosition);
+    }
   } catch (error) {
     console.error(error);
   }
+
 }
 
   return (

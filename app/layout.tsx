@@ -1,4 +1,7 @@
 import "./globals.css";
+import Link from "next/link"
+import AppHeader from "@/components/app-header"
+import { ToastProvider } from "@/components/toast"
 
 export const metadata = {
   title: "Klaro",
@@ -12,7 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+
+        <AppHeader />
+<ToastProvider>{children}</ToastProvider></body>
     </html>
   );
 }

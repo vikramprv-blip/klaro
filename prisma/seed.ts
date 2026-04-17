@@ -46,6 +46,8 @@ async function main() {
 
   const item = await prisma.workItem.create({
     data: {
+      status: "PENDING",
+      position: 0,
       title: "GST Return - March 2026",
       filingType: "GST Return",
       periodLabel: "Mar 2026",

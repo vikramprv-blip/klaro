@@ -1,3 +1,4 @@
+import Link from "next/link"
 export default function DashboardPage() {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#020617", color: "white" }}>

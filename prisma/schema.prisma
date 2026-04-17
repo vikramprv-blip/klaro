@@ -45,7 +45,9 @@ model WorkItem {
   completedAt       DateTime?
   filedAt           DateTime?
 
-  status            String           @default("PENDING")
+  status            String
+  position  Int      @default(0)
+  archivedAt DateTime?
   priority          String?
   invoiceTriggered  Boolean          @default(false)
 
@@ -68,6 +70,9 @@ model WorkItem {
   @@index([clientId, status])
   @@index([dueDate])
   @@index([filingType])
+
+
+  @@index([status, position])
 }
 
 model WorkDocument {
