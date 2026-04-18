@@ -1,4 +1,6 @@
 import "./globals.css";
+import { AppToaster } from "@/components/providers/app-toaster"
+import { LiveNotificationCenter } from "@/components/notifications/live-notification-center"
 import Link from "next/link"
 import AppHeader from "@/components/app-header"
 import { ToastProvider } from "@/components/toast"
@@ -16,6 +18,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <AppToaster />
+        <LiveNotificationCenter />
 
         <AppHeader />
 <ToastProvider>{children}</ToastProvider></body>

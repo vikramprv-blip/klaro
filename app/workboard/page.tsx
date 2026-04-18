@@ -1,5 +1,6 @@
 "use client"
 
+import { QuickAddTask } from "@/components/workboard/quick-add-task"
 import { WorkboardColumnCounts } from "@/components/workboard/workboard-column-counts"
 import { useUsers } from "@/hooks/use-users"
 
@@ -56,6 +57,7 @@ export default async function Workboard() {
 
   return (
     <div className="min-h-screen bg-zinc-50">
+      <QuickAddTask onCreated={() => location.reload()} />
       <AppTopbar />
       <WorkboardPage
         initialItems={normalizedItems}
