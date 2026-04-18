@@ -3,7 +3,21 @@
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
-export function QuickAddTask({ onCreated }: { onCreated?: () => void }) {
+type WorkItem = {
+  id: string
+  title: string
+  status: string
+  priority: string
+  dueDate?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+export function QuickAddTask({
+  onCreated,
+}: {
+  onCreated?: (item: WorkItem) => void
+}) {
   const [title, setTitle] = useState("")
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -51,9 +65,10 @@ export function QuickAddTask({ onCreated }: { onCreated?: () => void }) {
         return
       }
 
+      const item = await res.json()
       setTitle("")
       toast.success("Task created")
-      onCreated?.()
+      onCreated?.(item)
       inputRef.current?.focus()
     } catch {
       toast.error("Failed to create task")
