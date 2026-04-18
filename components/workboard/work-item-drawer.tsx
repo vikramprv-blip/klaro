@@ -153,7 +153,7 @@ export default function WorkItemDrawer({
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
             className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl"
           >
-            <div className="flex items-center justify-between border-b p-5">
+            <div className="flex items-center justify-between border-b p-5" data-work-item data-id={item.id}>
               <div className="min-w-0">
                 <h2 className="truncate text-lg font-semibold">{item.title}</h2>
                 <p className="truncate text-sm text-zinc-500">{item.client?.name}</p>

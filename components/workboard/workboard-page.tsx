@@ -42,7 +42,8 @@ async function persistWorkboardMove(id: string, nextStatus: string, nextPosition
   return res.json();
 }
 
-import { useMemo, useState  } from "react";
+import { useMemo, useState } from "react";
+import { useKeyboardNavigation } from "@/components/workboard/use-keyboard-navigation";
 import {
   closestCorners,
   DndContext,
@@ -188,6 +189,14 @@ export default function WorkboardPage({
     console.error(error);
   }
 }
+
+  useKeyboardNavigation({
+    items,
+    onOpen: (id) => {
+      const el = document.querySelector(`[data-id="${id}"]`)
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" })
+    },
+  })
 
   return (
     <div className="flex h-full flex-col gap-5 p-6">

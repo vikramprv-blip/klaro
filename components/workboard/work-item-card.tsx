@@ -50,7 +50,7 @@ export default function WorkItemCard({
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.995 }}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3" data-work-item data-id={item.id}>
         <div className="min-w-0">
           <h3 className="truncate text-sm font-semibold text-zinc-900">{item.title}</h3>
           <p className="mt-1 truncate text-xs text-zinc-500">{item.client.name}</p>
