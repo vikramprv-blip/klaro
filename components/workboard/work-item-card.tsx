@@ -1,4 +1,7 @@
 import { CSS } from "@dnd-kit/utilities";
+import { InlineEditableText } from "@/components/workboard/inline-editable-text";
+import { InlineEditableSelect } from "@/components/workboard/inline-editable-select";
+import { InlineEditableDate } from "@/components/workboard/inline-editable-date";
 import { useSortable } from "@dnd-kit/sortable";
 import { motion } from "framer-motion";
 import { formatDate } from "@/lib/utils";
@@ -52,7 +55,7 @@ export default function WorkItemCard({
     >
       <div className="flex items-start justify-between gap-3" data-work-item data-id={item.id}>
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-zinc-900">{item.title}</h3>
+          <h3 className="truncate text-sm font-semibold text-zinc-900"><InlineEditableText value={item.title} onSave={async (val) => { await fetch(`/api/work-items/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: val }) }) }} /></h3>
           <p className="mt-1 truncate text-xs text-zinc-500">{item.client.name}</p>
         </div>
 

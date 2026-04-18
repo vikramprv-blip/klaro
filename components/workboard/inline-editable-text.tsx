@@ -17,7 +17,9 @@ export function InlineEditableText({
   const [loading, setLoading] = useState(false)
 
   async function save() {
-    if (!text.trim() || text === value) {
+    const clean = text.trim()
+
+    if (!clean || clean === value) {
       setEditing(false)
       setText(value)
       return
@@ -25,14 +27,15 @@ export function InlineEditableText({
 
     setLoading(true)
     try {
-      await onSave(text)
+      await onSave(clean)
       toast.success("Updated")
     } catch {
-      toast.error("Failed to update")
+      toast.error("Failed")
       setText(value)
+    } finally {
+      setLoading(false)
+      setEditing(false)
     }
-    setLoading(false)
-    setEditing(false)
   }
 
   if (editing) {
