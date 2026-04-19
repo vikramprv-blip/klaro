@@ -3,7 +3,6 @@ import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import WorkItemStatusForm from "@/components/work-item-status-form"
 import WorkItemEditForm from "@/components/work-item-edit-form"
-import WorkItemAssigneeForm from "@/components/work-item-assignee-form"
 import WorkItemMetaForm from "@/components/work-item-meta-form"
 import WorkItemDangerZone from "@/components/work-item-danger-zone"
 
@@ -16,31 +15,12 @@ type PageProps = {
 export default async function WorkItemDetailPage({ params }: PageProps) {
   const { id } = await params
 
-  const [item, users] = await Promise.all([
-    prisma.workItem.findUnique({
-      where: { id },
-      include: {
-        client: true,
-        assignments: {
-          include: {
-            user: true,
-          },
-        },
-        documents: true,
-        invoice: true,
-      },
-    }),
-    prisma.user.findMany({
-      orderBy: {
-        name: "asc",
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    }),
-  ])
+  const item = await prisma.workItem.findUnique({
+    where: { id },
+    include: {
+      client: true,
+    },
+  })
 
   if (!item) {
     notFound()
@@ -59,7 +39,7 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
           </div>
           <h1 className="text-3xl font-semibold">{item.title}</h1>
           <p className="mt-2 text-sm text-gray-600">
-            {item.filingType} • {item.periodLabel} • {item.status}
+            {item.status}
           </p>
         </div>
 
@@ -81,20 +61,20 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
               <div className="mt-1 font-medium">{item.client?.name ?? "—"}</div>
             </div>
 
-
-
-
+            <div>
+              <div className="text-sm text-gray-500">Priority</div>
+              <div className="mt-1 font-medium">{item.priority ?? "MEDIUM"}</div>
+            </div>
 
             <div>
               <WorkItemStatusForm id={item.id} value={item.status} />
             </div>
 
             <div>
-              <WorkItemAssigneeForm
-                id={item.id}
-                value={item.assignments[0]?.userId ?? ""}
-                users={users}
-              />
+              <div className="text-sm text-gray-500">Due date</div>
+              <div className="mt-1 font-medium">
+                {item.dueDate ? new Date(item.dueDate).toLocaleDateString() : "—"}
+              </div>
             </div>
 
             <div className="sm:col-span-2">
@@ -117,55 +97,47 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
 
         <aside className="space-y-6">
           <section className="rounded-xl border bg-white p-5">
-            <h2 className="mb-3 text-lg font-semibold">Assignments</h2>
-            <div className="space-y-3">
-              {item.assignments.length ? (
-                item.assignments.map((assignment) => (
-                  <div key={assignment.id} className="rounded-lg border p-3">
-                    <div className="font-medium">{assignment.user?.name ?? "Unassigned"}</div>
-                    <div className="text-sm text-gray-500">{assignment.role}</div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500">No assignments yet.</p>
-              )}
+            <h2 className="mb-3 text-lg font-semibold">Details</h2>
+            <div className="space-y-3 text-sm">
+              <div>
+                <div className="text-gray-500">Status</div>
+                <div className="font-medium">{item.status}</div>
+              </div>
+              <div>
+                <div className="text-gray-500">Priority</div>
+                <div className="font-medium">{item.priority}</div>
+              </div>
+              <div>
+                <div className="text-gray-500">Created</div>
+                <div className="font-medium">
+                  {new Date(item.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-500">Last updated</div>
+                <div className="font-medium">
+                  {new Date(item.updatedAt).toLocaleDateString()}
+                </div>
+              </div>
             </div>
           </section>
 
           <section className="rounded-xl border bg-white p-5">
-            <h2 className="mb-3 text-lg font-semibold">Documents</h2>
-            <div className="space-y-3">
-              {item.documents.length ? (
-                item.documents.map((doc) => (
-                  <div key={doc.id} className="rounded-lg border p-3">
-                    <div className="font-medium">{doc.name}</div>
-                    <div className="text-sm text-gray-500">{doc.status}</div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500">No documents yet.</p>
-              )}
-            </div>
-          </section>
-
-          <section className="rounded-xl border bg-white p-5">
-            <h2 className="mb-3 text-lg font-semibold">Invoice</h2>
-            {item.invoice ? (
-              <div className="rounded-lg border p-3">
-                <div className="font-medium">{item.invoice.invoiceNo}</div>
-                <div className="text-sm text-gray-500">{item.invoice.status}</div>
+            <h2 className="mb-3 text-lg font-semibold">Description</h2>
+            {item.description ? (
+              <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                {item.description}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No invoice linked.</p>
+              <p className="text-sm text-gray-500">No description added.</p>
             )}
           </section>
         </aside>
       </div>
 
       <div className="mt-6">
-        <WorkItemDangerZone id={item.id} isArchived={!!item.archivedAt} />
+        <WorkItemDangerZone id={item.id} isArchived={false} />
       </div>
-
     </main>
   )
 }

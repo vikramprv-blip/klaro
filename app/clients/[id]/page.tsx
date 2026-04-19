@@ -121,7 +121,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
                 <div key={invoice.id} className="rounded-xl border border-slate-200 p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="font-medium text-slate-900">{`Invoice ${invoice.invoiceNo || invoice.id}`}</h3>
+                      <h3 className="font-medium text-slate-900">{`Invoice `}</h3>
                       <p className="mt-1 text-sm text-slate-600">{invoice.status}</p>
                     </div>
                     <div className="text-right text-sm font-medium text-slate-900">

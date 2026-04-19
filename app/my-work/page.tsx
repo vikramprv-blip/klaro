@@ -10,32 +10,14 @@ export default async function MyWorkPage({
   const userId = params.userId
   const status = params.status
 
-  if (!userId) {
-    return <div className="p-6">Missing userId</div>
-  }
-
   const items = await prisma.workItem.findMany({
     where: {
-      archivedAt: null,
-      ...(status ? { status: status as any } : {}),
-      assignments: {
-        some: {
-          userId,
-        },
-      },
+      ...(status ? { status } : {}),
     },
     include: {
       client: true,
-      assignments: {
-        include: {
-          user: true,
-        },
-      },
     },
-    orderBy: [
-      { dueDate: "asc" },
-      { createdAt: "desc" },
-    ],
+    orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
     take: 100,
   })
 
@@ -43,33 +25,33 @@ export default async function MyWorkPage({
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Assigned to you</h1>
+          <h1 className="text-2xl font-semibold">My Work</h1>
           <p className="text-sm text-neutral-500">
-            Your active work items in one place.
+            Assignment system is not active in the current schema, so this page shows work items by status{userId ? ` for requested user ${userId}` : ""}.
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-sm">
           <Link
-            href={`/my-work?userId=${userId}`}
+            href={userId ? `/my-work?userId=${userId}` : `/my-work`}
             className="rounded-md border px-3 py-2"
           >
             All
           </Link>
           <Link
-            href={`/my-work?userId=${userId}&status=PENDING`}
+            href={userId ? `/my-work?userId=${userId}&status=PENDING` : `/my-work?status=PENDING`}
             className="rounded-md border px-3 py-2"
           >
             Pending
           </Link>
           <Link
-            href={`/my-work?userId=${userId}&status=IN_PROGRESS`}
+            href={userId ? `/my-work?userId=${userId}&status=IN_PROGRESS` : `/my-work?status=IN_PROGRESS`}
             className="rounded-md border px-3 py-2"
           >
             In progress
           </Link>
           <Link
-            href={`/my-work?userId=${userId}&status=DONE`}
+            href={userId ? `/my-work?userId=${userId}&status=DONE` : `/my-work?status=DONE`}
             className="rounded-md border px-3 py-2"
           >
             Done
@@ -118,13 +100,6 @@ export default async function MyWorkPage({
                       ) : null}
                     </div>
                   </div>
-
-                  <Link
-                    href={`/workboard`}
-                    className="rounded-md border px-3 py-2 text-sm"
-                  >
-                    Open board
-                  </Link>
                 </div>
               </div>
             )

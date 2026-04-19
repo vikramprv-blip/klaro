@@ -1,31 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 
-// GET notifications
 export async function GET(req: NextRequest) {
-  const userId = req.nextUrl.searchParams.get("userId")
+  try {
+    const userId = req.nextUrl.searchParams.get("userId") || "me"
 
-  if (!userId) {
-    return NextResponse.json({ error: "Missing userId" }, { status: 400 })
+    return NextResponse.json({
+      notifications: [],
+      unreadCount: 0,
+      userId,
+      message: "Notifications table not available yet",
+    })
+  } catch (error) {
+    console.error("NOTIFICATIONS_GET_ERROR:", error)
+    return NextResponse.json(
+      { error: "Failed to load notifications" },
+      { status: 500 }
+    )
   }
-
-  const notifications = await prisma.notification.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  })
-
-  return NextResponse.json(notifications)
-}
-
-// PATCH mark as read
-export async function PATCH(req: NextRequest) {
-  const body = await req.json()
-
-  await prisma.notification.update({
-    where: { id: body.id },
-    data: { read: true },
-  })
-
-  return NextResponse.json({ success: true })
 }

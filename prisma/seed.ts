@@ -3,81 +3,61 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  const [admin, staff1, staff2] = await Promise.all([
-    prisma.user.upsert({
-      where: { email: "admin@klaro.test" },
-      update: {},
-      create: {
-        name: "Admin",
-        email: "admin@klaro.test",
-        role: "ADMIN",
-      },
-    }),
-    prisma.user.upsert({
-      where: { email: "riya@klaro.test" },
-      update: {},
-      create: {
-        name: "Riya",
-        email: "riya@klaro.test",
-        role: "STAFF",
-      },
-    }),
-    prisma.user.upsert({
-      where: { email: "arjun@klaro.test" },
-      update: {},
-      create: {
-        name: "Arjun",
-        email: "arjun@klaro.test",
-        role: "REVIEWER",
-      },
-    }),
-  ]);
-
-  const client = await prisma.client.upsert({
+  let client = await prisma.client.findFirst({
     where: { code: "ACME001" },
-    update: {},
-    create: {
-      name: "Acme Pvt Ltd",
-      code: "ACME001",
-      email: "finance@acme.test",
-      gstin: "29ABCDE1234F1Z5",
-    },
   });
 
-  const item = await prisma.workItem.create({
+  if (!client) {
+    client = await prisma.client.create({
+      data: {
+        name: "Acme Pvt Ltd",
+        code: "ACME001",
+        email: "finance@acme.test",
+        gstin: "29ABCDE1234F1Z5",
+      },
+    });
+  }
+
+  const workItem = await prisma.workItem.create({
     data: {
-      status: "PENDING",
-      position: 0,
       title: "GST Return - March 2026",
-      filingType: "GST Return",
-      periodLabel: "Mar 2026",
+      description: "Prepare and file GST return for March 2026",
+      status: "PENDING",
+      priority: "HIGH",
       dueDate: new Date(),
       clientId: client.id,
-      createdById: admin.id,
-      priority: "high",
-      assignments: {
-        create: [
-          {
-            userId: staff1.id,
-            role: "OWNER",
-          },
-          {
-            userId: staff2.id,
-            role: "REVIEWER",
-          },
-        ],
-      },
-      documents: {
-        create: [
-          { name: "Sales Register", docType: "SALES_REGISTER" },
-          { name: "Purchase Register", docType: "PURCHASE_REGISTER" },
-          { name: "Bank Statement", docType: "BANK_STATEMENT" },
-        ],
-      },
     },
   });
 
-  console.log({ admin, staff1, staff2, client, item });
+  const invoice = await prisma.invoice.create({
+    data: {
+      number: "INV-2026-001",
+      amount: 5000,
+      status: "DRAFT",
+      dueDate: new Date(),
+      clientId: client.id,
+    },
+  });
+
+  let serviceTemplate = await prisma.serviceTemplate.findFirst({
+    where: { code: "GST-MONTHLY" },
+  });
+
+  if (!serviceTemplate) {
+    serviceTemplate = await prisma.serviceTemplate.create({
+      data: {
+        name: "GST Monthly Filing",
+        code: "GST-MONTHLY",
+        description: "Monthly GST return filing template",
+        department: "Compliance",
+        frequency: "MONTHLY",
+        dueDayOfMonth: 11,
+        isActive: true,
+      },
+    });
+  }
+
+  console.log({ client, workItem, invoice, serviceTemplate });
 }
 
 main()

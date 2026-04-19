@@ -1,74 +1,54 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-type RouteContext = {
-  params: Promise<{
-    id: string
-  }>
+type Params = { params: Promise<{ id: string }> }
+
+export async function GET(_: NextRequest, { params }: Params) {
+  try {
+    const { id } = await params
+
+    const item = await prisma.workItem.findUnique({
+      where: { id },
+      include: { client: true },
+    })
+
+    if (!item) {
+      return NextResponse.json({ error: "Work item not found" }, { status: 404 })
+    }
+
+    return NextResponse.json({ item })
+  } catch (error) {
+    console.error("WORK_ITEM_GET_ERROR:", error)
+    return NextResponse.json(
+      { error: "Failed to load work item" },
+      { status: 500 }
+    )
+  }
 }
 
-export async function PATCH(req: Request, { params }: RouteContext) {
+export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     const { id } = await params
     const body = await req.json()
 
-    if (body.title !== undefined && !String(body.title).trim()) {
-      return NextResponse.json(
-        { error: "Title is required" },
-        { status: 400 }
-      )
-    }
+    const data: Record<string, unknown> = {}
 
-    if (
-      body.status !== undefined &&
-      !["PENDING", "IN_PROGRESS", "REVIEW", "COMPLETED"].includes(body.status)
-    ) {
-      return NextResponse.json(
-        { error: "Invalid status" },
-        { status: 400 }
-      )
-    }
+    if (body.title !== undefined) data.title = String(body.title)
+    if (body.description !== undefined) data.description = body.description ? String(body.description) : null
+    if (body.status !== undefined) data.status = String(body.status)
+    if (body.priority !== undefined) data.priority = String(body.priority)
+    if (body.dueDate !== undefined) data.dueDate = body.dueDate ? new Date(body.dueDate) : null
+    if (body.clientId !== undefined) data.clientId = body.clientId ? String(body.clientId) : null
 
-
-    const item = await prisma.$transaction(async (tx) => {
-      const updated = await tx.workItem.update({
-        where: { id },
-        data: {
-          ...(body.status !== undefined ? { status: body.status } : {}),
-          ...(body.title !== undefined ? { title: body.title } : {}),
-          ...(body.description !== undefined ? { description: body.description } : {}),
-          ...(body.priority !== undefined ? { priority: body.priority } : {}),
-          ...(body.dueDate !== undefined
-            ? { dueDate: body.dueDate ? new Date(body.dueDate) : null }
-            : {}),
-          ...(body.archivedAt !== undefined
-            ? { archivedAt: body.archivedAt ? new Date(body.archivedAt) : null }
-            : {}),
-        },
-      })
-
-      if (body.assigneeId !== undefined) {
-        await tx.workAssignment.deleteMany({
-          where: { workItemId: id },
-        })
-
-        if (body.assigneeId) {
-          await tx.workAssignment.create({
-            data: {
-              workItemId: id,
-              userId: body.assigneeId,
-              role: "OWNER",
-            },
-          })
-        }
-      }
-
-      return updated
+    const updated = await prisma.workItem.update({
+      where: { id },
+      data,
+      include: { client: true },
     })
 
-    return NextResponse.json(item)
+    return NextResponse.json({ item: updated })
   } catch (error) {
-    console.error("Failed to update work item", error)
+    console.error("WORK_ITEM_PATCH_ERROR:", error)
     return NextResponse.json(
       { error: "Failed to update work item" },
       { status: 500 }
@@ -76,30 +56,17 @@ export async function PATCH(req: Request, { params }: RouteContext) {
   }
 }
 
-
-export async function DELETE(_: Request, { params }: RouteContext) {
+export async function DELETE(_: NextRequest, { params }: Params) {
   try {
     const { id } = await params
-
-    await prisma.workAssignment.deleteMany({
-      where: { workItemId: id },
-    })
-
-    await prisma.workDocument.deleteMany({
-      where: { workItemId: id },
-    })
-
-    await prisma.invoice.deleteMany({
-      where: { workItemId: id },
-    })
 
     await prisma.workItem.delete({
       where: { id },
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ ok: true })
   } catch (error) {
-    console.error("Failed to delete work item", error)
+    console.error("WORK_ITEM_DELETE_ERROR:", error)
     return NextResponse.json(
       { error: "Failed to delete work item" },
       { status: 500 }

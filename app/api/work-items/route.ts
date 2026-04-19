@@ -1,27 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getWorkItems } from "@/lib/services/work-items";
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
 
-export async function GET(request: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(req.url)
 
-    const q = searchParams.get("q")?.trim() || undefined
-    const status = searchParams.get("status")?.trim() || undefined
-    const priority = searchParams.get("priority")?.trim() || undefined
-    const assigneeId = searchParams.get("assigneeId")?.trim() || undefined
+    const status = searchParams.get("status")
+    const priority = searchParams.get("priority")
+    const clientId = searchParams.get("clientId")
+    const q = searchParams.get("q")
 
     const items = await prisma.workItem.findMany({
       where: {
-        archivedAt: null,
-        ...(status ? { status: status as any } : {}),
-        ...(priority ? { priority: priority as any } : {}),
-        ...(assigneeId ? { assigneeId } : {}),
+        ...(status ? { status } : {}),
+        ...(priority ? { priority } : {}),
+        ...(clientId ? { clientId } : {}),
         ...(q
           ? {
               OR: [
                 { title: { contains: q } },
-                { client: { is: { name: { contains: q } } } },
+                { description: { contains: q } },
               ],
             }
           : {}),
@@ -29,17 +27,18 @@ export async function GET(request: Request) {
       include: {
         client: true,
       },
-      orderBy: [
-        { status: "asc" },
-        { position: "asc" },
-        { createdAt: "desc" },
-      ],
+      orderBy: {
+        updatedAt: "desc",
+      },
     })
 
-    return NextResponse.json(items)
+    return NextResponse.json({ items })
   } catch (error) {
-    console.error("GET /api/work-items failed", error)
-    return NextResponse.json({ error: "Failed to fetch work items" }, { status: 500 })
+    console.error("WORK_ITEMS_GET_ERROR:", error)
+    return NextResponse.json(
+      { error: "Failed to load work items" },
+      { status: 500 }
+    )
   }
 }
 
@@ -47,56 +46,26 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
-    if (!body.title || !String(body.title).trim()) {
-      return NextResponse.json(
-        { error: "Title is required" },
-        { status: 400 }
-      )
-    }
-
-    if (!body.clientId) {
-      return NextResponse.json(
-        { error: "Client is required" },
-        { status: 400 }
-      )
-    }
-
-
-    const itemCount = await prisma.workItem.count({
-      where: {
-        status: body.status ?? "PENDING",
-      },
-    });
-
-    const item = await prisma.workItem.create({
+    const created = await prisma.workItem.create({
       data: {
-        title: body.title,
-        description: body.description,
-        filingType: body.filingType,
-        periodLabel: body.periodLabel,
-        dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
-        priority: body.priority,
-        status: body.status ?? "PENDING",
-        position: body.position ?? itemCount,
-        client: { connect: { id: body.clientId } },
-        createdById: body.createdById,
+        title: String(body.title || "").trim(),
+        description: body.description ? String(body.description) : null,
+        status: body.status ? String(body.status) : "TODO",
+        priority: body.priority ? String(body.priority) : "MEDIUM",
+        dueDate: body.dueDate ? new Date(body.dueDate) : null,
+        clientId: body.clientId ? String(body.clientId) : null,
       },
       include: {
         client: true,
-        assignments: {
-          where: { unassignedAt: null },
-          include: { user: true },
-        },
-        documents: true,
-        invoice: true,
       },
-    });
+    })
 
-    return NextResponse.json({ item }, { status: 201 });
-  } catch {
+    return NextResponse.json({ item: created }, { status: 201 })
+  } catch (error) {
+    console.error("WORK_ITEMS_POST_ERROR:", error)
     return NextResponse.json(
       { error: "Failed to create work item" },
-      { status: 400 }
-    );
+      { status: 500 }
+    )
   }
 }

@@ -3,24 +3,15 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET() {
   try {
-    const items = await prisma.workItem.findMany({
-      where: {
-        archivedAt: {
-          not: null,
-        },
-      },
-      include: {
-        client: true,
-      },
-      orderBy: [{ archivedAt: "desc" }, { updatedAt: "desc" }],
+    return NextResponse.json({
+      items: [],
+      message: "Archived work items are not available because archivedAt is not in the current schema",
     })
-
-    return NextResponse.json(items)
   } catch (error) {
-    console.error("GET /api/work-items/archived failed", error)
+    console.error("ARCHIVED_WORK_ITEMS_GET_ERROR:", error)
     return NextResponse.json(
-      { error: "Failed to fetch archived work items" },
-      { status: 500 },
+      { error: "Failed to load archived work items" },
+      { status: 500 }
     )
   }
 }

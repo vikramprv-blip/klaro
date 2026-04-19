@@ -7,23 +7,23 @@ export async function GET() {
 
     const items = await prisma.workItem.findMany({
       where: {
-        archivedAt: null,
         dueDate: { lt: now },
-        status: { not: "DONE" as any },
+        status: { not: "DONE" },
+      },
+      orderBy: {
+        dueDate: "asc",
       },
       include: {
         client: true,
       },
-      orderBy: [{ dueDate: "asc" }, { updatedAt: "desc" }],
-      take: 20,
     })
 
-    return NextResponse.json(items)
+    return NextResponse.json({ items })
   } catch (error) {
-    console.error("GET /api/dashboard/overdue failed", error)
+    console.error("DASHBOARD_OVERDUE_ERROR:", error)
     return NextResponse.json(
-      { error: "Failed to fetch overdue work items" },
-      { status: 500 },
+      { error: "Failed to load overdue items" },
+      { status: 500 }
     )
   }
 }

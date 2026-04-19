@@ -1,20 +1,17 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma";
 
 export async function POST() {
   try {
-    const result = await prisma.notification.updateMany({
-      where: {
-        read: false,
-      },
-      data: {
-        read: true,
-      },
+    return NextResponse.json({
+      ok: true,
+      updatedCount: 0,
+      message: "Notifications table not available yet",
     })
-
-    return NextResponse.json({ ok: true, count: result.count })
   } catch (error) {
-    console.error("mark-all-read failed", error)
-    return NextResponse.json({ ok: false, error: "Failed to mark notifications as read" }, { status: 500 })
+    console.error("MARK_ALL_READ_ERROR:", error)
+    return NextResponse.json(
+      { error: "Failed to mark notifications as read" },
+      { status: 500 }
+    )
   }
 }

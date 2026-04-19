@@ -5,16 +5,8 @@ import AppTopbar from "@/components/layout/app-topbar";
 export default async function ClientsPage() {
   const clients = await prisma.client.findMany({
     include: {
-      workItems: {
-        include: {
-          documents: true,
-          invoice: true,
-          assignments: {
-            where: { unassignedAt: null },
-            include: { user: true },
-          },
-        },
-      },
+      workItems: true,
+      invoices: true,
     },
     orderBy: { name: "asc" },
   });
@@ -27,7 +19,7 @@ export default async function ClientsPage() {
         <div>
           <h1 className="text-2xl font-semibold">Clients</h1>
           <p className="text-sm text-zinc-500">
-            Client-wise filings, documents, and invoice readiness.
+            Client-wise filings and invoice readiness.
           </p>
         </div>
 
@@ -55,13 +47,9 @@ export default async function ClientsPage() {
                       (w) => w.status === "FILED"
                     ).length;
 
-                    const missingDocs = client.workItems.reduce(
-                      (acc, w) =>
-                        acc + w.documents.filter((d) => d.status === "MISSING").length,
-                      0
-                    );
+                    const missingDocs = 0;
 
-                    const invoices = client.workItems.filter((w) => !!w.invoice).length;
+                    const invoices = client.invoices.length;
 
                     return (
                       <tr key={client.id} className="border-t">
@@ -78,7 +66,7 @@ export default async function ClientsPage() {
                             href={`/clients/${client.id}`}
                             className="text-blue-600 hover:underline"
                           >
-                            View
+                            Open
                           </Link>
                         </td>
                       </tr>
@@ -86,8 +74,8 @@ export default async function ClientsPage() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-zinc-400">
-                      No clients found
+                    <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
+                      No clients found.
                     </td>
                   </tr>
                 )}
