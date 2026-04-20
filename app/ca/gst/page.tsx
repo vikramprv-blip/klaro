@@ -48,7 +48,7 @@ export default function GSTFilingsPage() {
   useEffect(() => {
     fetch("/api/ca/gst")
       .then(r => r.json())
-      .then(d => { setFilings(d); setLoading(false) })
+      .then(d => { setFilings(Array.isArray(d) ? d : []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 

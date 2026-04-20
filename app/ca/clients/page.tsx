@@ -42,7 +42,7 @@ export default function CAClientsPage() {
   useEffect(() => {
     fetch("/api/ca/clients")
       .then(r => r.json())
-      .then(d => { setClients(d); setLoading(false) })
+      .then(d => { setClients(Array.isArray(d) ? d : []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 
