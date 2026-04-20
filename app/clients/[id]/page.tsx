@@ -1,4 +1,4 @@
-
+export const dynamic = "force-dynamic";
 function formatCurrency(value: unknown) {
   if (value === null || value === undefined) return "—"
   const num =

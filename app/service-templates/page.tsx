@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link"
 import { getServiceTemplates } from "@/lib/service-templates"
 import ServiceTemplateForm from "@/components/service-templates/service-template-form"

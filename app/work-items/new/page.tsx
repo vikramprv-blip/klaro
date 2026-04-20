@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { ClientSelect } from "@/components/work-items/client-select"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
