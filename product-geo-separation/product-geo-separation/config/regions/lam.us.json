@@ -1,0 +1,14 @@
+{
+  "policy_pack": "lam.us",
+  "region_code": "US",
+  "rules": {
+    "identity.require_country": true,
+    "consent.require_terms_version": true,
+    "billing.tax_mode": "sales_tax",
+    "privacy.data_residency_required": false,
+    "privacy.default_retention_days": 30,
+    "privacy.cross_border_transfer_requires_basis": false,
+    "safety.policy_profile": "standard",
+    "support.contract_entity_required": true
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "regions": [
+    {
+      "code": "IN",
+      "name": "India",
+      "currency": "INR",
+      "timezone": "Asia/Kolkata",
+      "default_legal_entity": "openai-india",
+      "data_residency": "in-country",
+      "tax_engine": "gst",
+      "policy_pack": "lam.in"
+    },
+    {
+      "code": "AE",
+      "name": "UAE",
+      "currency": "AED",
+      "timezone": "Asia/Dubai",
+      "default_legal_entity": "openai-uae",
+      "data_residency": "regional",
+      "tax_engine": "vat_ae",
+      "policy_pack": "lam.ae"
+    },
+    {
+      "code": "US",
+      "name": "United States",
+      "currency": "USD",
+      "timezone": "America/Los_Angeles",
+      "default_legal_entity": "openai-us",
+      "data_residency": "us",
+      "tax_engine": "sales_tax",
+      "policy_pack": "lam.us"
+    },
+    {
+      "code": "EU",
+      "name": "European Union",
+      "currency": "EUR",
+      "timezone": "Europe/Dublin",
+      "default_legal_entity": "openai-eu",
+      "data_residency": "eu",
+      "tax_engine": "vat_eu",
+      "policy_pack": "lam.eu"
+    }
+  ]
+}

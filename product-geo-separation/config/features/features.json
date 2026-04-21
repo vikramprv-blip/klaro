@@ -1,0 +1,60 @@
+{
+  "defaults": {
+    "consumer.chat": false,
+    "consumer.voice": false,
+    "consumer.image_gen": false,
+    "consumer.memory": false,
+    "business.sso": false,
+    "business.scim": false,
+    "business.audit_logs": false,
+    "enterprise.data_residency": false,
+    "enterprise.zero_data_retention": false,
+    "payments.card": true,
+    "payments.invoice": false,
+    "compliance.export_archive": false,
+    "compliance.custom_retention": false
+  },
+  "product_defaults": {
+    "chatgpt-consumer": {
+      "consumer.chat": true,
+      "consumer.voice": true,
+      "consumer.image_gen": true,
+      "payments.card": true
+    },
+    "chatgpt-business": {
+      "consumer.chat": true,
+      "business.sso": true,
+      "business.audit_logs": true,
+      "payments.card": true,
+      "payments.invoice": true
+    },
+    "chatgpt-enterprise": {
+      "consumer.chat": true,
+      "business.sso": true,
+      "business.scim": true,
+      "business.audit_logs": true,
+      "enterprise.data_residency": true,
+      "enterprise.zero_data_retention": true,
+      "payments.invoice": true,
+      "compliance.custom_retention": true
+    },
+    "api-platform": {
+      "payments.card": true,
+      "payments.invoice": true,
+      "compliance.export_archive": true
+    }
+  },
+  "region_overrides": {
+    "IN": {
+      "enterprise.data_residency": true
+    },
+    "AE": {
+      "enterprise.data_residency": true
+    },
+    "US": {},
+    "EU": {
+      "enterprise.data_residency": true,
+      "consumer.memory": true
+    }
+  }
+}

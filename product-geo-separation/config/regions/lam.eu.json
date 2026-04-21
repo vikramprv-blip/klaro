@@ -1,0 +1,14 @@
+{
+  "policy_pack": "lam.eu",
+  "region_code": "EU",
+  "rules": {
+    "identity.require_country": true,
+    "consent.require_terms_version": true,
+    "billing.tax_mode": "vat_eu",
+    "privacy.data_residency_required": true,
+    "privacy.default_retention_days": 30,
+    "privacy.cross_border_transfer_requires_basis": true,
+    "safety.policy_profile": "standard",
+    "support.contract_entity_required": true
+  }
+}
