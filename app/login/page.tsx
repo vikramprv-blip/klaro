@@ -14,10 +14,39 @@ export default function LoginPage() {
   async function handleLogin() {
     if (!email || !password) { setError("Please fill all fields"); return }
     setLoading(true); setError("")
+
     const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
     if (err) { setError(err.message); setLoading(false); return }
-    const vertical = data.user?.user_metadata?.vertical
-    router.push(vertical === "ca" ? "/ca" : vertical === "lawyer" ? "/lawyer" : "/dashboard")
+
+    const user = data.user
+    const session = data.session
+
+    // Register session and enforce plan limits
+    try {
+      const res = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: user.id,
+          session_token: session.access_token.slice(-32),
+          device_info: navigator.userAgent.slice(0, 100),
+        }),
+      })
+      const sessionData = await res.json()
+
+      if (!res.ok && sessionData.error === "session_limit_reached") {
+        // Sign them out and show error
+        await supabase.auth.signOut()
+        setError(sessionData.message)
+        setLoading(false)
+        return
+      }
+    } catch {
+      // Session tracking failed silently — don't block login
+    }
+
+    const vertical = user.user_metadata?.vertical
+    router.push(vertical === "ca" ? "/ca" : vertical === "lawyer" ? "/lawyer" : "/ca")
   }
 
   return (
@@ -30,7 +59,11 @@ export default function LoginPage() {
           <h1 className="text-xl font-semibold text-gray-900 mb-1">Welcome back</h1>
           <p className="text-sm text-gray-400 mb-6">Sign in to your Klaro account</p>
 
-          {error && <div className="bg-red-50 text-red-600 text-xs px-3 py-2 rounded-lg mb-4">{error}</div>}
+          {error && (
+            <div className="bg-red-50 text-red-600 text-xs px-3 py-2 rounded-lg mb-4 leading-relaxed">
+              {error}
+            </div>
+          )}
 
           <div className="space-y-3">
             <div>
