@@ -7,7 +7,7 @@ Respond ONLY with JSON (no markdown):
 export async function POST(req: NextRequest) {
   const { gstr2b, purchases } = await req.json()
   const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST", headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY ?? "", "anthropic-version": "2023-06-01" },
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2000, system: SYSTEM,
       messages: [{ role: "user", content: `GSTR-2B:\n${gstr2b}\n\nPurchase register:\n${purchases}` }] }),
   })
