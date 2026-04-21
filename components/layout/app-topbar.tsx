@@ -1,36 +1,25 @@
 import Link from "next/link";
-import { LayoutGrid, BriefcaseBusiness, Users, Wallet, Calculator, Scale } from "lucide-react";
+import { Calculator, Scale, Home } from "lucide-react";
 
 const links = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { href: "/workboard", label: "Workboard", icon: BriefcaseBusiness },
-  { href: "/clients", label: "Clients", icon: Users },
-  { href: "/cashflow", label: "Cashflow", icon: Wallet },
+  { href: "/", label: "Home", icon: Home },
   { href: "/ca", label: "CA Suite", icon: Calculator },
-  { href: "/lawyer", label: "Lawyer", icon: Scale },
+  { href: "/lawyer", label: "Lawyer Suite", icon: Scale },
 ];
 
 export default function AppTopbar() {
   return (
     <div className="sticky top-0 z-40 border-b bg-white/90 backdrop-blur">
-      <div className="flex items-center gap-2 overflow-x-auto px-6 py-3">
-        <Link
-          href="/dashboard"
-          className="mr-3 shrink-0 text-sm font-semibold tracking-tight text-zinc-900"
-        >
-          Klaro
-        </Link>
-
-        {links.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="inline-flex shrink-0 items-center gap-2 rounded-2xl border px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-50"
-          >
-            <Icon className="h-4 w-4" />
-            <span>{label}</span>
-          </Link>
-        ))}
+      <div className="flex h-14 items-center gap-6 px-6">
+        <Link href="/" className="text-sm font-semibold text-gray-900">Klaro</Link>
+        <nav className="flex items-center gap-1">
+          {links.map(({ href, label }) => (
+            <Link key={href} href={href}
+              className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+              {label}
+            </Link>
+          ))}
+        </nav>
       </div>
     </div>
   );

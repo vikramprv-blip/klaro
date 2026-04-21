@@ -1,49 +1,40 @@
 "use client"
-
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/workboard", label: "Workboard" },
-  { href: "/clients", label: "Clients" },
-  { href: "/cashflow", label: "Cashflow" },
+  { href: "/ca",     label: "CA Suite" },
+  { href: "/lawyer", label: "Lawyer Suite" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/guide",  label: "Guide" },
 ]
 
 export default function AppHeader() {
   const pathname = usePathname()
+  
+  // Hide header on landing page — it has its own nav
+  if (pathname === "/") return null
 
   return (
-    <header className="border-b bg-white">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link href="/dashboard" className="text-lg font-semibold">
-          Klaro
-        </Link>
-
-        <nav className="flex items-center gap-2 text-sm">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-
+    <header className="border-b bg-white sticky top-0 z-40">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+        <Link href="/" className="text-base font-semibold text-gray-900">Klaro</Link>
+        <nav className="flex items-center gap-1">
+          {navItems.map(({ href, label }) => {
+            const active = pathname.startsWith(href)
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={[
-                  "rounded-md px-3 py-2 transition",
-                  isActive
-                    ? "bg-black text-white"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-black",
-                ].join(" ")}
-              >
-                {item.label}
+              <Link key={href} href={href}
+                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  active ? "bg-gray-100 text-gray-900 font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                }`}>
+                {label}
               </Link>
             )
           })}
         </nav>
-          <Link href="/work-items/new" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
-            New Work Item
-          </Link>
-        
+        <Link href="/signup" className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+          Get started free
+        </Link>
       </div>
     </header>
   )
