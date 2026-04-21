@@ -1,2 +1,2 @@
 "use client"
-export { PLParserPage as default } from "@/components/ca-ai-tools"
+export { PLParserPage as default } from "@/components/ca-ai-upload-pages"

@@ -119,7 +119,7 @@ export default function LandingPage() {
       {/* Pricing teaser */}
       <section className="px-8 py-20 max-w-3xl mx-auto text-center">
         <h2 className="text-3xl font-semibold text-gray-900 mb-4 tracking-tight">Simple, honest pricing</h2>
-        <p className="text-gray-500 mb-8">Free during beta. Paid plans from ₹999/month after launch.</p>
+        <p className="text-gray-500 mb-8">Free during beta. Paid plans from ₹1,499/month after launch.</p>
         <Link href="/pricing" className="inline-flex items-center gap-2 border border-gray-200 text-gray-700 px-5 py-2.5 rounded-lg text-sm hover:bg-gray-50 transition-colors">
           See full pricing →
         </Link>

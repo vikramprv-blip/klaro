@@ -4,7 +4,7 @@ import Link from "next/link"
 const CA_PLANS = [
   {
     name: "Solo",
-    price: "₹999",
+    price: "₹1,499",
     period: "/month",
     desc: "Single CA or freelance practitioner",
     highlight: false,
@@ -13,7 +13,7 @@ const CA_PLANS = [
   },
   {
     name: "Practice",
-    price: "₹2,999",
+    price: "₹4,999",
     period: "/month",
     desc: "Small firm with 2–10 staff",
     highlight: true,
@@ -22,7 +22,7 @@ const CA_PLANS = [
   },
   {
     name: "Firm",
-    price: "₹7,999",
+    price: "₹14,999",
     period: "/month",
     desc: "Mid-size firm, 10–50 staff",
     highlight: false,
@@ -34,7 +34,7 @@ const CA_PLANS = [
 const LAWYER_PLANS = [
   {
     name: "Solo",
-    price: "₹799",
+    price: "₹1,299",
     period: "/month",
     desc: "Individual advocate",
     highlight: false,
@@ -43,7 +43,7 @@ const LAWYER_PLANS = [
   },
   {
     name: "Chamber",
-    price: "₹2,499",
+    price: "₹4,499",
     period: "/month",
     desc: "Small chamber or firm",
     highlight: true,
@@ -52,7 +52,7 @@ const LAWYER_PLANS = [
   },
   {
     name: "Firm",
-    price: "₹5,999",
+    price: "₹11,999",
     period: "/month",
     desc: "Full firm, up to 50 staff",
     highlight: false,

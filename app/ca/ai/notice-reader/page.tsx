@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import FileUpload from "@/components/file-upload"
 
 type NoticeResult = {
   notice_type: string
@@ -15,11 +16,18 @@ type NoticeResult = {
   urgency: string
 }
 
+const URGENCY_STYLE: Record<string, string> = {
+  high:   "bg-red-50 text-red-700 border-red-200",
+  medium: "bg-amber-50 text-amber-700 border-amber-200",
+  low:    "bg-green-50 text-green-700 border-green-200",
+}
+
 export default function NoticeReaderPage() {
   const [text, setText]         = useState("")
   const [loading, setLoading]   = useState(false)
   const [result, setResult]     = useState<NoticeResult | null>(null)
   const [error, setError]       = useState("")
+  const [inputMode, setMode]    = useState<"file"|"paste">("file")
 
   async function handleAnalyse() {
     if (!text.trim()) return
@@ -33,34 +41,53 @@ export default function NoticeReaderPage() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setResult(data)
-    } catch (e: any) {
-      setError(e.message ?? "Analysis failed")
-    }
+    } catch (e: any) { setError(e.message ?? "Analysis failed") }
     setLoading(false)
-  }
-
-  const URGENCY_STYLE: Record<string,string> = {
-    high:   "bg-red-50 text-red-700 border-red-200",
-    medium: "bg-amber-50 text-amber-700 border-amber-200",
-    low:    "bg-green-50 text-green-700 border-green-200",
   }
 
   return (
     <div className="p-8 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-xl font-medium text-gray-900">Notice reader</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Paste any GST, Income Tax, or TDS notice — AI reads it, classifies it, and drafts your reply</p>
+        <p className="text-sm text-gray-400 mt-0.5">Upload or paste any GST, Income Tax, or TDS notice — AI reads it, classifies it, and drafts your reply</p>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
         <div>
-          <label className="text-xs font-medium text-gray-500 mb-2 block">Paste notice text</label>
-          <textarea
-            value={text}
-            onChange={e => setText(e.target.value)}
-            placeholder="Paste the full text of the notice here. You can copy-paste from a PDF or type key details like: notice type, GSTIN/PAN, tax period, demand amount, deadline..."
-            className="w-full h-64 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 resize-none"
-          />
+          {/* Mode toggle */}
+          <div className="flex gap-2 mb-3">
+            {(["file","paste"] as const).map(m => (
+              <button key={m} onClick={() => setMode(m)}
+                className={`text-xs px-3 py-1.5 rounded-lg capitalize transition-colors ${inputMode === m ? "bg-gray-900 text-white" : "border border-gray-200 text-gray-500 hover:bg-gray-50"}`}>
+                {m === "file" ? "Upload file" : "Paste text"}
+              </button>
+            ))}
+          </div>
+
+          {inputMode === "file" ? (
+            <div className="space-y-3">
+              <FileUpload
+                onTextExtracted={(t) => setText(t)}
+                accept=".pdf,.txt"
+                label="Drop notice PDF here"
+                hint="PDF or TXT — notice from GST portal, IT department, TDS"
+              />
+              {text && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">Extracted text preview ({text.length} chars)</p>
+                  <p className="text-xs text-gray-400 line-clamp-3">{text.slice(0, 200)}...</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <textarea
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="Paste the full notice text here..."
+              className="w-full h-52 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 resize-none"
+            />
+          )}
+
           <button
             onClick={handleAnalyse}
             disabled={!text.trim() || loading}
@@ -73,13 +100,7 @@ export default function NoticeReaderPage() {
           <div className="mt-4 bg-gray-50 rounded-xl p-4">
             <p className="text-xs font-medium text-gray-600 mb-2">What this AI does:</p>
             <ul className="space-y-1.5">
-              {[
-                "Identifies notice type (SCN, demand, assessment, audit)",
-                "Extracts key details — GSTIN, period, demand amount, deadline",
-                "Flags the legal provisions invoked",
-                "Drafts a structured reply you can adapt",
-                "Lists documents needed to respond",
-              ].map(t => (
+              {["Identifies notice type (SCN, demand, assessment, audit)", "Extracts GSTIN, period, demand amount, deadline", "Flags the legal provisions invoked", "Drafts a structured reply you can adapt", "Lists documents needed to respond"].map(t => (
                 <li key={t} className="flex items-start gap-2">
                   <span className="text-green-500 text-xs mt-0.5">✓</span>
                   <span className="text-xs text-gray-500">{t}</span>
@@ -93,13 +114,12 @@ export default function NoticeReaderPage() {
           {loading && (
             <div className="space-y-3">
               {[...Array(5)].map((_,i) => <div key={i} className="h-8 bg-gray-100 rounded-lg animate-pulse" />)}
-              <p className="text-xs text-gray-400 text-center mt-4">Claude is reading the notice...</p>
+              <p className="text-xs text-gray-400 text-center mt-4">AI is reading the notice...</p>
             </div>
           )}
 
           {result && (
             <div className="space-y-4">
-              {/* Header info */}
               <div className="border border-gray-100 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-medium text-gray-700">{result.notice_type}</span>
@@ -109,12 +129,12 @@ export default function NoticeReaderPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {[
-                    { label: "Authority",    value: result.issuing_authority },
-                    { label: "GSTIN/PAN",    value: result.gstin_or_pan },
-                    { label: "Period",       value: result.tax_period },
-                    { label: "Demand",       value: result.demand_amount },
-                    { label: "Reply by",     value: result.reply_deadline },
-                  ].map(({ label, value }) => value && value !== "—" && (
+                    { label: "Authority", value: result.issuing_authority },
+                    { label: "GSTIN/PAN", value: result.gstin_or_pan },
+                    { label: "Period",    value: result.tax_period },
+                    { label: "Demand",    value: result.demand_amount },
+                    { label: "Reply by", value: result.reply_deadline },
+                  ].filter(x => x.value && x.value !== "—").map(({ label, value }) => (
                     <div key={label}>
                       <span className="text-gray-400">{label}: </span>
                       <span className="text-gray-700 font-medium">{value}</span>
@@ -123,41 +143,30 @@ export default function NoticeReaderPage() {
                 </div>
               </div>
 
-              {/* Summary */}
               <div className="border border-gray-100 rounded-xl p-4">
                 <p className="text-xs font-medium text-gray-600 mb-2">Summary</p>
                 <p className="text-sm text-gray-600 leading-relaxed">{result.summary}</p>
               </div>
 
-              {/* Key issues */}
               {result.key_issues?.length > 0 && (
                 <div className="border border-amber-100 bg-amber-50/50 rounded-xl p-4">
                   <p className="text-xs font-medium text-amber-800 mb-2">Key issues raised</p>
-                  <ul className="space-y-1">
-                    {result.key_issues.map((issue, i) => (
-                      <li key={i} className="text-xs text-amber-700 flex items-start gap-2">
-                        <span className="mt-0.5">•</span>{issue}
-                      </li>
-                    ))}
-                  </ul>
+                  {result.key_issues.map((issue, i) => <p key={i} className="text-xs text-amber-700 mb-1">• {issue}</p>)}
                 </div>
               )}
 
-              {/* Documents needed */}
               {result.documents_needed?.length > 0 && (
                 <div className="border border-gray-100 rounded-xl p-4">
-                  <p className="text-xs font-medium text-gray-600 mb-2">Documents needed to reply</p>
-                  <ul className="space-y-1">
-                    {result.documents_needed.map((doc, i) => (
-                      <li key={i} className="text-xs text-gray-500 flex items-start gap-2">
-                        <span className="text-gray-300 mt-0.5">□</span>{doc}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-xs font-medium text-gray-600 mb-2">Documents needed</p>
+                  {result.documents_needed.map((doc, i) => (
+                    <div key={i} className="flex items-start gap-2 mb-1">
+                      <span className="text-gray-300 text-xs mt-0.5">□</span>
+                      <span className="text-xs text-gray-500">{doc}</span>
+                    </div>
+                  ))}
                 </div>
               )}
 
-              {/* Reply draft */}
               <div className="border border-blue-100 bg-blue-50/30 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-medium text-blue-800">Draft reply</p>
@@ -170,7 +179,7 @@ export default function NoticeReaderPage() {
           )}
 
           {!loading && !result && (
-            <div className="h-full flex items-center justify-center">
+            <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-100 rounded-xl">
               <p className="text-sm text-gray-300">Analysis will appear here</p>
             </div>
           )}
