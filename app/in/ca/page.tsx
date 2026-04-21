@@ -14,6 +14,7 @@ function urgencyColor(days: number) {
 }
 
 const MODULE_CARDS = [
+{ label: "AI services", href: "/in/ca/ai", desc: "Notice reader, 26AS analyser, GST AI tools", color: "bg-indigo-50 text-indigo-800" },
   { label: "GST filings",    href: "/in/ca/gst",         desc: "GSTR-1, 3B, 9 tracking",       color: "bg-blue-50   text-blue-800"   },
   { label: "TDS compliance", href: "/in/ca/tds",         desc: "24Q, 26Q, Form 16/16A",         color: "bg-purple-50 text-purple-800" },
   { label: "ITR tracker",    href: "/in/ca/itr",         desc: "ITR-1 to ITR-7, AY 2026-27",   color: "bg-teal-50   text-teal-800"   },

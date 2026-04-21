@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 
 const NAV = [
   { label: "Overview",        href: "/in/ca",             icon: "⊞" },
+  { label: "AI services",     href: "/in/ca/ai",          icon: "✦" },
   { label: "Clients",         href: "/in/ca/clients",     icon: "◉" },
   { label: "GST filings",     href: "/in/ca/gst",         icon: "◈" },
   { label: "TDS compliance",  href: "/in/ca/tds",         icon: "◇" },

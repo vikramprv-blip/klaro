@@ -3,8 +3,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 const navItems = [
-  { href: "/ca",     label: "CA Suite" },
-  { href: "/lawyer", label: "Lawyer Suite" },
+  { href: "/in/ca",     label: "CA Suite" },
+  { href: "/in/lawyer", label: "Lawyer Suite" },
   { href: "/pricing", label: "Pricing" },
   { href: "/guide",  label: "Guide" },
 ]
@@ -13,7 +13,7 @@ export default function AppHeader() {
   const pathname = usePathname()
   
   // Hide header on landing page — it has its own nav
-  if (pathname === "/") return null
+  if (pathname === "/" || pathname === "/in") return null
 
   return (
     <header className="border-b bg-white sticky top-0 z-40">
