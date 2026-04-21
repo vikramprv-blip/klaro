@@ -1,0 +1,104 @@
+{
+  "products": [
+    {
+      "product_key": "ca-suite",
+      "product_name": "CA Suite",
+      "product_surface": "professional"
+    },
+    {
+      "product_key": "lawyer-suite",
+      "product_name": "Lawyer Suite",
+      "product_surface": "professional"
+    }
+  ],
+  "region_products": [
+    {
+      "product_key": "ca-suite",
+      "region_code": "IN",
+      "legal_entity_code": "openai-india",
+      "sku_prefix": "IN-CA",
+      "price_book_key": "pb_in_ca_suite",
+      "terms_version": "in_ca_tos_v1",
+      "privacy_version": "in_ca_privacy_v1",
+      "support_plan_key": "support_professional",
+      "policy_pack_key": "lam.in"
+    },
+    {
+      "product_key": "ca-suite",
+      "region_code": "AE",
+      "legal_entity_code": "openai-uae",
+      "sku_prefix": "AE-CA",
+      "price_book_key": "pb_ae_ca_suite",
+      "terms_version": "ae_ca_tos_v1",
+      "privacy_version": "ae_ca_privacy_v1",
+      "support_plan_key": "support_professional",
+      "policy_pack_key": "lam.ae"
+    },
+    {
+      "product_key": "ca-suite",
+      "region_code": "US",
+      "legal_entity_code": "openai-us",
+      "sku_prefix": "US-CA",
+      "price_book_key": "pb_us_ca_suite",
+      "terms_version": "us_ca_tos_v1",
+      "privacy_version": "us_ca_privacy_v1",
+      "support_plan_key": "support_professional",
+      "policy_pack_key": "lam.us"
+    },
+    {
+      "product_key": "ca-suite",
+      "region_code": "EU",
+      "legal_entity_code": "openai-eu",
+      "sku_prefix": "EU-CA",
+      "price_book_key": "pb_eu_ca_suite",
+      "terms_version": "eu_ca_tos_v1",
+      "privacy_version": "eu_ca_privacy_v1",
+      "support_plan_key": "support_professional",
+      "policy_pack_key": "lam.eu"
+    },
+    {
+      "product_key": "lawyer-suite",
+      "region_code": "IN",
+      "legal_entity_code": "openai-india",
+      "sku_prefix": "IN-LAW",
+      "price_book_key": "pb_in_lawyer_suite",
+      "terms_version": "in_lawyer_tos_v1",
+      "privacy_version": "in_lawyer_privacy_v1",
+      "support_plan_key": "support_professional",
+      "policy_pack_key": "lam.in"
+    },
+    {
+      "product_key": "lawyer-suite",
+      "region_code": "AE",
+      "legal_entity_code": "openai-uae",
+      "sku_prefix": "AE-LAW",
+      "price_book_key": "pb_ae_lawyer_suite",
+      "terms_version": "ae_lawyer_tos_v1",
+      "privacy_version": "ae_lawyer_privacy_v1",
+      "support_plan_key": "support_professional",
+      "policy_pack_key": "lam.ae"
+    },
+    {
+      "product_key": "lawyer-suite",
+      "region_code": "US",
+      "legal_entity_code": "openai-us",
+      "sku_prefix": "US-LAW",
+      "price_book_key": "pb_us_lawyer_suite",
+      "terms_version": "us_lawyer_tos_v1",
+      "privacy_version": "us_lawyer_privacy_v1",
+      "support_plan_key": "support_professional",
+      "policy_pack_key": "lam.us"
+    },
+    {
+      "product_key": "lawyer-suite",
+      "region_code": "EU",
+      "legal_entity_code": "openai-eu",
+      "sku_prefix": "EU-LAW",
+      "price_book_key": "pb_eu_lawyer_suite",
+      "terms_version": "eu_lawyer_tos_v1",
+      "privacy_version": "eu_lawyer_privacy_v1",
+      "support_plan_key": "support_professional",
+      "policy_pack_key": "lam.eu"
+    }
+  ]
+}
