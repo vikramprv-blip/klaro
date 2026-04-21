@@ -1,19 +1,39 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const SYSTEM = `You are an expert Indian CA. Calculate exact penalty and interest for late filings.
-GST: ₹50/day late fee (max ₹5000), 18% pa interest on tax. TDS: ₹200/day u/s 234E. ITR: ₹5000 u/s 234F. Advance tax: interest u/s 234B/C.
-Respond ONLY with JSON (no markdown):
-{"days_late":0,"late_fee":"₹X","interest":"₹X","total_payable":"₹X","sections_invoked":"Section X","calculation_breakdown":"step by step working","waiver_possibility":"any","note":"caveats"}`
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+const MODEL = "llama-3.3-70b-versatile"
+const SYSTEM = 'You are an expert Indian CA. Calculate penalty and interest for late filings. GST: Rs50/day late fee max Rs5000, 18% pa interest. TDS: Rs200/day u/s 234E. ITR: Rs5000 u/s 234F. Respond ONLY with valid JSON, no markdown: {"days_late":0,"late_fee":"string","interest":"string","total_payable":"string","sections_invoked":"string","calculation_breakdown":"string","waiver_possibility":"string","note":"string"}'
 
 export async function POST(req: NextRequest) {
-  const b = await req.json()
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST", headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY ?? "", "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: SYSTEM,
-      messages: [{ role: "user", content: `Tax: ${b.tax_type}, Return: ${b.return_type}, Due: ${b.due_date}, Filed: ${b.filed_date}, Tax amount: ₹${b.tax_amount}, Turnover: ₹${b.turnover}` }] }),
+  const body = await req.json()
+  const b = body
+  const userMessage = `Calculate: Tax:{tax_type}, Return:{return_type}, Due:{due_date}, Filed:{filed_date}, Tax amount:Rs{tax_amount}, Turnover:Rs{turnover}`
+    .replace("{tax_type}", b.tax_type ?? "")
+    .replace("{return_type}", b.return_type ?? "")
+    .replace("{due_date}", b.due_date ?? "")
+    .replace("{filed_date}", b.filed_date ?? "")
+    .replace("{tax_amount}", b.tax_amount ?? "")
+    .replace("{turnover}", b.turnover ?? "")
+  const res = await fetch(GROQ_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.GROQ_API_KEY ?? ""}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 1000,
+      temperature: 0.1,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: SYSTEM },
+        { role: "user", content: userMessage },
+      ],
+    }),
   })
   const data = await res.json()
-  const txt = data.content?.[0]?.text ?? ""
-  try { return NextResponse.json(JSON.parse(txt.replace(/```json|```/g,"").trim())) }
+  if (!res.ok) return NextResponse.json({ error: data.error?.message ?? "Groq error" }, { status: 500 })
+  const txt = data.choices?.[0]?.message?.content ?? ""
+  try { return NextResponse.json(JSON.parse(txt)) }
   catch { return NextResponse.json({ error: "Parse failed", raw: txt }, { status: 500 }) }
 }
