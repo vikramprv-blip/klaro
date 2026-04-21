@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { LayoutGrid, BriefcaseBusiness, Users, Wallet } from "lucide-react";
+import { LayoutGrid, BriefcaseBusiness, Users, Wallet, Calculator, Scale } from "lucide-react";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { href: "/workboard", label: "Workboard", icon: BriefcaseBusiness },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/cashflow", label: "Cashflow", icon: Wallet },
+  { href: "/ca", label: "CA Suite", icon: Calculator },
+  { href: "/lawyer", label: "Lawyer", icon: Scale },
 ];
 
 export default function AppTopbar() {
