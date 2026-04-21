@@ -1,32 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-const MODEL = "llama-3.3-70b-versatile"
-const SYSTEM = 'You are an expert Indian CA. Analyse Form 26AS / AIS data and respond ONLY with valid JSON, no markdown: {"tds_entries":[{"deductor":"string","section":"string","amount":"string","quarter":"string"}],"total_tds":"string","advance_tax":"string","self_assessment_tax":"string","high_value_transactions":["string"],"mismatches":["string"],"recommendations":["string"],"summary":"string"}'
+const SYSTEM = `You are an expert Indian CA. Analyse the Form 26AS / AIS data provided.
+Respond ONLY with JSON (no markdown, no backticks):
+{"tds_entries":[{"deductor":"name","section":"194A","amount":"₹25,000","quarter":"Q1"}],"total_tds":"₹1,25,000","advance_tax":"₹0","self_assessment_tax":"₹0","high_value_transactions":[],"mismatches":[],"recommendations":[],"summary":"overview"}`
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const userMessage = 'Analyse this 26AS/AIS data:\n\n' + (body.text ?? "")
-  const res = await fetch(GROQ_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.GROQ_API_KEY ?? ""}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 2000,
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: userMessage },
-      ],
-    }),
+  const { text } = await req.json()
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2000, system: SYSTEM,
+      messages: [{ role: "user", content: `Analyse this 26AS/AIS data:\n\n${text}` }] }),
   })
   const data = await res.json()
-  if (!res.ok) return NextResponse.json({ error: data.error?.message ?? "Groq error" }, { status: 500 })
-  const txt = data.choices?.[0]?.message?.content ?? ""
-  try { return NextResponse.json(JSON.parse(txt)) }
+  const txt = data.content?.[0]?.text ?? ""
+  try { return NextResponse.json(JSON.parse(txt.replace(/```json|```/g,"").trim())) }
   catch { return NextResponse.json({ error: "Parse failed", raw: txt }, { status: 500 }) }
 }

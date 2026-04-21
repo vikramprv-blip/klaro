@@ -1,32 +1,22 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-const MODEL = "llama-3.3-70b-versatile"
-const SYSTEM = 'You are an expert Indian CA specialising in GST, Income Tax, and TDS notices. Analyse the notice and respond ONLY with valid JSON, no markdown, no backticks: {"notice_type":"string","issuing_authority":"string","gstin_or_pan":"string","tax_period":"string","demand_amount":"string","reply_deadline":"string","urgency":"high or medium or low","summary":"string","key_issues":["string"],"reply_draft":"full reply letter","documents_needed":["string"]}'
+const SYSTEM = "You are an expert Indian CA specialising in GST, Income Tax, and TDS notices. Analyse the notice text and respond ONLY with valid JSON (no markdown, no backticks): {\"notice_type\":\"e.g. Show Cause Notice u/s 73 CGST\",\"issuing_authority\":\"e.g. CGST Commissioner Delhi\",\"gstin_or_pan\":\"extract or dash\",\"tax_period\":\"e.g. FY 2023-24\",\"demand_amount\":\"e.g. Rs 4,52,000\",\"reply_deadline\":\"date or dash\",\"urgency\":\"high or medium or low\",\"summary\":\"2-3 sentence summary\",\"key_issues\":[\"allegations raised\"],\"reply_draft\":\"full professional reply letter\",\"documents_needed\":[\"docs to gather\"]}"
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const userMessage = 'Analyse this notice:\n\n' + (body.text ?? "")
-  const res = await fetch(GROQ_URL, {
+  const { text } = await req.json()
+  if (!text) return NextResponse.json({ error: "No notice text" }, { status: 400 })
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.GROQ_API_KEY ?? ""}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: MODEL,
+      model: "claude-sonnet-4-20250514",
       max_tokens: 2000,
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: userMessage },
-      ],
+      system: SYSTEM,
+      messages: [{ role: "user", content: "Analyse this notice:\\n\\n" + text }],
     }),
   })
   const data = await res.json()
-  if (!res.ok) return NextResponse.json({ error: data.error?.message ?? "Groq error" }, { status: 500 })
-  const txt = data.choices?.[0]?.message?.content ?? ""
-  try { return NextResponse.json(JSON.parse(txt)) }
+  const txt = data.content?.[0]?.text ?? ""
+  try { return NextResponse.json(JSON.parse(txt.replace(/```json|```/g, "").trim())) }
   catch { return NextResponse.json({ error: "Parse failed", raw: txt }, { status: 500 }) }
 }
