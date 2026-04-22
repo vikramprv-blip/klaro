@@ -1,11 +1,11 @@
-import Groq from "groq-sdk";
+import { VoyageAIClient } from "voyageai";
+
+const MODEL = process.env.VOYAGE_EMBEDDING_MODEL || "voyage-4-lite";
 
 function getClient() {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    throw new Error("GROQ_API_KEY is not set");
-  }
-  return new Groq({ apiKey });
+  const apiKey = process.env.VOYAGE_API_KEY;
+  if (!apiKey) throw new Error("VOYAGE_API_KEY is not set");
+  return new VoyageAIClient({ apiKey });
 }
 
 function ensureNumberArray(value: unknown): number[] {
@@ -17,24 +17,24 @@ function ensureNumberArray(value: unknown): number[] {
 
 export async function generateEmbedding(input: string): Promise<number[]> {
   const client = getClient();
-  const res = await client.embeddings.create({
-    model: "nomic-embed-text-v1.5",
+  const res = await client.embed({
     input,
-    encoding_format: "float",
+    model: MODEL,
+    inputType: "query",
   });
 
-  return ensureNumberArray(res.data[0]?.embedding);
+  return ensureNumberArray(res.data?.[0]?.embedding);
 }
 
 export async function generateEmbeddings(inputs: string[]): Promise<number[][]> {
   if (!inputs.length) return [];
 
   const client = getClient();
-  const res = await client.embeddings.create({
-    model: "nomic-embed-text-v1.5",
+  const res = await client.embed({
     input: inputs,
-    encoding_format: "float",
+    model: MODEL,
+    inputType: "document",
   });
 
-  return res.data.map((item) => ensureNumberArray(item.embedding));
+  return (res.data ?? []).map((item: any) => ensureNumberArray(item.embedding));
 }
