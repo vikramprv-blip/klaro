@@ -40,7 +40,7 @@ export function Form26ASPage() {
           </div>
           {mode === "file" ? (
             <div className="space-y-3">
-              <FileUpload onTextExtracted={t => setText(t)} accept=".pdf,.txt"
+              <FileUpload onTextExtracted={(t: string) => setText(t)} accept=".pdf,.txt"
                 label="Drop Form 26AS / AIS PDF" hint="Download from incometax.gov.in" />
               {text && <p className="text-xs text-gray-400 bg-gray-50 rounded-lg p-2">{text.length} characters extracted</p>}
             </div>
@@ -134,7 +134,7 @@ export function GSTR2BReconPage() {
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <label className="text-xs font-medium text-gray-500 mb-2 block">GSTR-2B</label>
-          <FileUpload onTextExtracted={t => setGstr2b(t)} accept=".pdf,.xlsx,.csv,.txt"
+          <FileUpload onTextExtracted={(t: string) => setGstr2b(t)} accept=".pdf,.xlsx,.csv,.txt"
             label="Drop GSTR-2B file" hint="PDF, Excel or CSV from GST portal" />
           {gstr2b && (
             <textarea value={gstr2b} onChange={e => setGstr2b(e.target.value)}
@@ -148,7 +148,7 @@ export function GSTR2BReconPage() {
         </div>
         <div>
           <label className="text-xs font-medium text-gray-500 mb-2 block">Purchase register / books</label>
-          <FileUpload onTextExtracted={t => setPurchases(t)} accept=".xlsx,.csv,.txt"
+          <FileUpload onTextExtracted={(t: string) => setPurchases(t)} accept=".xlsx,.csv,.txt"
             label="Drop purchase register" hint="Excel or CSV with invoice data" />
           {purchases && (
             <textarea value={purchases} onChange={e => setPurchases(e.target.value)}
@@ -242,7 +242,7 @@ export function PLParserPage() {
           </div>
           {mode === "file" ? (
             <div className="space-y-3">
-              <FileUpload onTextExtracted={t => setText(t)} accept=".pdf,.xlsx,.csv,.txt"
+              <FileUpload onTextExtracted={(t: string) => setText(t)} accept=".pdf,.xlsx,.csv,.txt"
                 label="Drop P&L / Balance sheet" hint="PDF, Excel, or CSV" />
               {text && <p className="text-xs text-gray-400 bg-gray-50 rounded-lg p-2">{text.length} characters extracted</p>}
             </div>
