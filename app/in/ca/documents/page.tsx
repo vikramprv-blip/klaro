@@ -20,7 +20,7 @@ export default function DocumentsPage() {
         const text = await r.text()
         return text ? JSON.parse(text) : []
       })
-      .then(setClients)
+      .then(data => Array.isArray(data) ? data : (Array.isArray(data.clients) ? data.clients : []))
       .catch((e) => setError(e.message || "Failed to load clients"))
   }, [])
 
