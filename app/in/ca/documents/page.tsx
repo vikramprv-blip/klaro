@@ -27,6 +27,21 @@ export default function DocumentsPage() {
     setDocs(data)
   }
 
+  async function deleteDoc(id: string) {
+    setError("")
+    const ok = window.confirm("Delete this document?")
+    if (!ok) return
+
+    const res = await fetch(`/api/documents/${id}`, {
+      method: "DELETE",
+    })
+
+    const data = await res.json()
+    if (!res.ok) return setError(data.error || "Delete failed")
+
+    loadDocs()
+  }
+
   return (
     <div className="p-8 max-w-4xl space-y-6">
       <h1 className="text-xl font-medium text-gray-900">Documents</h1>
@@ -83,7 +98,7 @@ export default function DocumentsPage() {
               </p>
             </div>
 
-            <div className="flex gap-3 text-xs">
+            <div className="flex gap-3 text-xs items-center">
               <a
                 href={doc.fileUrl}
                 target="_blank"
@@ -100,6 +115,13 @@ export default function DocumentsPage() {
               >
                 Download
               </a>
+
+              <button
+                onClick={() => deleteDoc(doc.id)}
+                className="text-red-600 hover:underline"
+              >
+                Delete
+              </button>
             </div>
           </div>
         ))}

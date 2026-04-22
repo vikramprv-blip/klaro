@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
-import FileUpload from "@/components/file-upload"
 import { useParams } from "next/navigation"
+import FileUpload from "@/components/file-upload"
 
 export default function ClientPage() {
   const { id } = useParams()
@@ -15,6 +15,27 @@ export default function ClientPage() {
     fetch(`/api/clients/${id}`).then(r => r.json()).then(setClient)
     fetch(`/api/documents/list?clientId=${id}`).then(r => r.json()).then(setDocs)
   }, [id])
+
+  async function loadDocs() {
+    const res = await fetch(`/api/documents/list?clientId=${id}`)
+    const data = await res.json()
+    setDocs(data)
+  }
+
+  async function deleteDoc(docId: string) {
+    setError("")
+    const ok = window.confirm("Delete this document?")
+    if (!ok) return
+
+    const res = await fetch(`/api/documents/${docId}`, {
+      method: "DELETE",
+    })
+
+    const data = await res.json()
+    if (!res.ok) return setError(data.error || "Delete failed")
+
+    loadDocs()
+  }
 
   if (!client) return <p className="p-8 text-sm text-gray-400">Loading...</p>
 
@@ -45,7 +66,7 @@ export default function ClientPage() {
           if (!res.ok) return setError(data.error)
 
           setSaved(data.document.id)
-          fetch(`/api/documents/list?clientId=`).then(r => r.json()).then(setDocs)
+          loadDocs()
         }}
       />
 
@@ -60,17 +81,26 @@ export default function ClientPage() {
         )}
 
         {docs.map(doc => (
-          <div key={doc.id} className="border rounded p-3 flex justify-between">
+          <div key={doc.id} className="border rounded p-3 flex justify-between items-center">
             <span className="text-sm">{doc.filename}</span>
 
-            <a
-              href={doc.fileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-blue-600 text-xs"
-            >
-              View
-            </a>
+            <div className="flex gap-3 items-center">
+              <a
+                href={doc.fileUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-600 text-xs"
+              >
+                View
+              </a>
+
+              <button
+                onClick={() => deleteDoc(doc.id)}
+                className="text-red-600 text-xs hover:underline"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>
