@@ -1,28 +1,40 @@
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
-function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
+function getClient() {
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not set");
+    throw new Error("GROQ_API_KEY is not set");
   }
-  return new OpenAI({ apiKey });
+  return new Groq({ apiKey });
+}
+
+function ensureNumberArray(value: unknown): number[] {
+  if (Array.isArray(value) && value.every((x) => typeof x === "number")) {
+    return value;
+  }
+  throw new Error("Embedding response was not a number array");
 }
 
 export async function generateEmbedding(input: string): Promise<number[]> {
-  const client = getOpenAIClient();
+  const client = getClient();
   const res = await client.embeddings.create({
-    model: "text-embedding-3-small",
+    model: "nomic-embed-text-v1.5",
     input,
+    encoding_format: "float",
   });
-  return res.data[0].embedding;
+
+  return ensureNumberArray(res.data[0]?.embedding);
 }
 
 export async function generateEmbeddings(inputs: string[]): Promise<number[][]> {
   if (!inputs.length) return [];
-  const client = getOpenAIClient();
+
+  const client = getClient();
   const res = await client.embeddings.create({
-    model: "text-embedding-3-small",
+    model: "nomic-embed-text-v1.5",
     input: inputs,
+    encoding_format: "float",
   });
-  return res.data.map((d) => d.embedding);
+
+  return res.data.map((item) => ensureNumberArray(item.embedding));
 }
