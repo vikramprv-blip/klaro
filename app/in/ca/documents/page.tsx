@@ -15,7 +15,13 @@ export default function DocumentsPage() {
   const [error, setError] = useState("")
 
   useEffect(() => {
-    fetch("/api/clients").then(r => r.json()).then(setClients)
+    fetch("/api/clients")
+      .then(async (r) => {
+        const text = await r.text()
+        return text ? JSON.parse(text) : []
+      })
+      .then(setClients)
+      .catch((e) => setError(e.message || "Failed to load clients"))
   }, [])
 
   useEffect(() => {
@@ -23,6 +29,8 @@ export default function DocumentsPage() {
   }, [clientId, q, typeFilter])
 
   async function loadDocs() {
+    setError("")
+
     const params = new URLSearchParams()
     if (clientId) params.set("clientId", clientId)
     if (typeFilter) params.set("documentType", typeFilter)
@@ -33,8 +41,22 @@ export default function DocumentsPage() {
       : "/api/documents/list"
 
     const res = await fetch(url)
-    const data = await res.json()
-    setDocs(data)
+    let data: any = []
+    try {
+      const text = await res.text()
+      data = text ? JSON.parse(text) : []
+    } catch (e) {
+      console.error("Invalid JSON:", e)
+      setDocs([])
+      return setError("Invalid server response")
+    }
+
+    if (!res.ok) {
+      setDocs([])
+      return setError(data.error || "Failed to load documents")
+    }
+
+    setDocs(Array.isArray(data) ? data : [])
   }
 
   async function deleteDoc(id: string) {
@@ -46,7 +68,9 @@ export default function DocumentsPage() {
       method: "DELETE",
     })
 
-    const data = await res.json()
+    const text = await res.text()
+    const data = text ? JSON.parse(text) : {}
+
     if (!res.ok) return setError(data.error || "Delete failed")
 
     loadDocs()
@@ -63,7 +87,9 @@ export default function DocumentsPage() {
       body: JSON.stringify({ id, filename: name }),
     })
 
-    const data = await res.json()
+    const text = await res.text()
+    const data = text ? JSON.parse(text) : {}
+
     if (!res.ok) return setError(data.error || "Rename failed")
 
     loadDocs()
@@ -121,14 +147,17 @@ export default function DocumentsPage() {
           form.append("file", file)
           form.append("clientId", clientId)
           form.append("documentType", documentType)
+          form.append("content", _t || "")
 
           const res = await fetch("/api/documents", {
             method: "POST",
             body: form,
           })
 
-          const data = await res.json()
-          if (!res.ok) return setError(data.error)
+          const text = await res.text()
+          const data = text ? JSON.parse(text) : {}
+
+          if (!res.ok) return setError(data.error || "Upload failed")
 
           setSaved(data.document.id)
           loadDocs()
@@ -157,16 +186,14 @@ export default function DocumentsPage() {
 
             <div className="flex gap-3 text-xs items-center">
               <a
-                href={`/in/ca/documents/`}
-                target="_blank"
-                rel="noreferrer"
+                href={`/in/ca/documents/${doc.id}`}
                 className="text-blue-600 hover:underline"
               >
                 Preview
               </a>
 
               <a
-                href={`/in/ca/documents/`}
+                href={doc.fileUrl}
                 download
                 className="text-gray-600 hover:underline"
               >
