@@ -60,7 +60,7 @@ export default function NoticeReaderPage() {
 
           {/* NEW: Upload block */}
           <FileUpload
-            onTextExtracted={(t) => setText(t)}
+            onTextExtracted={(t: string) => setText(t)}
             accept=".pdf,.txt"
             label="Drop notice PDF"
             hint="or paste text below"
