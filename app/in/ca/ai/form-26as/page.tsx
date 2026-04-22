@@ -40,7 +40,7 @@ export default function Form26ASPage() {
 
           {/* NEW: Upload */}
           <FileUpload
-            onTextExtracted={(t) => setText(t)}
+            onTextExtracted={(t: string) => setText(t)}
             accept=".pdf,.txt"
             label="Drop 26AS PDF"
             hint="or paste below"
