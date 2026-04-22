@@ -63,6 +63,7 @@ model ServiceTemplate {
 }
 
 model Document {
+  documentChunks DocumentChunk[]
   id        String   @id @default(cuid())
   filename  String
   documentType String? @default("Other")
@@ -72,4 +73,19 @@ model Document {
   clientId  String?
   client    Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
+}
+
+
+model DocumentChunk {
+  id         String   @id
+  documentId String
+  chunkIndex Int
+  content    String
+  embedding  Unsupported("vector(1536)")?
+  createdAt  DateTime @default(now())
+
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@index([documentId])
 }
