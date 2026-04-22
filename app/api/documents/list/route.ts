@@ -6,10 +6,12 @@ const prisma = new PrismaClient()
 export async function GET(req: NextRequest) {
   const clientId = req.nextUrl.searchParams.get("clientId")
   const q = req.nextUrl.searchParams.get("q")?.trim()
+  const documentType = req.nextUrl.searchParams.get("documentType")?.trim()
 
   const docs = await prisma.document.findMany({
     where: {
       ...(clientId ? { clientId } : {}),
+      ...(documentType ? { documentType } : {}),
       ...(q
         ? {
             filename: {

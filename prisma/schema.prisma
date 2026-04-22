@@ -65,6 +65,7 @@ model ServiceTemplate {
 model Document {
   id        String   @id @default(cuid())
   filename  String
+  documentType String? @default("Other")
   content   String   @db.Text
   fileUrl   String?
   filePath  String?

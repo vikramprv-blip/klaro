@@ -2,9 +2,13 @@
 import { useEffect, useState } from "react"
 import FileUpload from "@/components/file-upload"
 
+const DOC_TYPES = ["ID", "Contract", "Invoice", "Evidence", "Other"]
+
 export default function DocumentsPage() {
   const [clients, setClients] = useState<any[]>([])
   const [clientId, setClientId] = useState("")
+  const [documentType, setDocumentType] = useState("Other")
+  const [typeFilter, setTypeFilter] = useState("")
   const [q, setQ] = useState("")
   const [docs, setDocs] = useState<any[]>([])
   const [saved, setSaved] = useState("")
@@ -16,11 +20,12 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     loadDocs()
-  }, [clientId, q])
+  }, [clientId, q, typeFilter])
 
   async function loadDocs() {
     const params = new URLSearchParams()
     if (clientId) params.set("clientId", clientId)
+    if (typeFilter) params.set("documentType", typeFilter)
     if (q.trim()) params.set("q", q.trim())
 
     const url = params.toString()
@@ -79,12 +84,33 @@ export default function DocumentsPage() {
         ))}
       </select>
 
+      <select
+        value={typeFilter}
+        onChange={e => setTypeFilter(e.target.value)}
+        className="border px-3 py-2 rounded w-full text-sm"
+      >
+        <option value="">All Types</option>
+        {DOC_TYPES.map(t => (
+          <option key={t} value={t}>{t}</option>
+        ))}
+      </select>
+
       <input
         value={q}
         onChange={e => setQ(e.target.value)}
         placeholder="Search documents by filename"
         className="border px-3 py-2 rounded w-full text-sm"
       />
+
+      <select
+        value={documentType}
+        onChange={e => setDocumentType(e.target.value)}
+        className="border px-3 py-2 rounded w-full text-sm"
+      >
+        {DOC_TYPES.map(t => (
+          <option key={t} value={t}>{t}</option>
+        ))}
+      </select>
 
       <FileUpload
         onTextExtracted={async (_t: string, name: string, file: File) => {
@@ -94,6 +120,7 @@ export default function DocumentsPage() {
           const form = new FormData()
           form.append("file", file)
           form.append("clientId", clientId)
+          form.append("documentType", documentType)
 
           const res = await fetch("/api/documents", {
             method: "POST",
@@ -122,6 +149,7 @@ export default function DocumentsPage() {
           <div key={doc.id} className="border rounded-lg p-3 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-800">{doc.filename}</p>
+              <p className="text-xs text-gray-500">{doc.documentType || "Other"}</p>
               <p className="text-xs text-gray-400">
                 {new Date(doc.createdAt).toLocaleString()}
               </p>
@@ -129,7 +157,7 @@ export default function DocumentsPage() {
 
             <div className="flex gap-3 text-xs items-center">
               <a
-                href={doc.fileUrl}
+                href={`/in/ca/documents/`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-blue-600 hover:underline"
@@ -138,7 +166,7 @@ export default function DocumentsPage() {
               </a>
 
               <a
-                href={doc.fileUrl}
+                href={`/in/ca/documents/`}
                 download
                 className="text-gray-600 hover:underline"
               >

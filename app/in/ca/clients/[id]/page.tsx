@@ -3,6 +3,8 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import FileUpload from "@/components/file-upload"
 
+const DOC_TYPES = ["ID", "Contract", "Invoice", "Evidence", "Other"]
+
 export default function ClientPage() {
   const { id } = useParams()
 
@@ -10,10 +12,11 @@ export default function ClientPage() {
   const [docs, setDocs] = useState<any[]>([])
   const [saved, setSaved] = useState("")
   const [error, setError] = useState("")
+  const [documentType, setDocumentType] = useState("Other")
 
   useEffect(() => {
     fetch(`/api/clients/${id}`).then(r => r.json()).then(setClient)
-    fetch(`/api/documents/list?clientId=${id}`).then(r => r.json()).then(setDocs)
+    loadDocs()
   }, [id])
 
   async function loadDocs() {
@@ -48,6 +51,16 @@ export default function ClientPage() {
         <p>Phone: {client.phone || "-"}</p>
       </div>
 
+      <select
+        value={documentType}
+        onChange={e => setDocumentType(e.target.value)}
+        className="border px-3 py-2 rounded w-full text-sm"
+      >
+        {DOC_TYPES.map(t => (
+          <option key={t} value={t}>{t}</option>
+        ))}
+      </select>
+
       <FileUpload
         onTextExtracted={async (_t: string, name: string, file: File) => {
           setError("")
@@ -56,6 +69,7 @@ export default function ClientPage() {
           const form = new FormData()
           form.append("file", file)
           form.append("clientId", id as string)
+          form.append("documentType", documentType)
 
           const res = await fetch("/api/documents", {
             method: "POST",
@@ -82,11 +96,14 @@ export default function ClientPage() {
 
         {docs.map(doc => (
           <div key={doc.id} className="border rounded p-3 flex justify-between items-center">
-            <span className="text-sm">{doc.filename}</span>
+            <div>
+              <p className="text-sm">{doc.filename}</p>
+              <p className="text-xs text-gray-500">{doc.documentType || "Other"}</p>
+            </div>
 
             <div className="flex gap-3 items-center">
               <a
-                href={doc.fileUrl}
+                href={`/in/ca/documents/`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-blue-600 text-xs"
