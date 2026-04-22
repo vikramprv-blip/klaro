@@ -1,8 +1,7 @@
 import "./globals.css";
 import { AppToaster } from "@/components/providers/app-toaster"
 import { LiveNotificationCenter } from "@/components/notifications/live-notification-center"
-import { ToastProvider } from "@/components/toast"
-import { usePathname } from "next/navigation"
+import LayoutClient from "@/components/layout-client"
 
 export const metadata = {
   title: "Klaro",
@@ -19,25 +18,8 @@ export default function RootLayout({
       <body>
         <AppToaster />
         <LiveNotificationCenter />
-
-        <LayoutWrapper>{children}</LayoutWrapper>
+        <LayoutClient>{children}</LayoutClient>
       </body>
     </html>
   );
-}
-
-function LayoutWrapper({ children }: { children: React.ReactNode }) {
-  const pathname = typeof window !== "undefined" ? window.location.pathname : ""
-
-  const isLanding =
-    pathname === "/" || pathname === "/in"
-
-  const AppHeader = require("@/components/app-header").default
-
-  return (
-    <>
-      {!isLanding && <AppHeader />}
-      <ToastProvider>{children}</ToastProvider>
-    </>
-  )
 }
