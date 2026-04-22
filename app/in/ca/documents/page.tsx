@@ -5,6 +5,7 @@ import FileUpload from "@/components/file-upload"
 export default function DocumentsPage() {
   const [clients, setClients] = useState<any[]>([])
   const [clientId, setClientId] = useState("")
+  const [q, setQ] = useState("")
   const [docs, setDocs] = useState<any[]>([])
   const [saved, setSaved] = useState("")
   const [error, setError] = useState("")
@@ -15,11 +16,15 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     loadDocs()
-  }, [clientId])
+  }, [clientId, q])
 
   async function loadDocs() {
-    const url = clientId
-      ? `/api/documents/list?clientId=${encodeURIComponent(clientId)}`
+    const params = new URLSearchParams()
+    if (clientId) params.set("clientId", clientId)
+    if (q.trim()) params.set("q", q.trim())
+
+    const url = params.toString()
+      ? `/api/documents/list?${params.toString()}`
       : "/api/documents/list"
 
     const res = await fetch(url)
@@ -42,6 +47,23 @@ export default function DocumentsPage() {
     loadDocs()
   }
 
+  async function renameDoc(id: string, current: string) {
+    setError("")
+    const name = window.prompt("Rename file", current)
+    if (!name) return
+
+    const res = await fetch("/api/documents/rename", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, filename: name }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) return setError(data.error || "Rename failed")
+
+    loadDocs()
+  }
+
   return (
     <div className="p-8 max-w-4xl space-y-6">
       <h1 className="text-xl font-medium text-gray-900">Documents</h1>
@@ -56,6 +78,13 @@ export default function DocumentsPage() {
           <option key={c.id} value={c.id}>{c.name}</option>
         ))}
       </select>
+
+      <input
+        value={q}
+        onChange={e => setQ(e.target.value)}
+        placeholder="Search documents by filename"
+        className="border px-3 py-2 rounded w-full text-sm"
+      />
 
       <FileUpload
         onTextExtracted={async (_t: string, name: string, file: File) => {
@@ -115,6 +144,13 @@ export default function DocumentsPage() {
               >
                 Download
               </a>
+
+              <button
+                onClick={() => renameDoc(doc.id, doc.filename)}
+                className="text-gray-600 hover:underline"
+              >
+                Rename
+              </button>
 
               <button
                 onClick={() => deleteDoc(doc.id)}
