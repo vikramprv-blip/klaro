@@ -98,7 +98,7 @@ export default function DocumentsPage() {
       <input
         value={q}
         onChange={e => setQ(e.target.value)}
-        placeholder="Search documents by filename"
+        placeholder="Search filename or extracted text"
         className="border px-3 py-2 rounded w-full text-sm"
       />
 

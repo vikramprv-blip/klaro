@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
   const file = formData.get("file") as File | null
   const clientId = formData.get("clientId") as string | null
   const documentType = (formData.get("documentType") as string | null) || "Other"
+  const content = (formData.get("content") as string | null) || ""
 
   if (!file) {
     return NextResponse.json({ error: "File is required" }, { status: 400 })
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
       filePath,
       clientId: clientId || null,
       documentType,
-      content: "",
+      content,
     },
   })
 

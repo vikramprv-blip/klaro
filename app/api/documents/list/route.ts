@@ -14,10 +14,20 @@ export async function GET(req: NextRequest) {
       ...(documentType ? { documentType } : {}),
       ...(q
         ? {
-            filename: {
-              contains: q,
-              mode: "insensitive",
-            },
+            OR: [
+              {
+                filename: {
+                  contains: q,
+                  mode: "insensitive",
+                },
+              },
+              {
+                content: {
+                  contains: q,
+                  mode: "insensitive",
+                },
+              },
+            ],
           }
         : {}),
     },
