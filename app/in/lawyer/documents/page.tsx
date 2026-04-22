@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import FileUpload from "@/components/file-upload"
 
 export default function LegalDocumentsPage() {
@@ -7,13 +7,31 @@ export default function LegalDocumentsPage() {
   const [filename, setFilename] = useState("")
   const [saved, setSaved] = useState("")
   const [error, setError] = useState("")
+  const [matters, setMatters] = useState<any[]>([])
+  const [matterId, setMatterId] = useState("")
+
+  useEffect(() => {
+    fetch("/api/lawyer/matters")
+      .then(r => r.json())
+      .then(setMatters)
+  }, [])
 
   return (
     <div className="p-8 max-w-4xl">
       <h1 className="text-xl font-medium text-gray-900">Documents</h1>
-      <p className="text-sm text-gray-400 mt-1 mb-6">
-        Upload case documents (PDF, Excel, CSV)
-      </p>
+
+      <select
+        value={matterId}
+        onChange={e => setMatterId(e.target.value)}
+        className="border px-3 py-2 rounded mb-4 w-full text-sm"
+      >
+        <option value="">Select matter</option>
+        {matters.map(m => (
+          <option key={m.id} value={m.id}>
+            {m.client_name} — {m.matter_title}
+          </option>
+        ))}
+      </select>
 
       <FileUpload
         onTextExtracted={async (t, name) => {
@@ -25,41 +43,25 @@ export default function LegalDocumentsPage() {
           const res = await fetch("/api/documents", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ filename: name, content: t }),
+            body: JSON.stringify({
+              filename: name,
+              content: t,
+              clientId: matterId
+            }),
           })
 
           const data = await res.json()
           if (!res.ok) {
-            setError(data.error || "Failed to save document")
+            setError(data.error)
             return
           }
 
-          setSaved(data.document?.id || "saved")
+          setSaved(data.document?.id)
         }}
       />
 
-      {saved && (
-        <p className="mt-4 text-xs text-green-700">
-          Saved document: {filename} ({saved})
-        </p>
-      )}
-
-      {error && (
-        <p className="mt-4 text-xs text-red-600">
-          {error}
-        </p>
-      )}
-
-      {text && (
-        <div className="mt-6 border border-gray-100 rounded-xl p-4">
-          <p className="text-xs text-gray-400 mb-2">
-            Extracted from {filename} ({text.length} chars)
-          </p>
-          <div className="text-xs text-gray-600 whitespace-pre-wrap max-h-64 overflow-auto">
-            {text.slice(0, 3000)}
-          </div>
-        </div>
-      )}
+      {saved && <p className="text-green-600 mt-2 text-xs">Saved ({saved})</p>}
+      {error && <p className="text-red-600 mt-2 text-xs">{error}</p>}
     </div>
   )
 }
