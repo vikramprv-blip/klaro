@@ -23,7 +23,7 @@ export default function DocumentsPage() {
       </select>
 
       <FileUpload
-        onTextExtracted={async (_t, name, file) => {
+        onTextExtracted={async (_t: string, name: string, file: File) => {
           const form = new FormData()
           form.append("file", file)
           form.append("clientId", clientId)
