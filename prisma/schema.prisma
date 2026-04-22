@@ -66,6 +66,8 @@ model Document {
   id        String   @id @default(cuid())
   filename  String
   content   String   @db.Text
+  fileUrl   String?
+  filePath  String?
   clientId  String?
   client    Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())

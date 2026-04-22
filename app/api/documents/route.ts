@@ -28,19 +28,20 @@ export async function POST(req: NextRequest) {
 
     const { data: urlData } = supabaseAdmin.storage
       .from("documents")
-      .getPublicUrl(filePath)
+      .getPublicUrl(filePa  )
 
     const doc = await prisma.document.create({
       data: {
         filename: file.name,
         content: "",
+        fileUrl: urlData.publicUrl,
+        filePath,
         clientId: clientId || null,
       },
     })
 
     return NextResponse.json({
       ok: true,
-      url: urlData.publicUrl,
       document: doc,
     })
   } catch (e: any) {
