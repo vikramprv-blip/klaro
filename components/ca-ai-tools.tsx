@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import FileUpload from "@/components/file-upload"
 
 // ── P&L Parser ────────────────────────────────────────────────────────────────
 export function PLParserPage() {
@@ -27,7 +28,9 @@ export function PLParserPage() {
       <p className="text-sm text-gray-400 mb-6">Paste financial statements — AI extracts key figures, spots anomalies, pre-fills tax audit checklist</p>
       <div className="grid grid-cols-2 gap-6">
         <div>
-          <textarea value={text} onChange={e => setText(e.target.value)}
+          <FileUpload onTextExtracted={(t) => setText(t)} accept=".pdf,.xlsx,.csv,.txt" label="Drop P&L / Balance sheet" hint="PDF, Excel or CSV" />
+
+<textarea value={text} onChange={e => setText(e.target.value)}
             placeholder="Paste P&L and/or balance sheet figures. Include revenue, expenses, assets, liabilities..."
             className="w-full h-64 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 resize-none" />
           <button onClick={handle} disabled={!text.trim() || loading}
@@ -105,7 +108,9 @@ export function GSTHealthPage() {
       <p className="text-sm text-gray-400 mb-6">Describe client's GST position — AI generates a health report with score and recommendations</p>
       <div className="grid grid-cols-2 gap-6">
         <div>
-          <textarea value={details} onChange={e => setDetails(e.target.value)}
+          <FileUpload onTextExtracted={(t) => setDetails(t)} accept=".pdf,.txt" label="Upload GST data" hint="or paste below" />
+
+<textarea value={details} onChange={e => setDetails(e.target.value)}
             placeholder="Describe the client's GST situation. E.g.: GSTIN, turnover, filing status (any late filings?), ITC claims vs liability, any mismatches in 2B, pending refunds, recent notices..."
             className="w-full h-64 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 resize-none" />
           <button onClick={handle} disabled={!details.trim() || loading}
