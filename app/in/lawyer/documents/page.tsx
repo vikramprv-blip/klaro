@@ -34,7 +34,7 @@ export default function LegalDocumentsPage() {
       </select>
 
       <FileUpload
-        onTextExtracted={async (t, name) => {
+        onTextExtracted={async (t: string, name: string) => {
           setError("")
           setSaved("")
           setText(t)
