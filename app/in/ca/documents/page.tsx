@@ -5,6 +5,8 @@ import FileUpload from "@/components/file-upload"
 export default function DocumentsPage() {
   const [text, setText] = useState("")
   const [filename, setFilename] = useState("")
+  const [saved, setSaved] = useState("")
+  const [error, setError] = useState("")
 
   return (
     <div className="p-8 max-w-4xl">
@@ -14,11 +16,39 @@ export default function DocumentsPage() {
       </p>
 
       <FileUpload
-        onTextExtracted={(t, name) => {
+        onTextExtracted={async (t, name) => {
+          setError("")
+          setSaved("")
           setText(t)
           setFilename(name)
+
+          const res = await fetch("/api/documents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename: name, content: t }),
+          })
+
+          const data = await res.json()
+          if (!res.ok) {
+            setError(data.error || "Failed to save document")
+            return
+          }
+
+          setSaved(data.document?.id || "saved")
         }}
       />
+
+      {saved && (
+        <p className="mt-4 text-xs text-green-700">
+          Saved document: {filename} ({saved})
+        </p>
+      )}
+
+      {error && (
+        <p className="mt-4 text-xs text-red-600">
+          {error}
+        </p>
+      )}
 
       {text && (
         <div className="mt-6 border border-gray-100 rounded-xl p-4">

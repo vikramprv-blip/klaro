@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("DATABASE_URL")
-directUrl = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Client {
@@ -20,6 +20,7 @@ model Client {
   updatedAt DateTime   @updatedAt
   workItems WorkItem[]
   invoices  Invoice[]
+  documents Document[]
 }
 
 model Invoice {
@@ -59,4 +60,13 @@ model ServiceTemplate {
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  filename  String
+  content   String   @db.Text
+  clientId  String?
+  client    Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
 }

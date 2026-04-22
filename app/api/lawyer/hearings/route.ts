@@ -7,13 +7,27 @@ export async function GET() {
     .from("legal_hearings")
     .select("*, legal_matters(client_name, matter_title)")
     .order("hearing_date", { ascending: true })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (error) {
+    console.error("LAWYER_HEARINGS_GET_ERROR:", error)
+    return NextResponse.json({ error: error.message, details: error }, { status: 500 })
+  }
+
   return NextResponse.json(data)
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { data, error } = await supabaseAdmin.from("legal_hearings").insert(body).select().single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const { data, error } = await supabaseAdmin
+    .from("legal_hearings")
+    .insert(body)
+    .select()
+    .single()
+
+  if (error) {
+    console.error("LAWYER_HEARINGS_POST_ERROR:", error)
+    return NextResponse.json({ error: error.message, details: error }, { status: 500 })
+  }
+
   return NextResponse.json(data)
 }
