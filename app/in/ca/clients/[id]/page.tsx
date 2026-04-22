@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useState } from "react"
+import FileUpload from "@/components/file-upload"
 import { useParams } from "next/navigation"
 
 export default function ClientPage() {
@@ -7,6 +8,8 @@ export default function ClientPage() {
 
   const [client, setClient] = useState<any>(null)
   const [docs, setDocs] = useState<any[]>([])
+  const [saved, setSaved] = useState("")
+  const [error, setError] = useState("")
 
   useEffect(() => {
     fetch(`/api/clients/${id}`).then(r => r.json()).then(setClient)
@@ -23,6 +26,31 @@ export default function ClientPage() {
         <p>Email: {client.email || "-"}</p>
         <p>Phone: {client.phone || "-"}</p>
       </div>
+
+      <FileUpload
+        onTextExtracted={async (_t: string, name: string, file: File) => {
+          setError("")
+          setSaved("")
+
+          const form = new FormData()
+          form.append("file", file)
+          form.append("clientId", id as string)
+
+          const res = await fetch("/api/documents", {
+            method: "POST",
+            body: form,
+          })
+
+          const data = await res.json()
+          if (!res.ok) return setError(data.error)
+
+          setSaved(data.document.id)
+          fetch(`/api/documents/list?clientId=`).then(r => r.json()).then(setDocs)
+        }}
+      />
+
+      {saved && <p className="text-green-600 text-xs">Saved ({saved})</p>}
+      {error && <p className="text-red-600 text-xs">{error}</p>}
 
       <div className="mt-6 space-y-3">
         <h2 className="text-sm font-medium text-gray-700">Documents</h2>
