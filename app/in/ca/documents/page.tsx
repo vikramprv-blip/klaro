@@ -11,11 +11,18 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     fetch("/api/clients").then(r => r.json()).then(setClients)
-    loadDocs()
   }, [])
 
+  useEffect(() => {
+    loadDocs()
+  }, [clientId])
+
   async function loadDocs() {
-    const res = await fetch("/api/documents/list")
+    const url = clientId
+      ? `/api/documents/list?clientId=${encodeURIComponent(clientId)}`
+      : "/api/documents/list"
+
+    const res = await fetch(url)
     const data = await res.json()
     setDocs(data)
   }
@@ -29,7 +36,7 @@ export default function DocumentsPage() {
         onChange={e => setClientId(e.target.value)}
         className="border px-3 py-2 rounded w-full text-sm"
       >
-        <option value="">Select client</option>
+        <option value="">All Clients</option>
         {clients.map(c => (
           <option key={c.id} value={c.id}>{c.name}</option>
         ))}
@@ -60,7 +67,6 @@ export default function DocumentsPage() {
       {saved && <p className="text-green-600 text-xs">Saved ({saved})</p>}
       {error && <p className="text-red-600 text-xs">{error}</p>}
 
-      {/* DOCUMENT LIST */}
       <div className="mt-6 space-y-3">
         <h2 className="text-sm font-medium text-gray-700">Uploaded Documents</h2>
 
@@ -81,6 +87,7 @@ export default function DocumentsPage() {
               <a
                 href={doc.fileUrl}
                 target="_blank"
+                rel="noreferrer"
                 className="text-blue-600 hover:underline"
               >
                 Preview
