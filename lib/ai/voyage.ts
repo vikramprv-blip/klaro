@@ -34,11 +34,3 @@ export async function embedQuery(input: string) {
   if (!embedding) throw new Error("No embedding returned from Voyage");
   return embedding;
 }
-
-export async function generateEmbedding(input: string) {
-  return embedQuery(input);
-}
-
-export async function generateEmbeddings(input: string[]) {
-  return embedTexts(input);
-}
