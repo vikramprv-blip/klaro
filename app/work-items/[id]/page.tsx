@@ -7,6 +7,8 @@ import WorkItemEditForm from "@/components/work-item-edit-form"
 import WorkItemMetaForm from "@/components/work-item-meta-form"
 import WorkItemDangerZone from "@/components/work-item-danger-zone"
 import WorkItemDocumentLinker from "@/components/work-item-document-linker"
+import { WorkItemTaskSuggestions } from "@/components/work-item-task-suggestions"
+import { WorkItemAIDescription } from "@/components/work-item-ai-description"
 
 type LinkedDocument = {
   linkId: string
@@ -142,6 +144,10 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
             </div>
           </div>
         </section>
+
+<WorkItemAIDescription />
+
+      <WorkItemTaskSuggestions />
 
         <aside className="space-y-6">
           <section className="rounded-xl border bg-white p-5">
