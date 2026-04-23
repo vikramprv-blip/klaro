@@ -103,7 +103,7 @@ export default function ClientPage() {
 
             <div className="flex gap-3 items-center">
               <a
-                href={`/in/ca/documents/`}
+                href={`/in/ca/documents-ai?client_id=${id}`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-blue-600 text-xs"
