@@ -1,43 +1,43 @@
-import Link from 'next/link'
+import Link from "next/link";
+import { getAllRegions } from "@/lib/regions/config";
 
-const countries = [
-  { code: 'in', flag: '🇮🇳', name: 'India', desc: 'CA Suite, GST, TDS, AI tools' },
-  { code: 'ae', flag: '🇦🇪', name: 'UAE', desc: 'UAE region tools' },
-  { code: 'us', flag: '🇺🇸', name: 'United States', desc: 'US region tools' },
-  { code: 'eu', flag: '🇪🇺', name: 'Europe', desc: 'EU region tools' },
-]
+export default function HomePage() {
+  const regions = getAllRegions();
 
-export default function CountryPickerPage() {
   return (
-    <main className="min-h-[calc(100vh-72px)] bg-white">
-      <section className="mx-auto max-w-6xl px-6 py-16 md:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-4xl font-semibold tracking-tight text-gray-900 md:text-5xl">
-            Choose your country
-          </h1>
-          <p className="mt-4 text-lg text-gray-600">
-            Select your region to continue to the correct product experience.
-          </p>
+    <main style={{ padding: "40px", maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ display: "grid", gap: 24 }}>
+        <div>
+          <p style={{ fontSize: 14, opacity: 0.7 }}>klaro.services</p>
+          <h1 style={{ fontSize: 40, fontWeight: 800, margin: "8px 0 0 0" }}>Select your region</h1>
         </div>
 
-        <div className="mx-auto mt-12 grid max-w-4xl gap-5 sm:grid-cols-2">
-          {countries.map((country) => (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 16,
+          }}
+        >
+          {regions.map((region) => (
             <Link
-              key={country.code}
-              href={`/${country.code}`}
-              className="group rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-gray-300 hover:shadow-sm"
+              key={region.code}
+              href={`/${region.slug}`}
+              style={{
+                display: "grid",
+                gap: 8,
+                padding: 20,
+                border: "1px solid #e5e7eb",
+                borderRadius: 16,
+                textDecoration: "none",
+              }}
             >
-              <div className="flex items-start gap-4">
-                <div className="text-3xl leading-none">{country.flag}</div>
-                <div>
-                  <div className="text-xl font-semibold text-gray-900">{country.name}</div>
-                  <div className="mt-2 text-sm text-gray-600">{country.desc}</div>
-                </div>
-              </div>
+              <strong style={{ fontSize: 18 }}>{region.name}</strong>
+              <span style={{ opacity: 0.75 }}>{region.suiteName}</span>
             </Link>
           ))}
         </div>
-      </section>
+      </div>
     </main>
-  )
+  );
 }
