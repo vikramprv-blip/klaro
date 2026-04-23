@@ -45,7 +45,17 @@ export default function CAClientsPage() {
   return (
     <div className="p-8 max-w-5xl">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-medium">Clients</h1>
+        <div>
+          <h1 className="text-xl font-medium text-gray-900">Clients</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Client master for CA Suite</p>
+        </div>
+
+        <Link
+          href="/clients/new"
+          className="bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700"
+        >
+          + Add client
+        </Link>
       </div>
 
       <div className="grid gap-3">
@@ -63,7 +73,15 @@ export default function CAClientsPage() {
         ))}
 
         {clients.length === 0 && (
-          <div className="text-gray-400 text-sm">No clients found</div>
+          <div className="border border-dashed rounded-lg p-8 text-center">
+            <p className="text-sm text-gray-500 mb-3">No clients found</p>
+            <Link
+              href="/clients/new"
+              className="inline-flex bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700"
+            >
+              Add first client
+            </Link>
+          </div>
         )}
       </div>
     </div>
