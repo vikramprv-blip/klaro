@@ -48,10 +48,13 @@ model WorkItem {
   priority    String    @default("MEDIUM")
   dueDate     DateTime?
   clientId    String?
+  assigneeId  String?   @db.Uuid
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   client      Client?   @relation(fields: [clientId], references: [id])
+  assignee    users?    @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
 
+  @@index([assigneeId])
   @@schema("public")
 }
 
@@ -512,6 +515,7 @@ model users {
   subscriptions               subscriptions[]
   user_region_preferences     user_region_preferences?
   user_sessions               user_sessions[]
+  workItemsAssigned           WorkItem[]
 
   @@index([created_at(sort: Desc)], map: "idx_users_created_at_desc")
   @@index([email], map: "idx_users_email")

@@ -1,3 +1,4 @@
+import { WorkItemFollowups } from "@/components/work-item-followups"
 export const dynamic = "force-dynamic";
 import Link from "next/link"
 import { notFound } from "next/navigation"
