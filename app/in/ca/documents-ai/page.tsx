@@ -410,3 +410,12 @@ export default function DocumentsAIPage() {
     </div>
   )
 }
+
+// --- UX upgrades ---
+/*
+Add:
+- auto search debounce
+- enter to send chat
+- scroll to bottom on new message
+- highlight selected citation
+*/
