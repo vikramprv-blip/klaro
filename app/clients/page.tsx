@@ -1,8 +1,7 @@
-import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+"use client";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 type ClientRow = {
   id: string;
@@ -11,26 +10,33 @@ type ClientRow = {
   code: string | null;
 };
 
-async function getClientsSafe(): Promise<ClientRow[]> {
-  try {
-    return await prisma.client.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        code: true,
-      },
-    });
-  } catch (error) {
-    console.error("Failed to load clients page data:", error);
-    return [];
-  }
-}
+export default function ClientsPage() {
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function ClientsPage() {
-  const clients = await getClientsSafe();
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/clients", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        setClients(Array.isArray(data?.clients) ? data.clients : []);
+      })
+      .catch((error) => {
+        console.error("Failed to load clients:", error);
+        if (!active) return;
+        setClients([]);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <main style={{ padding: 24 }}>
@@ -56,7 +62,9 @@ export default async function ClientsPage() {
         </Link>
       </div>
 
-      <div style={{ display: "grid", gap: 12 }}>
+      {loading ? <div>Loading clients...</div> : null}
+
+      <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
         {clients.map((client) => (
           <Link
             key={client.id}
@@ -76,7 +84,7 @@ export default async function ClientsPage() {
           </Link>
         ))}
 
-        {clients.length === 0 ? <div>No clients found.</div> : null}
+        {!loading && clients.length === 0 ? <div>No clients found.</div> : null}
       </div>
     </main>
   );
