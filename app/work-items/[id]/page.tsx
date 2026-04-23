@@ -11,6 +11,7 @@ import { WorkItemTaskSuggestions } from "@/components/work-item-task-suggestions
 import { WorkItemAIDescription } from "@/components/work-item-ai-description"
 import { WorkItemTimeline } from "@/components/work-item-timeline"
 import { WorkItemChecklistAutocreate } from "@/components/work-item-checklist-autocreate"
+import { WorkItemAIPrioritization } from "@/components/work-item-ai-prioritization"
 
 type LinkedDocument = {
   linkId: string
@@ -150,6 +151,8 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
 <WorkItemAIDescription />
 
       <WorkItemTaskSuggestions />
+
+      <WorkItemAIPrioritization />
 
         <aside className="space-y-6">
           <section className="rounded-xl border bg-white p-5">
