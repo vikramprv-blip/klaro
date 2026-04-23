@@ -71,6 +71,7 @@ function DocumentsAIPageInner() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [selectedCitations, setSelectedCitations] = useState<ChatCitation[]>([])
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([])
+  const [showGuide, setShowGuide] = useState(true)
   const seededDocumentIdRef = useRef(false)
   const chatScrollRef = useRef<HTMLDivElement | null>(null)
 
