@@ -1,6 +1,10 @@
-export const dynamic = "force-dynamic";
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
 function formatCurrency(value: unknown) {
-  if (value === null || value === undefined) return "—"
+  if (value === null || value === undefined) return "—";
   const num =
     typeof value === "number"
       ? value
@@ -8,38 +12,104 @@ function formatCurrency(value: unknown) {
         ? Number(value)
         : typeof value === "object" && value !== null && "toString" in value
           ? Number((value as { toString(): string }).toString())
-          : NaN
+          : NaN;
 
-  return Number.isFinite(num) ? `₹${num.toLocaleString("en-IN")}` : "—"
+  return Number.isFinite(num) ? `₹${num.toLocaleString("en-IN")}` : "—";
 }
 
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import { prisma } from "@/lib/prisma"
+type WorkItemRow = {
+  id: string;
+  title: string;
+  status: string;
+};
+
+type InvoiceRow = {
+  id: string;
+  invoiceNo: string | null;
+  status: string;
+  amount: unknown;
+};
+
+type ClientDetail = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  workItems: WorkItemRow[];
+  invoices: InvoiceRow[];
+};
 
 type PageProps = {
   params: Promise<{
-    id: string
-  }>
-}
+    id: string;
+  }>;
+};
 
-export default async function ClientDetailPage({ params }: PageProps) {
-  const { id } = await params
+export default function ClientDetailPage({ params }: PageProps) {
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [client, setClient] = useState<ClientDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  const client = await prisma.client.findUnique({
-    where: { id },
-    include: {
-      workItems: {
-        orderBy: { createdAt: "desc" },
-      },
-      invoices: {
-        orderBy: { createdAt: "desc" },
-      },
-    },
-  })
+  useEffect(() => {
+    let active = true;
 
-  if (!client) {
-    notFound()
+    params
+      .then(({ id }) => {
+        if (!active) return;
+        setClientId(id);
+
+        return fetch(`/api/clients/${id}`, { cache: "no-store" });
+      })
+      .then(async (res) => {
+        if (!active || !res) return;
+
+        if (res.status === 404) {
+          setNotFound(true);
+          setClient(null);
+          return;
+        }
+
+        const data = await res.json();
+        setClient(data?.client ?? null);
+      })
+      .catch((error) => {
+        console.error("Failed to load client:", error);
+        if (!active) return;
+        setClient(null);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [params]);
+
+  if (loading) {
+    return <main className="mx-auto max-w-6xl px-6 py-8">Loading client...</main>;
+  }
+
+  if (notFound || !client) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-slate-500">Client</p>
+            <h1 className="text-3xl font-semibold tracking-tight">Client not found</h1>
+          </div>
+
+          <Link
+            href="/clients"
+            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Back to Clients
+          </Link>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -85,9 +155,12 @@ export default async function ClientDetailPage({ params }: PageProps) {
             </div>
             <div>
               <dt className="text-slate-500">Company</dt>
-              <dd className="text-slate-900">"—"</dd>
+              <dd className="text-slate-900">—</dd>
             </div>
-
+            <div>
+              <dt className="text-slate-500">Client ID</dt>
+              <dd className="text-slate-900">{clientId || client.id}</dd>
+            </div>
           </dl>
         </section>
 
@@ -121,7 +194,9 @@ export default async function ClientDetailPage({ params }: PageProps) {
                 <div key={invoice.id} className="rounded-xl border border-slate-200 p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="font-medium text-slate-900">{`Invoice `}</h3>
+                      <h3 className="font-medium text-slate-900">
+                        {`Invoice ${invoice.invoiceNo || invoice.id}`}
+                      </h3>
                       <p className="mt-1 text-sm text-slate-600">{invoice.status}</p>
                     </div>
                     <div className="text-right text-sm font-medium text-slate-900">
@@ -135,5 +210,5 @@ export default async function ClientDetailPage({ params }: PageProps) {
         </section>
       </div>
     </main>
-  )
+  );
 }
