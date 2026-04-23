@@ -426,22 +426,6 @@ function DocumentsAIPageInner() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Suggested prompts</div>
-              <div className="flex flex-wrap gap-2">
-                {SUGGESTED_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => applySuggestedPrompt(prompt)}
-                    className="rounded-full border px-3 py-1 text-xs hover:bg-gray-50"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="max-h-[420px] overflow-auto space-y-3 rounded-xl border p-3">
               {messages.length === 0 ? (
                 <div className="text-sm text-gray-500">No messages yet.</div>
