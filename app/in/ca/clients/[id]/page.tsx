@@ -20,9 +20,9 @@ export default function ClientPage() {
   }, [id])
 
   async function loadDocs() {
-    const res = await fetch(`/api/documents/list?clientId=${id}`)
+    const res = await fetch(`/api/documents/list?client_id=${id}`)
     const data = await res.json()
-    setDocs(data)
+    setDocs(Array.isArray(data?.documents) ? data.documents : [])
   }
 
   async function deleteDoc(docId: string) {
@@ -68,10 +68,10 @@ export default function ClientPage() {
 
           const form = new FormData()
           form.append("file", file)
-          form.append("clientId", id as string)
-          form.append("documentType", documentType)
+          form.append("client_id", id as string)
+          form.append("document_type", documentType)
 
-          const res = await fetch("/api/documents", {
+          const res = await fetch("/api/documents/upload", {
             method: "POST",
             body: form,
           })
@@ -97,8 +97,8 @@ export default function ClientPage() {
         {docs.map(doc => (
           <div key={doc.id} className="border rounded p-3 flex justify-between items-center">
             <div>
-              <p className="text-sm">{doc.filename}</p>
-              <p className="text-xs text-gray-500">{doc.documentType || "Other"}</p>
+              <p className="text-sm">{doc.file_name || doc.title || "Untitled Document"}</p>
+              <p className="text-xs text-gray-500">{doc.doc_category || "Other"}</p>
             </div>
 
             <div className="flex gap-3 items-center">
