@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 
 type ClientItem = {
   id: string
@@ -44,9 +45,11 @@ type ChatMessage = {
   citations?: ChatCitation[]
 }
 
-export default function DocumentsAIPage() {
+function DocumentsAIPageInner() {
+  const searchParams = useSearchParams()
   const [clients, setClients] = useState<ClientItem[]>([])
-  const [selectedClientId, setSelectedClientId] = useState("")
+  const initialClientId = searchParams.get("client_id") || ""
+  const [selectedClientId, setSelectedClientId] = useState(initialClientId)
   const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [loadingDocs, setLoadingDocs] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -465,3 +468,12 @@ Add:
 // 3. auto-scroll chat
 // 4. enter to send (shift+enter newline)
 // 5. loading skeleton for chat
+
+
+export default function DocumentsAIPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-7xl p-6">Loading...</div>}>
+      <DocumentsAIPageInner />
+    </Suspense>
+  )
+}
