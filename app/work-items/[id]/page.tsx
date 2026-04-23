@@ -238,7 +238,3 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
     </main>
   )
 }
-
-<WorkItemTimeline />
-
-      <WorkItemChecklistAutocreate />
