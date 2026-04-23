@@ -45,6 +45,25 @@ type ChatMessage = {
   citations?: ChatCitation[]
 }
 
+type LinkedWorkItemDocument = {
+  linkId?: string
+  workItemId?: string
+  documentId?: string
+  title?: string | null
+  file_name?: string | null
+  file_url?: string | null
+  notes?: string | null
+  client_id?: string | null
+}
+
+type WorkItemResponse = {
+  item?: {
+    id: string
+    title?: string | null
+    clientId?: string | null
+  }
+}
+
 const SUGGESTED_PROMPTS = [
   "Summarise the key points from these documents.",
   "What are the important deadlines mentioned?",
@@ -59,6 +78,7 @@ function DocumentsAIPageInner() {
   const [clients, setClients] = useState<ClientItem[]>([])
   const initialClientId = searchParams.get("client_id") || ""
   const initialDocumentId = searchParams.get("document_id") || ""
+  const initialWorkItemId = searchParams.get("work_item_id") || ""
   const [selectedClientId, setSelectedClientId] = useState(initialClientId)
   const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [loadingDocs, setLoadingDocs] = useState(false)
@@ -71,8 +91,10 @@ function DocumentsAIPageInner() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [selectedCitations, setSelectedCitations] = useState<ChatCitation[]>([])
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([])
-  const [showGuide, setShowGuide] = useState(true)
+  const [workItemTitle, setWorkItemTitle] = useState("")
+  const [loadingWorkItemContext, setLoadingWorkItemContext] = useState(false)
   const seededDocumentIdRef = useRef(false)
+  const seededWorkItemDocsRef = useRef(false)
   const chatScrollRef = useRef<HTMLDivElement | null>(null)
 
   async function loadClients() {
@@ -80,7 +102,7 @@ function DocumentsAIPageInner() {
       const res = await fetch("/api/clients", { cache: "no-store" })
       if (!res.ok) return
       const data = await res.json()
-      const rows = Array.isArray(data?.clients) ? data.clients : []
+      const rows = Array.isArray(data?.clients) ? data.clients : Array.isArray(data) ? data : []
       setClients(rows)
     } catch {
       setClients([])
@@ -92,13 +114,20 @@ function DocumentsAIPageInner() {
     try {
       const endpoints = ["/api/documents/list", "/api/documents"]
       for (const endpoint of endpoints) {
-        const qs = endpoint === "/api/documents/list" && selectedClientId
-          ? `?client_id=${encodeURIComponent(selectedClientId)}`
-          : ""
+        const qs =
+          endpoint === "/api/documents/list" && selectedClientId
+            ? `?client_id=${encodeURIComponent(selectedClientId)}`
+            : ""
         const res = await fetch(`${endpoint}${qs}`, { cache: "no-store" })
         if (!res.ok) continue
         const data = await res.json()
-        const docs = Array.isArray(data) ? data : Array.isArray(data.documents) ? data.documents : Array.isArray(data.items) ? data.items : []
+        const docs = Array.isArray(data)
+          ? data
+          : Array.isArray(data.documents)
+          ? data.documents
+          : Array.isArray(data.items)
+          ? data.items
+          : []
         if (docs.length || endpoint === endpoints[endpoints.length - 1]) {
           setDocuments(docs)
           return
@@ -110,6 +139,47 @@ function DocumentsAIPageInner() {
     }
   }
 
+  async function loadWorkItemContext() {
+    if (!initialWorkItemId || seededWorkItemDocsRef.current) return
+
+    setLoadingWorkItemContext(true)
+    try {
+      const [itemRes, docsRes] = await Promise.all([
+        fetch(`/api/work-items/${encodeURIComponent(initialWorkItemId)}`, { cache: "no-store" }),
+        fetch(`/api/work-items/${encodeURIComponent(initialWorkItemId)}/documents`, { cache: "no-store" }),
+      ])
+
+      if (itemRes.ok) {
+        const itemData = (await itemRes.json()) as WorkItemResponse
+        const item = itemData?.item
+        if (item?.title) {
+          setWorkItemTitle(item.title)
+        }
+        if (!selectedClientId && item?.clientId) {
+          setSelectedClientId(item.clientId)
+        }
+      }
+
+      if (docsRes.ok) {
+        const docsData = await docsRes.json()
+        const linkedDocs = Array.isArray(docsData?.documents) ? (docsData.documents as LinkedWorkItemDocument[]) : []
+        const linkedDocumentIds = linkedDocs
+          .map((doc) => String(doc.documentId || "").trim())
+          .filter(Boolean)
+
+        if (linkedDocumentIds.length) {
+          setSelectedDocumentIds(linkedDocumentIds)
+        }
+      }
+
+      seededWorkItemDocsRef.current = true
+    } catch {
+      // no-op
+    } finally {
+      setLoadingWorkItemContext(false)
+    }
+  }
+
   useEffect(() => {
     loadClients()
   }, [])
@@ -117,6 +187,10 @@ function DocumentsAIPageInner() {
   useEffect(() => {
     loadDocuments()
   }, [selectedClientId])
+
+  useEffect(() => {
+    void loadWorkItemContext()
+  }, [initialWorkItemId])
 
   useEffect(() => {
     if (!initialDocumentId || seededDocumentIdRef.current || documents.length === 0) return
@@ -170,32 +244,40 @@ function DocumentsAIPageInner() {
 
     setSearching(true)
     try {
-      const payloads = [
-        { query: searchQuery, topK: 8, documentIds: selectedDocumentIds, client_id: selectedClientId || undefined },
-        { q: searchQuery, topK: 8, documentIds: selectedDocumentIds, client_id: selectedClientId || undefined },
-      ]
-
-      let data: any = null
-
-      for (const payload of payloads) {
-        const res = await fetch("/api/search/hybrid", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-        if (!res.ok) continue
-        data = await res.json()
-        if (data) break
+      const payload = {
+        query: searchQuery,
+        topK: 8,
+        documentIds: selectedDocumentIds,
+        client_id: selectedClientId || undefined,
       }
 
-      const results = Array.isArray(data) ? data : Array.isArray(data.results) ? data.results : Array.isArray(data.hits) ? data.hits : []
+      const res = await fetch("/api/search/hybrid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || "Search failed")
+      }
+
+      const data = await res.json()
+      const results = Array.isArray(data)
+        ? data
+        : Array.isArray(data.results)
+        ? data.results
+        : Array.isArray(data.hits)
+        ? data.hits
+        : []
+
       setSearchResults(results)
       setSelectedCitations(
         results.map((r: any) => ({
           documentId: r.documentId,
           documentTitle: r.documentTitle || r.title,
-          fileName: r.fileName,
-          chunkId: r.chunkId,
+          fileName: r.fileName || r.file_name,
+          chunkId: r.chunkId || r.id,
           page: r.page ?? null,
           snippet: r.snippet || r.text || r.content || "",
           text: r.text || r.content || r.snippet || "",
@@ -215,32 +297,33 @@ function DocumentsAIPageInner() {
   async function sendChat() {
     if (!chatInput.trim()) return
 
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: chatInput }]
+    const question = chatInput
+    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: question }]
     setMessages(nextMessages)
     setChatLoading(true)
-
-    const question = chatInput
     setChatInput("")
 
     try {
-      const payloads = [
-        { message: question, messages: nextMessages, documentIds: selectedDocumentIds, client_id: selectedClientId || undefined },
-        { query: question, messages: nextMessages, documentIds: selectedDocumentIds, client_id: selectedClientId || undefined },
-        { question, messages: nextMessages, documentIds: selectedDocumentIds, client_id: selectedClientId || undefined },
-      ]
-
-      let data: any = null
-
-      for (const payload of payloads) {
-        const res = await fetch("/api/chat/documents", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-        if (!res.ok) continue
-        data = await res.json()
-        if (data) break
+      const payload = {
+        question,
+        messages: nextMessages,
+        documentIds: selectedDocumentIds,
+        client_id: selectedClientId || undefined,
+        workItemId: initialWorkItemId || undefined,
       }
+
+      const res = await fetch("/api/chat/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || "Chat failed")
+      }
+
+      const data = await res.json()
 
       const answer =
         data?.answer ||
@@ -277,20 +360,21 @@ function DocumentsAIPageInner() {
     <div className="mx-auto max-w-7xl p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Documents AI</h1>
-
-<div className="rounded-xl border p-4 text-sm text-gray-700 bg-gray-50">
-<div className="font-medium mb-2">How to use</div>
-<ul className="list-disc pl-5 space-y-1">
-<li>Upload PDFs (optionally select a client)</li>
-<li>Search across documents using keywords or semantic search</li>
-<li>Click a result to use it as context</li>
-<li>Ask questions in chat (Enter to send)</li>
-<li>Use from client page for client-specific context</li>
-</ul>
-</div>
         <p className="text-sm text-gray-600">
           Upload, search, and chat over indexed documents using existing retrieval APIs.
         </p>
+
+        {initialWorkItemId ? (
+          <div className="mt-3 rounded-xl border bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            <div className="font-medium">
+              Task AI context {workItemTitle ? `• ${workItemTitle}` : ""}
+            </div>
+            <div className="mt-1">
+              Work item: {initialWorkItemId}
+              {loadingWorkItemContext ? " • loading linked docs..." : ""}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -307,7 +391,9 @@ function DocumentsAIPageInner() {
             >
               <option value="">All clients</option>
               {clients.map((client) => (
-                <option key={client.id} value={client.id}>{client.name}</option>
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                </option>
               ))}
             </select>
             <input type="file" accept=".pdf" onChange={handleUpload} disabled={uploading} />
@@ -470,15 +556,16 @@ function DocumentsAIPageInner() {
               <textarea
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-onKeyDown={(e) => {
-if (e.key === "Enter" && !e.shiftKey) {
-e.preventDefault();
-sendChat();
-}
-}}                placeholder="Ask a question about your documents..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault()
+                    void sendChat()
+                  }
+                }}
+                placeholder="Ask a question about your documents..."
                 className="min-h-[96px] w-full rounded-xl border px-3 py-2"
               />
-              <button onClick={sendChat} disabled={chatLoading} className="rounded-xl border px-4 py-2">
+              <button onClick={() => void sendChat()} disabled={chatLoading} className="rounded-xl border px-4 py-2">
                 {chatLoading ? "Sending..." : "Send"}
               </button>
             </div>
@@ -517,23 +604,6 @@ sendChat();
     </div>
   )
 }
-
-// --- UX upgrades ---
-/*
-Add:
-- auto search debounce
-- enter to send chat
-- scroll to bottom on new message
-- highlight selected citation
-*/
-
-// --- streaming + UX upgrade plan ---
-// 1. try fetch with ReadableStream (if API supports)
-// 2. fallback to normal JSON response
-// 3. auto-scroll chat
-// 4. enter to send (shift+enter newline)
-// 5. loading skeleton for chat
-
 
 export default function DocumentsAIPage() {
   return (
