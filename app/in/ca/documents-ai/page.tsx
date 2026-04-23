@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 
 type ClientItem = {
@@ -49,6 +49,7 @@ function DocumentsAIPageInner() {
   const searchParams = useSearchParams()
   const [clients, setClients] = useState<ClientItem[]>([])
   const initialClientId = searchParams.get("client_id") || ""
+  const initialDocumentId = searchParams.get("document_id") || ""
   const [selectedClientId, setSelectedClientId] = useState(initialClientId)
   const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [loadingDocs, setLoadingDocs] = useState(false)
@@ -61,6 +62,7 @@ function DocumentsAIPageInner() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [selectedCitations, setSelectedCitations] = useState<ChatCitation[]>([])
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([])
+  const seededDocumentIdRef = useRef(false)
 
   async function loadClients() {
     try {
@@ -104,6 +106,14 @@ function DocumentsAIPageInner() {
   useEffect(() => {
     loadDocuments()
   }, [selectedClientId])
+
+  useEffect(() => {
+    if (!initialDocumentId || seededDocumentIdRef.current || documents.length === 0) return
+    const found = documents.find((doc) => doc.id === initialDocumentId)
+    if (!found) return
+    setSelectedDocumentIds((prev) => (prev.includes(initialDocumentId) ? prev : [...prev, initialDocumentId]))
+    seededDocumentIdRef.current = true
+  }, [documents, initialDocumentId])
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -287,6 +297,9 @@ function DocumentsAIPageInner() {
             <div className="text-sm text-gray-500">
               {loadingDocs ? "Loading..." : `${documents.length} documents`}
             </div>
+            {initialDocumentId ? (
+              <div className="text-xs text-blue-600">Document focus: {initialDocumentId}</div>
+            ) : null}
 
             <div className="max-h-[420px] overflow-auto space-y-2">
               {documents.map((doc) => {
