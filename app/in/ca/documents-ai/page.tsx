@@ -45,6 +45,15 @@ type ChatMessage = {
   citations?: ChatCitation[]
 }
 
+const SUGGESTED_PROMPTS = [
+  "Summarise the key points from these documents.",
+  "What are the important deadlines mentioned?",
+  "List compliance risks and missing information.",
+  "Draft a client-ready summary in simple language.",
+  "What questions should I ask the client next?",
+  "Extract action items and organise them as a checklist.",
+]
+
 function DocumentsAIPageInner() {
   const searchParams = useSearchParams()
   const [clients, setClients] = useState<ClientItem[]>([])
@@ -190,6 +199,10 @@ function DocumentsAIPageInner() {
     } finally {
       setSearching(false)
     }
+  }
+
+  function applySuggestedPrompt(prompt: string) {
+    setChatInput(prompt)
   }
 
   async function sendChat() {
@@ -395,6 +408,22 @@ function DocumentsAIPageInner() {
             <div>
               <h2 className="font-medium">Chat</h2>
               <p className="text-sm text-gray-600">Ask questions over retrieved document context.</p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Suggested prompts</div>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTED_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => applySuggestedPrompt(prompt)}
+                    className="rounded-full border px-3 py-1 text-xs hover:bg-gray-50"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="max-h-[420px] overflow-auto space-y-3 rounded-xl border p-3">
