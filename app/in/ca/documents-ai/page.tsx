@@ -419,3 +419,10 @@ Add:
 - scroll to bottom on new message
 - highlight selected citation
 */
+
+// --- streaming + UX upgrade plan ---
+// 1. try fetch with ReadableStream (if API supports)
+// 2. fallback to normal JSON response
+// 3. auto-scroll chat
+// 4. enter to send (shift+enter newline)
+// 5. loading skeleton for chat
