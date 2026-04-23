@@ -46,6 +46,8 @@ export default function ClientPage() {
     <div className="p-8 max-w-4xl space-y-6">
       <h1 className="text-xl font-medium">{client.name}</h1>
 
+<a href={`/in/ca/documents-ai?client_id=${id}`} className="inline-block text-sm text-blue-600 underline">Ask AI about this client</a>
+
       <div className="space-y-2 text-sm text-gray-600">
         <p>Email: {client.email || "-"}</p>
         <p>Phone: {client.phone || "-"}</p>
