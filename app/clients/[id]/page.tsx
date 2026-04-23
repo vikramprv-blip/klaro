@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 function formatCurrency(value: unknown) {
   if (value === null || value === undefined) return "—";
@@ -39,38 +40,33 @@ type ClientDetail = {
   invoices: InvoiceRow[];
 };
 
-type PageProps = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
-export default function ClientDetailPage({ params }: PageProps) {
-  const [clientId, setClientId] = useState<string | null>(null);
+export default function ClientDetailPage() {
+  const params = useParams();
+  const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
   const [client, setClient] = useState<ClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    if (!id) return;
+
     let active = true;
 
-    params
-      .then(({ id }) => {
-        if (!active) return;
-        setClientId(id);
-
-        return fetch(`/api/clients/${id}`, { cache: "no-store" });
-      })
+    fetch(`/api/clients/${id}`, { cache: "no-store" })
       .then(async (res) => {
-        if (!active || !res) return;
+        if (!active) return null;
 
         if (res.status === 404) {
           setNotFound(true);
           setClient(null);
-          return;
+          return null;
         }
 
         const data = await res.json();
+        return data;
+      })
+      .then((data) => {
+        if (!active || !data) return;
         setClient(data?.client ?? null);
       })
       .catch((error) => {
@@ -86,7 +82,7 @@ export default function ClientDetailPage({ params }: PageProps) {
     return () => {
       active = false;
     };
-  }, [params]);
+  }, [id]);
 
   if (loading) {
     return <main className="mx-auto max-w-6xl px-6 py-8">Loading client...</main>;
@@ -159,7 +155,7 @@ export default function ClientDetailPage({ params }: PageProps) {
             </div>
             <div>
               <dt className="text-slate-500">Client ID</dt>
-              <dd className="text-slate-900">{clientId || client.id}</dd>
+              <dd className="text-slate-900">{id || client.id}</dd>
             </div>
           </dl>
         </section>
