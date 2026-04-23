@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react"
 
+type ClientItem = {
+  id: string
+  name: string
+}
+
 type DocumentItem = {
   id: string
   title?: string | null
@@ -40,6 +45,8 @@ type ChatMessage = {
 }
 
 export default function DocumentsAIPage() {
+  const [clients, setClients] = useState<ClientItem[]>([])
+  const [selectedClientId, setSelectedClientId] = useState("")
   const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [loadingDocs, setLoadingDocs] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -52,12 +59,27 @@ export default function DocumentsAIPage() {
   const [selectedCitations, setSelectedCitations] = useState<ChatCitation[]>([])
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([])
 
+  async function loadClients() {
+    try {
+      const res = await fetch("/api/clients", { cache: "no-store" })
+      if (!res.ok) return
+      const data = await res.json()
+      const rows = Array.isArray(data?.clients) ? data.clients : []
+      setClients(rows)
+    } catch {
+      setClients([])
+    }
+  }
+
   async function loadDocuments() {
     setLoadingDocs(true)
     try {
       const endpoints = ["/api/documents/list", "/api/documents"]
       for (const endpoint of endpoints) {
-        const res = await fetch(endpoint, { cache: "no-store" })
+        const qs = endpoint === "/api/documents/list" && selectedClientId
+          ? `?client_id=${encodeURIComponent(selectedClientId)}`
+          : ""
+        const res = await fetch(`${endpoint}${qs}`, { cache: "no-store" })
         if (!res.ok) continue
         const data = await res.json()
         const docs = Array.isArray(data) ? data : Array.isArray(data.documents) ? data.documents : Array.isArray(data.items) ? data.items : []
@@ -73,8 +95,12 @@ export default function DocumentsAIPage() {
   }
 
   useEffect(() => {
-    loadDocuments()
+    loadClients()
   }, [])
+
+  useEffect(() => {
+    loadDocuments()
+  }, [selectedClientId])
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -82,6 +108,9 @@ export default function DocumentsAIPage() {
 
     const formData = new FormData()
     formData.append("file", file)
+    if (selectedClientId) {
+      formData.append("client_id", selectedClientId)
+    }
 
     setUploading(true)
     try {
@@ -113,8 +142,8 @@ export default function DocumentsAIPage() {
     setSearching(true)
     try {
       const payloads = [
-        { query: searchQuery, topK: 8, documentIds: selectedDocumentIds },
-        { q: searchQuery, topK: 8, documentIds: selectedDocumentIds },
+        { query: searchQuery, topK: 8, documentIds: selectedDocumentIds, client_id: selectedClientId || undefined },
+        { q: searchQuery, topK: 8, documentIds: selectedDocumentIds, client_id: selectedClientId || undefined },
       ]
 
       let data: any = null
@@ -162,9 +191,9 @@ export default function DocumentsAIPage() {
 
     try {
       const payloads = [
-        { message: question, messages: nextMessages, documentIds: selectedDocumentIds },
-        { query: question, messages: nextMessages, documentIds: selectedDocumentIds },
-        { question, messages: nextMessages, documentIds: selectedDocumentIds },
+        { message: question, messages: nextMessages, documentIds: selectedDocumentIds, client_id: selectedClientId || undefined },
+        { query: question, messages: nextMessages, documentIds: selectedDocumentIds, client_id: selectedClientId || undefined },
+        { question, messages: nextMessages, documentIds: selectedDocumentIds, client_id: selectedClientId || undefined },
       ]
 
       let data: any = null
@@ -227,6 +256,16 @@ export default function DocumentsAIPage() {
               <h2 className="font-medium">Upload</h2>
               <p className="text-sm text-gray-600">PDF upload and auto-index.</p>
             </div>
+            <select
+              value={selectedClientId}
+              onChange={(e) => setSelectedClientId(e.target.value)}
+              className="w-full rounded-xl border px-3 py-2"
+            >
+              <option value="">All clients</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>{client.name}</option>
+              ))}
+            </select>
             <input type="file" accept=".pdf" onChange={handleUpload} disabled={uploading} />
             <div className="text-sm text-gray-500">{uploading ? "Uploading..." : "Ready"}</div>
           </section>
