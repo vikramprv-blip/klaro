@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
 
     if (typeof body?.status === "string") data.status = body.status
     if (typeof body?.priority === "string") data.priority = body.priority
+    if (body?.urgent === true) data.priority = "HIGH"
     if (body?.dueDate === null) data.dueDate = null
     else if (typeof body?.dueDate === "string" && body.dueDate) data.dueDate = new Date(body.dueDate)
 
