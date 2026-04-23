@@ -186,14 +186,14 @@ export default function DocumentsPage() {
 
             <div className="flex gap-3 text-xs items-center">
               <a
-                href={`/in/ca/documents/${doc.id}`}
+                href={`/in/ca/documents-ai?document_id=`}
                 className="text-blue-600 hover:underline"
               >
                 Preview
               </a>
 
               <a
-                href={doc.fileUrl}
+                href={`/in/ca/documents-ai?document_id=`}
                 download
                 className="text-gray-600 hover:underline"
               >
