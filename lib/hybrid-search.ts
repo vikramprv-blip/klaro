@@ -61,16 +61,16 @@ export async function hybridSearch(params: {
   >(
     `
     SELECT
-      dc.id,
-      dc."documentId",
+      dc.id::text as id,
+      dc."documentId"::text as "documentId",
       dc.content,
       dc."chunkIndex",
       d.title,
       d.notes AS source
-    FROM "public"."document_chunks" dc
+    FROM "public"."DocumentChunk" dc
     JOIN "public"."documents" d ON d.id = dc."documentId"
     WHERE dc.content ILIKE '%' || $1 || '%'
-      AND ($2::text[] IS NULL OR dc."documentId" = ANY($2::text[]))
+      AND ($2::uuid[] IS NULL OR dc."documentId" = ANY($2::uuid[]))
     ORDER BY dc."chunkIndex" ASC
     LIMIT $3
     `,
@@ -92,16 +92,16 @@ export async function hybridSearch(params: {
   >(
     `
     SELECT
-      dc.id,
-      dc."documentId",
+      dc.id::text as id,
+      dc."documentId"::text as "documentId",
       dc.content,
       dc."chunkIndex",
       d.title,
       d.notes AS source,
       (dc.embedding <=> $1::vector) AS distance
-    FROM "public"."document_chunks" dc
+    FROM "public"."DocumentChunk" dc
     JOIN "public"."documents" d ON d.id = dc."documentId"
-    WHERE ($2::text[] IS NULL OR dc."documentId" = ANY($2::text[]))
+    WHERE ($2::uuid[] IS NULL OR dc."documentId" = ANY($2::uuid[]))
     ORDER BY dc.embedding <=> $1::vector ASC
     LIMIT $3
     `,
