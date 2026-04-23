@@ -13,6 +13,7 @@ import { WorkItemTimeline } from "@/components/work-item-timeline"
 import { WorkItemChecklistAutocreate } from "@/components/work-item-checklist-autocreate"
 import { WorkItemAIPrioritization } from "@/components/work-item-ai-prioritization"
 import { WorkItemAIDeadlines } from "@/components/work-item-ai-deadlines"
+import { WorkItemAutoLinker } from "@/components/work-item-auto-linker"
 
 type LinkedDocument = {
   linkId: string
@@ -154,6 +155,8 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
       <WorkItemTaskSuggestions />
 
       <WorkItemAIPrioritization />
+
+      <WorkItemAutoLinker />
 
       <WorkItemAIDeadlines />
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { autoLinkWorkItem } from "@/lib/auto-link-work-item"
 
 function extractText(payload: unknown): string {
   if (typeof payload === "string") return payload
@@ -131,6 +132,7 @@ export async function POST(
           clientId: workItem.clientId,
         },
       })
+      await autoLinkWorkItem(item.id)
       created.push(item)
     }
 
