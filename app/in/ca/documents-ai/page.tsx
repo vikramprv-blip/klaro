@@ -276,6 +276,17 @@ function DocumentsAIPageInner() {
     <div className="mx-auto max-w-7xl p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Documents AI</h1>
+
+<div className="rounded-xl border p-4 text-sm text-gray-700 bg-gray-50">
+<div className="font-medium mb-2">How to use</div>
+<ul className="list-disc pl-5 space-y-1">
+<li>Upload PDFs (optionally select a client)</li>
+<li>Search across documents using keywords or semantic search</li>
+<li>Click a result to use it as context</li>
+<li>Ask questions in chat (Enter to send)</li>
+<li>Use from client page for client-specific context</li>
+</ul>
+</div>
         <p className="text-sm text-gray-600">
           Upload, search, and chat over indexed documents using existing retrieval APIs.
         </p>
