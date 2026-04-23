@@ -452,7 +452,12 @@ function DocumentsAIPageInner() {
               <textarea
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask a question about your documents..."
+onKeyDown={(e) => {
+if (e.key === "Enter" && !e.shiftKey) {
+e.preventDefault();
+sendChat();
+}
+}}                placeholder="Ask a question about your documents..."
                 className="min-h-[96px] w-full rounded-xl border px-3 py-2"
               />
               <button onClick={sendChat} disabled={chatLoading} className="rounded-xl border px-4 py-2">
