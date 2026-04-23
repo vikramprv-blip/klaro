@@ -72,6 +72,7 @@ function DocumentsAIPageInner() {
   const [selectedCitations, setSelectedCitations] = useState<ChatCitation[]>([])
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([])
   const seededDocumentIdRef = useRef(false)
+  const chatScrollRef = useRef<HTMLDivElement | null>(null)
 
   async function loadClients() {
     try {
@@ -123,6 +124,11 @@ function DocumentsAIPageInner() {
     setSelectedDocumentIds((prev) => (prev.includes(initialDocumentId) ? prev : [...prev, initialDocumentId]))
     seededDocumentIdRef.current = true
   }, [documents, initialDocumentId])
+
+  useEffect(() => {
+    if (!chatScrollRef.current) return
+    chatScrollRef.current.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: "smooth" })
+  }, [messages, chatLoading])
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -426,7 +432,7 @@ function DocumentsAIPageInner() {
               </div>
             </div>
 
-            <div className="max-h-[420px] overflow-auto space-y-3 rounded-xl border p-3">
+            <div ref={chatScrollRef} className="max-h-[420px] overflow-auto space-y-3 rounded-xl border p-3">
               {messages.length === 0 ? (
                 <div className="text-sm text-gray-500">No messages yet.</div>
               ) : (
