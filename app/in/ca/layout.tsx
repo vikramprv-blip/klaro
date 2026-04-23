@@ -12,6 +12,7 @@ const NAV = [
   { label: "Advance tax",     href: "/in/ca/advance-tax", icon: "◆" },
   { label: "Deadlines",       href: "/in/ca/deadlines",   icon: "◷" },
   { label: "Documents",       href: "/in/ca/documents",   icon: "▣" },
+{ label: "AI Documents", href: "/in/ca/documents-ai", icon: "✺" },
 ]
 
 export default function CALayout({ children }: { children: React.ReactNode }) {
