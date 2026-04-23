@@ -9,6 +9,7 @@ import WorkItemDangerZone from "@/components/work-item-danger-zone"
 import WorkItemDocumentLinker from "@/components/work-item-document-linker"
 import { WorkItemTaskSuggestions } from "@/components/work-item-task-suggestions"
 import { WorkItemAIDescription } from "@/components/work-item-ai-description"
+import { WorkItemTimeline } from "@/components/work-item-timeline"
 
 type LinkedDocument = {
   linkId: string
@@ -236,3 +237,5 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
     </main>
   )
 }
+
+<WorkItemTimeline />
