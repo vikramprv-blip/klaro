@@ -15,7 +15,7 @@ export async function getMerchantLinks(merchantId: string) {
     .from("payment_links")
     .select("*")
     .eq("merchant_id", merchantId)
-    .order("created_at", { ascending: false })
+    .order("createdAt", { ascending: false })
   return data ?? []
 }
 
@@ -24,7 +24,7 @@ export async function getMerchantTransactions(merchantId: string) {
     .from("transactions")
     .select("*")
     .eq("merchant_id", merchantId)
-    .order("created_at", { ascending: false })
+    .order("createdAt", { ascending: false })
     .limit(100)
   return data ?? []
 }

@@ -21,7 +21,7 @@ export interface Merchant {
   is_active: boolean
   onboarding_done: boolean
   apps: string[] | null
-  created_at: string
+  createdAt: string
 }
 
 export interface PaymentLink {
@@ -47,7 +47,7 @@ export interface PaymentLink {
   paid_at: string | null
   expires_at: string
   view_count: number
-  created_at: string
+  createdAt: string
 }
 
 export interface Transaction {
@@ -65,7 +65,7 @@ export interface Transaction {
   customer_name: string | null
   customer_email: string | null
   fee_saved: number
-  created_at: string
+  createdAt: string
 }
 
 

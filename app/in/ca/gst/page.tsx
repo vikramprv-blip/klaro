@@ -3,7 +3,7 @@ import { useState, useEffect, useTransition } from "react"
 
 type GSTFiling = {
   id: string
-  client_id: string
+  clientId: string
   return_type: string
   period: string
   due_date: string

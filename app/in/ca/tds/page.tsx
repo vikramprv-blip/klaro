@@ -3,7 +3,7 @@ import { useState, useEffect, useTransition } from "react"
 
 type TDSFiling = {
   id: string
-  client_id: string
+  clientId: string
   form_type: string
   quarter: string
   due_date: string
@@ -87,8 +87,8 @@ export default function TDSCompliancePage() {
   async function handleGenerate() {
     if (!genClients.length) return
     setGenerating(true)
-    const rows = genClients.map(client_id => ({
-      client_id,
+    const rows = genClients.map(clientId => ({
+      clientId,
       form_type: genForm,
       quarter: genQuarter,
       due_date: QUARTER_DUE[genQuarter],
@@ -103,7 +103,7 @@ export default function TDSCompliancePage() {
     if (Array.isArray(created)) {
       const withClients = created.map((f: TDSFiling) => ({
         ...f,
-        ca_clients: clients.find(c => c.id === f.client_id),
+        ca_clients: clients.find(c => c.id === f.clientId),
       }))
       setFilings(prev => [...prev, ...withClients])
     }

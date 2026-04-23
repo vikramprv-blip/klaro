@@ -54,13 +54,13 @@ export default function RoadmapPage() {
   const updateKlaro = async (id: string, status: string) => {
     setSaving(id)
     setKlaro(prev => prev.map(r => r.id===id ? {...r,status} : r))
-    await supabase.from("klaro_roadmap").update({ status, updated_at: new Date().toISOString() }).eq("id", id)
+    await supabase.from("klaro_roadmap").update({ status, updatedAt: new Date().toISOString() }).eq("id", id)
     setSaving(null)
   }
   const updateLawyer = async (id: string, status: string) => {
     setSaving(id)
     setLawyer(prev => prev.map(r => r.id===id ? {...r,status} : r))
-    await supabase.from("lawyer_roadmap").update({ status, updated_at: new Date().toISOString() }).eq("id", id)
+    await supabase.from("lawyer_roadmap").update({ status, updatedAt: new Date().toISOString() }).eq("id", id)
     setSaving(null)
   }
 

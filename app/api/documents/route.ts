@@ -10,47 +10,59 @@ const supabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
-  const formData = await req.formData()
+  try {
+    const formData = await req.formData()
 
-  const file = formData.get("file") as File | null
-  const clientId = formData.get("clientId") as string | null
-  const documentType = (formData.get("documentType") as string | null) || "Other"
-  const content = (formData.get("content") as string | null) || ""
+    const file = formData.get("file") as File | null
+    const client_id = formData.get("client_id") as string | null
+    const document_type = (formData.get("document_type") as string | null) || "Other"
 
-  if (!file) {
-    return NextResponse.json({ error: "File is required" }, { status: 400 })
-  }
+    if (!file) {
+      return NextResponse.json({ error: "File is required" }, { status: 400 })
+    }
 
-  const bytes = await file.arrayBuffer()
-  const buffer = Buffer.from(bytes)
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const file_path = `${Date.now()}-${file.name}`
 
-  const filePath = `${Date.now()}-${file.name}`
+    const { error: uploadError } = await supabase.storage
+      .from("documents")
+      .upload(file_path, buffer, {
+        contentType: file.type,
+        upsert: false,
+      })
 
-  const { error: uploadError } = await supabase.storage
-    .from("documents")
-    .upload(filePath, buffer, {
-      contentType: file.type,
-      upsert: false,
+    if (uploadError) {
+      return NextResponse.json({ error: uploadError.message }, { status: 500 })
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("documents")
+      .getPublicUrl(file_path)
+
+    const document = await prisma.documents.create({
+      data: {
+        title: file.name.replace(/\.[^.]+$/, "") || "Untitled Document",
+        file_name: file.name,
+        file_url: publicUrlData.publicUrl,
+        file_size: BigInt(file.size),
+        file_type: file.type || null,
+        doc_category: document_type,
+        client_id: client_id || null,
+      },
     })
 
-  if (uploadError) {
-    return NextResponse.json({ error: uploadError.message }, { status: 500 })
+    return NextResponse.json({
+      document: {
+        ...document,
+        file_size: document.file_size?.toString?.() ?? null,
+      },
+    })
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Upload failed" },
+      { status: 500 }
+    )
   }
-
-  const { data: publicUrlData } = supabase.storage
-    .from("documents")
-    .getPublicUrl(filePath)
-
-  const document = await prisma.document.create({
-    data: {
-      filename: file.name,
-      fileUrl: publicUrlData.publicUrl,
-      filePath,
-      clientId: clientId || null,
-      documentType,
-      content,
-    },
-  })
-
-  return NextResponse.json({ document })
 }

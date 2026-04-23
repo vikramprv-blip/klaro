@@ -3,7 +3,7 @@ import { useState, useEffect, useTransition } from "react"
 
 type ITRFiling = {
   id: string
-  client_id: string
+  clientId: string
   itr_form: string
   assessment_year: string
   due_date: string
@@ -95,11 +95,11 @@ export default function ITRTrackerPage() {
   async function handleGenerate() {
     if (!genClients.length) return
     setGenerating(true)
-    const rows = genClients.map(client_id => {
-      const client = clients.find(c => c.id === client_id)
+    const rows = genClients.map(clientId => {
+      const client = clients.find(c => c.id === clientId)
       const itr_form = ENTITY_FORM[client?.entity_type] ?? "ITR-1"
       return {
-        client_id,
+        clientId,
         itr_form,
         assessment_year: genAY,
         due_date: FORM_DUE[itr_form],
@@ -114,7 +114,7 @@ export default function ITRTrackerPage() {
     const created = await res.json()
     if (Array.isArray(created)) {
       setFilings(prev => [...prev, ...created.map((f: ITRFiling) => ({
-        ...f, ca_clients: clients.find(c => c.id === f.client_id),
+        ...f, ca_clients: clients.find(c => c.id === f.clientId),
       }))])
     }
     setShowGen(false)

@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const { id } = await params
 
-  const doc = await prisma.document.findUnique({
+  const doc = await prisma.documents.findUnique({
     where: { id },
   })
 

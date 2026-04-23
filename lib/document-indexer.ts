@@ -1,48 +1,66 @@
-import { PrismaClient } from "@prisma/client";
-import { randomUUID } from "crypto";
-import { splitTextIntoChunks } from "./chunking";
-import { generateEmbeddings } from "./embeddings";
+import { PrismaClient } from "@prisma/client"
+import { chunkText } from "@/lib/chunk-text"
+import { embedDocuments, toPgVector } from "@/lib/voyage"
 
-const prisma = new PrismaClient();
-
-function toVectorLiteral(values: number[]) {
-  return `[${values.join(",")}]`;
-}
+const prisma = new PrismaClient()
 
 export async function indexDocument(documentId: string) {
-  const document = await prisma.document.findUnique({
+  const document = await prisma.documents.findUnique({
     where: { id: documentId },
-    include: { client: true },
-  });
+    include: { Client: true },
+  })
 
-  if (!document || !document.content?.trim()) {
-    throw new Error("Document content not found");
+  if (!document) {
+    throw new Error("Document not found")
   }
 
-  const chunks = splitTextIntoChunks(document.content);
-  const inputs = chunks.map(
-    (chunk) =>
-      `Filename: ${document.filename}\nDocument Type: ${document.documentType ?? ""}\nClient: ${document.client?.name ?? ""}\nContent: ${chunk}`
-  );
+  const sourceText = [document.title, document.notes, document.file_name]
+    .filter((value): value is string => Boolean(value && value.trim()))
+    .join("\n\n")
+    .trim()
 
-  const embeddings = await generateEmbeddings(inputs);
+  if (!sourceText) {
+    return {
+      ok: false,
+      reason: "No indexable text found on document record",
+      chunks: 0,
+    }
+  }
 
   await prisma.$executeRawUnsafe(
-    `delete from "DocumentChunk" where "documentId" = $1`,
+    `DELETE FROM "public"."document_chunks" WHERE "documentId" = $1`,
     documentId
-  );
+  )
 
-  for (let i = 0; i < chunks.length; i++) {
-    await prisma.$executeRawUnsafe(
-      `insert into "DocumentChunk" (id, "documentId", "chunkIndex", content, embedding, "createdAt")
-       values ($1, $2, $3, $4, $5::vector, now())`,
-      randomUUID(),
-      documentId,
-      i,
-      chunks[i],
-      toVectorLiteral(embeddings[i])
-    );
+  const chunks = chunkText(sourceText)
+  const batchSize = 32
+
+  for (let i = 0; i < chunks.length; i += batchSize) {
+    const batch = chunks.slice(i, i + batchSize)
+    const embeddings = await embedDocuments(batch.map((item) => item.content))
+
+    for (let j = 0; j < batch.length; j += 1) {
+      const chunk = batch[j]
+      const embedding = embeddings[j]
+
+      await prisma.$executeRawUnsafe(
+        `
+        INSERT INTO "public"."document_chunks"
+          ("id", "documentId", "chunkIndex", "content", "embedding", "createdAt", "updatedAt")
+        VALUES
+          (gen_random_uuid(), $1, $2, $3, $4::vector, NOW(), NOW())
+        `,
+        documentId,
+        chunk.chunkIndex,
+        chunk.content,
+        toPgVector(embedding)
+      )
+    }
   }
 
-  return { success: true, chunks: chunks.length };
+  return {
+    ok: true,
+    documentId,
+    chunks: chunks.length,
+  }
 }

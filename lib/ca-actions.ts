@@ -16,7 +16,7 @@ export type CAClient = {
   assigned_to: string | null
   services: string[]
   is_active: boolean
-  created_at: string
+  createdAt: string
 }
 
 export type GSTFiling = {
@@ -70,7 +70,7 @@ export async function createCAClient(input: Partial<CAClient>) {
 export async function updateCAClient(id: string, input: Partial<CAClient>) {
   const { data, error } = await supabaseAdmin
     .from("ca_clients")
-    .update({ ...input, updated_at: new Date().toISOString() })
+    .update({ ...input, updatedAt: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single()
@@ -81,7 +81,7 @@ export async function updateCAClient(id: string, input: Partial<CAClient>) {
 // ── GST Filings ────────────────────────────────────────────────────────────────
 
 export async function getGSTFilings(filters?: {
-  clientId?: string
+  client_id?: string
   status?: string
   period?: string
   returnType?: string
@@ -91,7 +91,7 @@ export async function getGSTFilings(filters?: {
     .select("*, ca_clients(name, gstin)")
     .order("due_date", { ascending: true })
 
-  if (filters?.clientId) q = q.eq("client_id", filters.clientId)
+  if (filters?.client_id) q = q.eq("client_id", filters.client_id)
   if (filters?.status)   q = q.eq("status", filters.status)
   if (filters?.period)   q = q.eq("period", filters.period)
   if (filters?.returnType) q = q.eq("return_type", filters.returnType)
@@ -104,7 +104,7 @@ export async function getGSTFilings(filters?: {
 export async function updateGSTFiling(id: string, input: Partial<GSTFiling>) {
   const { data, error } = await supabaseAdmin
     .from("gst_filings")
-    .update({ ...input, updated_at: new Date().toISOString() })
+    .update({ ...input, updatedAt: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single()
@@ -112,8 +112,8 @@ export async function updateGSTFiling(id: string, input: Partial<GSTFiling>) {
   return data
 }
 
-export async function bulkCreateGSTFilings(clientIds: string[], returnType: string, periods: { period: string; due_date: string }[]) {
-  const rows = clientIds.flatMap(client_id =>
+export async function bulkCreateGSTFilings(client_ids: string[], returnType: string, periods: { period: string; due_date: string }[]) {
+  const rows = client_ids.flatMap(client_id =>
     periods.map(({ period, due_date }) => ({
       client_id,
       return_type: returnType,

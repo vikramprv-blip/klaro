@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const query = String(body.query ?? "").trim();
-    const clientId = body.clientId ? String(body.clientId) : null;
-    const documentType = body.documentType ? String(body.documentType) : null;
+    const client_id = body.client_id ? String(body.client_id) : null;
+    const document_type = body.document_type ? String(body.document_type) : null;
 
     if (!query) {
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
@@ -26,14 +26,14 @@ export async function POST(req: NextRequest) {
     const values: any[] = [vector];
     let idx = 2;
 
-    if (clientId) {
-      filters.push(`d."clientId" = $${idx++}`);
-      values.push(clientId);
+    if (client_id) {
+      filters.push(`d."client_id" = $${idx++}`);
+      values.push(client_id);
     }
 
-    if (documentType) {
-      filters.push(`d."documentType" = $${idx++}`);
-      values.push(documentType);
+    if (document_type) {
+      filters.push(`d."document_type" = $${idx++}`);
+      values.push(document_type);
     }
 
     const whereClause = filters.length ? `where ${filters.join(" and ")}` : "";
@@ -42,9 +42,9 @@ export async function POST(req: NextRequest) {
       `
       select
         dc."documentId",
-        d.filename,
-        d."documentType",
-        d."clientId",
+        d.file_name,
+        d."document_type",
+        d."client_id",
         dc.content as snippet,
         1 - (dc.embedding <=> $1::vector) as "semanticScore"
       from "DocumentChunk" dc

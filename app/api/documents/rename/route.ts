@@ -4,15 +4,15 @@ import { PrismaClient } from "@prisma/client"
 const prisma = new PrismaClient()
 
 export async function POST(req: NextRequest) {
-  const { id, filename } = await req.json()
+  const { id, file_name } = await req.json()
 
-  if (!id || !filename) {
+  if (!id || !file_name) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 })
   }
 
-  const doc = await prisma.document.update({
+  const doc = await prisma.documents.update({
     where: { id },
-    data: { filename },
+    data: { file_name },
   })
 
   return NextResponse.json({ document: doc })

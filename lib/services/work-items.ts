@@ -2,11 +2,11 @@ import { prisma } from "@/lib/prisma";
 
 export async function getWorkItems(filters?: {
   status?: string;
-  clientId?: string;
+  client_id?: string;
 }) {
   const where = {
     ...(filters?.status ? { status: filters.status } : {}),
-    ...(filters?.clientId ? { clientId: filters.clientId } : {}),
+    ...(filters?.client_id ? { client_id: filters.client_id } : {}),
   };
 
   return prisma.workItem.findMany({

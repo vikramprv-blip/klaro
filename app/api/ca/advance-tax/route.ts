@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     .select("*, ca_clients(name, pan)")
     .order("due_date", { ascending: true })
 
-  if (clientId) q = q.eq("client_id", clientId)
+  if (clientId) q = q.eq("clientId", clientId)
 
   const { data, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

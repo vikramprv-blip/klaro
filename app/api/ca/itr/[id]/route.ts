@@ -10,7 +10,7 @@ export async function PATCH(
   const body = await req.json()
   const { data, error } = await supabaseAdmin
     .from("itr_filings")
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update({ ...body, updatedAt: new Date().toISOString() })
     .eq("id", id).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)

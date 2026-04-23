@@ -11,7 +11,7 @@ export const createWorkItemSchema = z.object({
   periodLabel: z.string().optional(),
   dueDate: z.string().datetime().optional(),
   priority: z.string().optional(),
-  clientId: z.string().min(1),
+  client_id: z.string().min(1),
   createdById: z.string().optional(),
 });
 
@@ -43,6 +43,6 @@ export const createDocumentsSchema = z.array(
 
 export const updateDocumentSchema = z.object({
   status: DocumentStatusEnum.optional(),
-  fileUrl: z.string().optional(),
+  file_url: z.string().optional(),
   notes: z.string().optional(),
 });

@@ -1,47 +1,56 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 
-const prisma = new PrismaClient()
+export const runtime = "nodejs"
 
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const clientId = req.nextUrl.searchParams.get("clientId")
-    const q = req.nextUrl.searchParams.get("q")?.trim()
-    const documentType = req.nextUrl.searchParams.get("documentType")?.trim()
+    const { searchParams } = new URL(request.url)
 
-    const docs = await prisma.document.findMany({
-      where: {
-        ...(clientId ? { clientId } : {}),
-        ...(documentType ? { documentType } : {}),
-        ...(q
-          ? {
-              OR: [
-                {
-                  filename: {
-                    contains: q,
-                    mode: "insensitive",
-                  },
+    const q = (searchParams.get("q") ?? "").trim()
+    const document_type = (searchParams.get("document_type") ?? "").trim()
+    const client_id = (searchParams.get("client_id") ?? "").trim()
+
+    const where = {
+      ...(document_type ? { document_type: document_type } : {}),
+      ...(client_id ? { client_id: client_id } : {}),
+      ...(q
+        ? {
+            OR: [
+              {
+                file_name: {
+                  contains: q,
+                  mode: "insensitive" as const,
                 },
-                {
-                  content: {
-                    contains: q,
-                    mode: "insensitive",
-                  },
+              },
+              {
+                title: {
+                  contains: q,
+                  mode: "insensitive" as const,
                 },
-              ],
-            }
-          : {}),
-      },
-      orderBy: { createdAt: "desc" },
+              },
+              {
+                notes: {
+                  contains: q,
+                  mode: "insensitive" as const,
+                },
+              },
+            ],
+          }
+        : {}),
+    }
+
+    const documents = await prisma.documents.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      take: 100,
     })
 
-    return NextResponse.json(docs)
+    return NextResponse.json({ ok: true, documents })
   } catch (error) {
-    console.error("GET /api/documents/list failed:", error)
+    console.error(error)
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Failed to load documents",
-      },
+      { error: error instanceof Error ? error.message : "Failed to list documents" },
       { status: 500 }
     )
   }

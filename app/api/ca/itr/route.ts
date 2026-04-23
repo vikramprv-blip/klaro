@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     .select("*, ca_clients(name, pan, entity_type)")
     .order("due_date", { ascending: true })
 
-  if (clientId) q = q.eq("client_id", clientId)
+  if (clientId) q = q.eq("clientId", clientId)
   if (status)   q = q.eq("status", status)
 
   const { data, error } = await q

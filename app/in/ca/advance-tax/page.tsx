@@ -3,7 +3,7 @@ import { useState, useEffect, useTransition } from "react"
 
 type AdvanceTax = {
   id: string
-  client_id: string
+  clientId: string
   assessment_year: string
   instalment: string
   due_date: string
@@ -83,9 +83,9 @@ export default function AdvanceTaxPage() {
   async function handleGenerate() {
     if (!genClients.length) return
     setGenerating(true)
-    const rows = genClients.flatMap(client_id =>
+    const rows = genClients.flatMap(clientId =>
       INSTALMENTS.map(({ key, due }) => ({
-        client_id, assessment_year: genAY, instalment: key, due_date: due, status: "pending",
+        clientId, assessment_year: genAY, instalment: key, due_date: due, status: "pending",
       }))
     )
     const res = await fetch("/api/ca/advance-tax", {
@@ -96,7 +96,7 @@ export default function AdvanceTaxPage() {
     const created = await res.json()
     if (Array.isArray(created)) {
       setRecords(prev => [...prev, ...created.map((r: AdvanceTax) => ({
-        ...r, ca_clients: clients.find(c => c.id === r.client_id),
+        ...r, ca_clients: clients.find(c => c.id === r.clientId),
       }))])
     }
     setShowGen(false); setGenClients([]); setGenerating(false)
