@@ -6,19 +6,6 @@ import WorkItemStatusForm from "@/components/work-item-status-form"
 import WorkItemEditForm from "@/components/work-item-edit-form"
 import WorkItemMetaForm from "@/components/work-item-meta-form"
 import WorkItemDangerZone from "@/components/work-item-danger-zone"
-import WorkItemDocumentLinker from "@/components/work-item-document-linker"
-
-type LinkedDocument = {
-  linkId: string
-  documentId: string
-  title: string | null
-  file_name: string | null
-  file_url: string | null
-  notes: string | null
-  client_id: string | null
-  created_at: Date | null
-  updated_at: Date | null
-}
 
 type PageProps = {
   params: Promise<{
@@ -40,31 +27,6 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  const linkedDocuments = await prisma.$queryRawUnsafe<LinkedDocument[]>(
-    `
-    select
-      wid."id" as "linkId",
-      wid."documentId"::text as "documentId",
-      d.title,
-      d.file_name,
-      d.file_url,
-      d.notes,
-      d.client_id,
-      d.created_at,
-      d.updated_at
-    from public."WorkItemDocument" wid
-    join public.documents d
-      on d.id = wid."documentId"
-    where wid."workItemId" = $1
-    order by wid."createdAt" desc
-    `,
-    id
-  )
-
-  const askAiHref = linkedDocuments.length
-    ? `/in/ca/documents-ai?document_id=${encodeURIComponent(linkedDocuments[0].documentId)}`
-    : `/in/ca/documents-ai${item.clientId ? `?client_id=${encodeURIComponent(item.clientId)}` : ""}`
-
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -82,21 +44,12 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href={askAiHref}
-            className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
-          >
-            Ask AI
-          </Link>
-
-          <Link
-            href="/workboard"
-            className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
-          >
-            Back to Workboard
-          </Link>
-        </div>
+        <Link
+          href="/workboard"
+          className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
+        >
+          Back to Workboard
+        </Link>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -169,47 +122,6 @@ export default async function WorkItemDetailPage({ params }: PageProps) {
               </div>
             </div>
           </section>
-
-          <section className="rounded-xl border bg-white p-5">
-            <h2 className="mb-3 text-lg font-semibold">Linked documents</h2>
-            {linkedDocuments.length ? (
-              <div className="space-y-3">
-                {linkedDocuments.map((doc) => (
-                  <div key={doc.linkId} className="rounded-lg border p-3">
-                    <div className="font-medium">
-                      {doc.title || doc.file_name || doc.documentId}
-                    </div>
-                    <div className="mt-1 text-xs text-gray-500">
-                      {doc.file_name || "No filename"}
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Link
-                        href={`/in/ca/documents-ai?document_id=${encodeURIComponent(doc.documentId)}`}
-                        className="rounded-md border px-3 py-1.5 text-xs hover:bg-gray-50"
-                      >
-                        Ask AI on this doc
-                      </Link>
-                      <Link
-                        href={`/in/ca/documents/${encodeURIComponent(doc.documentId)}`}
-                        className="rounded-md border px-3 py-1.5 text-xs hover:bg-gray-50"
-                      >
-                        Open document
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-gray-500">
-                No linked documents yet.
-              </div>
-            )}
-          </section>
-
-          <WorkItemDocumentLinker
-            workItemId={item.id}
-            clientId={item.clientId}
-          />
 
           <section className="rounded-xl border bg-white p-5">
             <h2 className="mb-3 text-lg font-semibold">Description</h2>
