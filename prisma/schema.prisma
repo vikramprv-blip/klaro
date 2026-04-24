@@ -1178,3 +1178,21 @@ enum one_time_token_type {
 
   @@schema("auth")
 }
+
+
+model WhatsappOutbox {
+  id           String   @id @default(uuid())
+  toPhone      String
+  templateName String
+  templateLang String   @default("en")
+  payload      Json     @default("{}")
+  status       String   @default("pending")
+  attempts     Int      @default(0)
+  lastError    String?
+  sentAt       DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@schema("public")
+}

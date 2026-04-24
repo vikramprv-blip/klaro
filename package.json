@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-"auto-followups": "node scripts/auto-followups.js",
+    "auto-followups": "node scripts/auto-followups.js",
     "dev": "next dev",
     "build": "prisma generate && next build --no-lint",
     "start": "next start",
     "lint": "eslint .",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "whatsapp:test:queue": "node scripts/queue-whatsapp-test.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -33,6 +34,7 @@
     "react-dom": "19.1.1",
     "sonner": "^2.0.7",
     "swr": "^2.4.1",
+    "twilio": "^6.0.0",
     "voyageai": "^0.2.1",
     "xlsx": "^0.18.5",
     "zod": "^4.3.6"
