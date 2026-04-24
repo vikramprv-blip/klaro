@@ -26,11 +26,19 @@ export async function POST(req: Request) {
       message = `Hi ${clientName}, please share the required details for ${period} so we can complete this work on time.`;
     }
 
+    // 1. Insert follow-up log
     await prisma.$executeRaw`
       insert into ca_client_followups
       (compliance_task_id, client_id, client_name, channel, message, status)
       values
       (${complianceTaskId}::uuid, ${clientId}, ${clientName}, 'manual', ${message}, 'drafted')
+    `;
+
+    // 2. Update LAST FOLLOWED UP
+    await prisma.$executeRaw`
+      update ca_compliance_tasks
+      set last_followed_up_at = now()
+      where id::text = ${complianceTaskId}
     `;
 
     return NextResponse.json({ ok: true, message });

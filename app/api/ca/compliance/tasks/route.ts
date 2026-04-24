@@ -21,6 +21,7 @@ export async function GET() {
         source,
         created_at,
         updated_at
+last_followed_up_at,
       from ca_compliance_tasks
       order by due_date asc, client_name asc
       limit 500
@@ -46,6 +47,7 @@ export async function PATCH(req: Request) {
     await prisma.$executeRaw`
       update ca_compliance_tasks
       set status = ${status}, updated_at = now()
+last_followed_up_at,
       where id::text = ${id}
     `;
 

@@ -13,6 +13,7 @@ type ComplianceTask = {
   due_date: string;
   status: string;
   priority: string;
+  last_followed_up_at: string | null;
 };
 
 function daysUntil(date: string) {
@@ -73,6 +74,7 @@ export default function CACompliancePage() {
     if (data?.message) {
       setFollowupMessage(data.message);
       await navigator.clipboard?.writeText(data.message);
+      await loadTasks();
     }
   }
 
@@ -176,7 +178,7 @@ export default function CACompliancePage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
-              {["Client", "Type", "Period", "Due date", "Status", ""].map((h) => (
+              {["Client", "Type", "Period", "Due date", "Status", "Last Follow-up", ""].map((h) => (
                 <th key={h} className="text-left text-xs font-medium text-gray-400 px-4 py-3">{h}</th>
               ))}
             </tr>
@@ -184,7 +186,7 @@ export default function CACompliancePage() {
           <tbody>
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center text-gray-400 py-12">
+                <td colSpan={7} className="text-center text-gray-400 py-12">
                   No compliance tasks found
                 </td>
               </tr>
@@ -211,36 +213,30 @@ export default function CACompliancePage() {
                       <select
                         value={task.status}
                         onChange={(e) => updateStatus(task.id, e.target.value)}
-                        className="border border-gray-200 rounded px-2 py-1 text-xs"
+                        className="border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white"
                       >
                         <option value="pending">Pending</option>
                         <option value="in_progress">In progress</option>
                         <option value="done">Done</option>
                       </select>
                     </td>
+                    <td className="px-4 py-3 text-xs text-gray-500">
+                      {task.last_followed_up_at
+                        ? new Date(task.last_followed_up_at).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "—"}
+                    </td>
                     <td className="px-4 py-3 text-right">
-<button
-onClick={async () => {
-  const res = await fetch("/api/ca/followup", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      clientName: task.client_name,
-      taskType: task.task_type,
-      period: task.period,
-    }),
-  });
-
-  const data = await res.json();
-  if (data?.message) {
-    alert(data.message);
-  }
-}}
-className="text-xs border px-2 py-1 rounded hover:bg-gray-100"
->
-Follow-up
-</button>
-</td>
+                      <button
+                        onClick={() => generateFollowup(task)}
+                        className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                      >
+                        Generate follow-up
+                      </button>
+                    </td>
                   </tr>
                 );
               })
