@@ -11,6 +11,7 @@ export async function GET() {
         id,
         client_id,
         client_name,
+        client_phone,
         task_type,
         title,
         description,
@@ -20,8 +21,8 @@ export async function GET() {
         priority,
         source,
         created_at,
-        updated_at
-last_followed_up_at,
+        updated_at,
+        last_followed_up_at
       from ca_compliance_tasks
       order by due_date asc, client_name asc
       limit 500

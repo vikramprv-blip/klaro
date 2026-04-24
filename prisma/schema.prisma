@@ -13,8 +13,8 @@ model Client {
   id        String      @id @default(cuid())
   code      String?
   name      String
+phone String?
   email     String?
-  phone     String?
   address   String?
   gstin     String?
   createdAt DateTime    @default(now())
@@ -76,6 +76,7 @@ model FollowUpLog {
 model ServiceTemplate {
   id             String   @id @default(cuid())
   name           String
+phone String?
   code           String?  @unique
   description    String?
   department     String?
@@ -108,6 +109,7 @@ model custom_oauth_providers {
   provider_type         String
   identifier            String    @unique
   name                  String
+phone String?
   client_id             String
   client_secret         String
   acceptable_client_ids String[]  @default([])
@@ -232,12 +234,12 @@ model mfa_factors {
   id                           String           @id @db.Uuid
   user_id                      String           @db.Uuid
   friendly_name                String?
+phone String?
   factor_type                  factor_type
   status                       factor_status
   created_at                   DateTime         @db.Timestamptz(6)
   updated_at                   DateTime         @db.Timestamptz(6)
   secret                       String?
-  phone                        String?
   last_challenged_at           DateTime?        @unique @db.Timestamptz(6)
   web_authn_credential         Json?
   web_authn_aaguid             String?          @db.Uuid
@@ -295,6 +297,7 @@ model oauth_clients {
   redirect_uris              String
   grant_types                String
   client_name                String?
+phone String?
   client_uri                 String?
   logo_uri                   String?
   created_at                 DateTime                @default(now()) @db.Timestamptz(6)
@@ -379,6 +382,7 @@ model saml_providers {
   created_at        DateTime?     @db.Timestamptz(6)
   updated_at        DateTime?     @db.Timestamptz(6)
   name_id_format    String?
+phone String?
   sso_providers     sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([sso_provider_id])
@@ -567,6 +571,7 @@ model webauthn_credentials {
   backup_eligible  Boolean   @default(false)
   backed_up        Boolean   @default(false)
   friendly_name    String    @default("")
+phone String?
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
   updated_at       DateTime  @default(now()) @db.Timestamptz(6)
   last_used_at     DateTime? @db.Timestamptz(6)
@@ -604,10 +609,10 @@ model ca_clients {
   id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   merchant_id          String?                @db.Uuid
   name                 String
+phone String?
   pan                  String?
   gstin                String?
   email                String?
-  phone                String?
   client_type          String?                @default("individual")
   financial_year       String?                @default("2025-26")
   status               String?                @default("active")
@@ -701,6 +706,7 @@ model documents {
   merchant_id    String?     @db.Uuid
   client_id      String?     @db.Uuid
   file_name      String
+phone String?
   file_url       String
   file_size      BigInt?
   file_type      String?
@@ -842,6 +848,7 @@ model legal_documents {
   merchant_id    String?        @db.Uuid
   matter_id      String?        @db.Uuid
   file_name      String
+phone String?
   file_url       String
   file_size      BigInt?
   file_type      String?
@@ -886,6 +893,7 @@ model legal_hearings {
   id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   matter_id     String?        @db.Uuid
   client_name   String?
+phone String?
   matter_title  String?
   hearing_date  DateTime?      @db.Date
   court         String?
@@ -903,6 +911,7 @@ model legal_matters {
   id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   merchant_id     String?           @db.Uuid
   client_name     String
+phone String?
   client_email    String?
   client_phone    String?
   matter_title    String
@@ -958,7 +967,7 @@ model merchants {
   id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email                String                 @unique
   full_name            String?
-  phone                String?
+phone String?
   business_name        String?
   business_type        String?                @default("freelancer")
   country              String?                @default("IN")
@@ -996,6 +1005,7 @@ model payment_links {
   currency       String?    @default("INR")
   status         String?    @default("active")
   customer_name  String?
+phone String?
   customer_email String?
   customer_phone String?
   paid_at        DateTime?  @db.Timestamptz(6)
@@ -1012,6 +1022,7 @@ model regions {
   code                    String                    @unique @db.VarChar(8)
   slug                    String                    @unique @db.VarChar(32)
   name                    String                    @db.VarChar(128)
+phone String?
   app_base_url            String                    @db.VarChar(255)
   signin_url              String                    @db.VarChar(255)
   signup_url              String                    @db.VarChar(255)

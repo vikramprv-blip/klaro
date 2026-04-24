@@ -6,6 +6,7 @@ type ComplianceTask = {
   id: string;
   client_id: string;
   client_name: string;
+  client_phone: string | null;
   task_type: string;
   title: string;
   description: string | null;
@@ -33,6 +34,7 @@ export default function CACompliancePage() {
   const [generating, setGenerating] = useState(false);
   const [filter, setFilter] = useState("all");
   const [followupMessage, setFollowupMessage] = useState("");
+  const [runningReminders, setRunningReminders] = useState(false);
 
   async function loadTasks() {
     const res = await fetch("/api/ca/compliance/tasks", { cache: "no-store" });
@@ -56,6 +58,15 @@ export default function CACompliancePage() {
     setGenerating(false);
   }
 
+  async function runReminders() {
+    setRunningReminders(true);
+    const res = await fetch("/api/cron/auto-followups", { cache: "no-store" });
+    const data = await res.json();
+    setFollowupMessage(`Auto reminders processed: ${data?.processed ?? 0}`);
+    await loadTasks();
+    setRunningReminders(false);
+  }
+
   async function generateFollowup(task: ComplianceTask, openWhatsapp = false) {
     const res = await fetch("/api/ca/followup", {
       method: "POST",
@@ -77,7 +88,7 @@ export default function CACompliancePage() {
 
       if (openWhatsapp) {
         window.open(
-          `https://wa.me/?text=${encodeURIComponent(data.message)}`,
+          `https://wa.me/${task.client_phone}?text=${encodeURIComponent(data.message)}`,
           "_blank",
           "noopener,noreferrer"
         );
@@ -122,13 +133,23 @@ export default function CACompliancePage() {
           <p className="text-sm text-gray-400 mt-0.5">GST, TDS and ITR tasks generated from client master</p>
         </div>
 
-        <button
-          onClick={generateTasks}
-          disabled={generating}
-          className="bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
-        >
-          {generating ? "Generating..." : "Generate yearly tasks"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={runReminders}
+            disabled={runningReminders}
+            className="border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          >
+            {runningReminders ? "Running..." : "Run reminders"}
+          </button>
+
+          <button
+            onClick={generateTasks}
+            disabled={generating}
+            className="bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
+          >
+            {generating ? "Generating..." : "Generate yearly tasks"}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-3 mb-6">

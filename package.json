@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+"auto-followups": "node scripts/auto-followups.js",
     "dev": "next dev",
     "build": "prisma generate && next build --no-lint",
     "start": "next start",
