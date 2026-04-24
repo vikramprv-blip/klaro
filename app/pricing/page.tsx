@@ -101,15 +101,24 @@ export default function PricingPage() {
       {/* Nav */}
       <nav className="border-b border-gray-100 px-8 py-4 flex items-center justify-between">
         <Link href="/" className="text-xl font-semibold tracking-tight text-gray-900">Klaro</Link>
+
+        <div className="flex items-center gap-6 text-sm">
+          <Link href="/in/ca" className="text-gray-500 hover:text-gray-900">CA Suite</Link>
+          <Link href="#" className="text-gray-500 hover:text-gray-900">Lawyer Suite</Link>
+          <Link href="/pricing" className="font-medium text-gray-900">Pricing</Link>
+          <Link href="#" className="text-gray-500 hover:text-gray-900">Guide</Link>
+        </div>
+
         <div className="flex items-center gap-4">
-          <Link href="/login" className="text-sm text-gray-500 hover:text-gray-900">Sign in</Link>
-          <Link href="/signup" className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Get started</Link>
+          <Link href="/signup" className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+            Get started free
+          </Link>
         </div>
       </nav>
 
       <div className="max-w-6xl mx-auto px-8 py-20">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-20">
           <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 text-xs font-medium px-3 py-1.5 rounded-full mb-6 border border-green-100">
             Free during beta — all plans
           </div>
@@ -118,7 +127,7 @@ export default function PricingPage() {
         </div>
 
         {/* Individual */}
-        <div className="mb-16">
+        <div className="mb-20">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-xs font-medium bg-gray-100 text-gray-600 px-3 py-1 rounded-full">Individual</span>
           </div>
@@ -146,26 +155,26 @@ export default function PricingPage() {
         </div>
 
         {/* CA Suite */}
-        <div className="mb-16">
+        <div className="mb-20">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-xs font-medium bg-blue-50 text-blue-700 px-3 py-1 rounded-full">CA Suite</span>
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-1">For chartered accountants & firms</h2>
           <p className="text-gray-500 text-sm mb-6">Multi-client GST, TDS, ITR, advance tax, documents, deadlines — all modules included.</p>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-6">
             {CA_PLANS.map(plan => <PlanCard key={plan.name} plan={plan} vertical="ca" />)}
           </div>
         </div>
 
         {/* Lawyer Suite */}
-        <div className="mb-16">
+        <div className="mb-20">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-xs font-medium bg-gray-900 text-white px-3 py-1 rounded-full">Lawyer Suite</span>
             <span className="text-xs text-gray-400">Coming soon</span>
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-1">For advocates & law firms</h2>
           <p className="text-gray-500 text-sm mb-6">Case management, AI drafting, deadline tracking, client communication. Join the waitlist.</p>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-6">
             {LAWYER_PLANS.map(plan => <PlanCard key={plan.name} plan={plan} vertical="lawyer" />)}
           </div>
         </div>
