@@ -4,7 +4,7 @@ import Link from "next/link"
 const CA_PLANS = [
   {
     name: "Solo",
-    price: "₹1,499",
+    price: "₹1,768.82",
     period: "/month",
     desc: "Single CA or freelance practitioner",
     highlight: false,
@@ -13,7 +13,7 @@ const CA_PLANS = [
   },
   {
     name: "Practice",
-    price: "₹4,999",
+    price: "₹5,898.82",
     period: "/month",
     desc: "Small firm with 2–10 staff",
     highlight: true,
@@ -22,7 +22,7 @@ const CA_PLANS = [
   },
   {
     name: "Firm",
-    price: "₹14,999",
+    price: "₹17,698.82",
     period: "/month",
     desc: "Mid-size firm, 10–50 staff",
     highlight: false,
@@ -124,6 +124,7 @@ export default function PricingPage() {
           </div>
           <h1 className="text-4xl font-semibold text-gray-900 mb-4 tracking-tight">Simple pricing</h1>
           <p className="text-gray-500 text-lg">Pay by team size, not by feature. All plans include the full module set.</p>
+          <p className="text-xs text-gray-400 mt-2">Prices include 18% GST</p>
         </div>
 
         {/* Individual */}
@@ -137,7 +138,7 @@ export default function PricingPage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-1">Personal</h3>
             <p className="text-xs text-gray-500 mb-4">Salaried, freelance, or business owner</p>
             <div className="flex items-baseline gap-1 mb-6">
-              <span className="text-3xl font-semibold text-gray-900">₹299</span>
+              <span className="text-3xl font-semibold text-gray-900">₹588.82</span>
               <span className="text-sm text-gray-400">/month</span>
             </div>
             <ul className="space-y-2.5 mb-6">
