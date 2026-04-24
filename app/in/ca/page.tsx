@@ -1,31 +1,34 @@
 import { prisma } from "@/lib/prisma";
-import { createServerClient } from "@supabase/ssr";
+import { getCurrentUser } from "@/lib/server/auth";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function CADashboard() {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return []; }, setAll() {} } }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/signin");
   }
 
+  const org = await prisma.organization.findFirst({
+    where: { userId: user.id },
+  });
+
+  if (!org) {
+    redirect("/onboarding");
+  }
+
   const tasks = await prisma.workItem.findMany({
+    where: { organizationId: org.id },
     orderBy: { createdAt: "desc" },
     take: 5,
     include: { client: true },
   });
 
-  const clients = await prisma.client.count();
+  const clients = await prisma.client.count({
+    where: { organizationId: org.id },
+  });
 
   return (
     <main className="p-6 space-y-6">
@@ -48,7 +51,7 @@ export default async function CADashboard() {
 
         {tasks.length === 0 ? (
           <div className="border rounded-lg p-4 text-sm text-gray-500">
-            No tasks yet.
+            No tasks yet. Add a client to get started.
           </div>
         ) : (
           <div className="space-y-3">
@@ -67,6 +70,15 @@ export default async function CADashboard() {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="flex gap-3">
+        <a href="/clients" className="border px-4 py-2 rounded-lg text-sm">
+          + Add client
+        </a>
+        <a href="/documents" className="border px-4 py-2 rounded-lg text-sm">
+          Upload document
+        </a>
       </div>
     </main>
   );

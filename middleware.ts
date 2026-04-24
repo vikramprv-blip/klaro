@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const protectedPrefixes = [
+  "/admin",
   "/in",
   "/us",
   "/uk",
@@ -67,6 +68,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/admin/:path*",
     "/in/:path*",
     "/us/:path*",
     "/uk/:path*",
