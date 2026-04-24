@@ -18,7 +18,7 @@ export default function PostLoginPage() {
       }
 
       if (!data.org) {
-        window.location.href = "/pricing";
+        window.location.href = "/onboarding";
         return;
       }
 
