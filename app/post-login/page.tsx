@@ -8,6 +8,15 @@ export default function PostLoginPage() {
       const res = await fetch("/api/me");
       const data = await res.json();
 
+      
+      if (data.user) {
+        await fetch("/api/onboarding/seed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: data.user.id }),
+        });
+      }
+
       if (!data.org) {
         window.location.href = "/pricing";
         return;
