@@ -1,0 +1,10 @@
+DO $$ BEGIN
+  CREATE TYPE "PaymentStatus" AS ENUM ('FREE', 'TRIAL', 'PAID', 'PAST_DUE', 'CANCELED');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+ALTER TABLE "User"
+  ADD COLUMN IF NOT EXISTS "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'FREE',
+  ADD COLUMN IF NOT EXISTS "paidUntil" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "trialEndsAt" TIMESTAMP(3);

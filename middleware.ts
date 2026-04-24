@@ -1,3 +1,13 @@
+
+const PAID_LOCKED_PATHS = [
+  "/app",
+  "/admin",
+  "/clients",
+  "/work-items",
+  "/documents",
+  "/in/ca",
+]
+
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
