@@ -179,7 +179,29 @@ export default function CACompliancePage() {
                         <option value="done">Done</option>
                       </select>
                     </td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-400">{task.priority}</td>
+                    <td className="px-4 py-3 text-right">
+<button
+onClick={async () => {
+  const res = await fetch("/api/ca/followup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      clientName: task.client_name,
+      taskType: task.task_type,
+      period: task.period,
+    }),
+  });
+
+  const data = await res.json();
+  if (data?.message) {
+    alert(data.message);
+  }
+}}
+className="text-xs border px-2 py-1 rounded hover:bg-gray-100"
+>
+Follow-up
+</button>
+</td>
                   </tr>
                 );
               })
