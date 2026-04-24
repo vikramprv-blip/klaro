@@ -11,9 +11,10 @@ const navItems = [
 
 export default function AppHeader() {
   const pathname = usePathname()
+  const path = pathname || ""
   
   // Hide header on landing page — it has its own nav
-  if (pathname === "/" || pathname === "/in") return null
+  if (path === "/" || path === "/in") return null
 
   return (
     <header className="border-b bg-white sticky top-0 z-40">
@@ -21,7 +22,7 @@ export default function AppHeader() {
         <Link href="/" className="text-base font-semibold text-gray-900">Klaro</Link>
         <nav className="flex items-center gap-1">
           {navItems.map(({ href, label }) => {
-            const active = pathname.startsWith(href)
+            const active = path.startsWith(href)
             return (
               <Link key={href} href={href}
                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${

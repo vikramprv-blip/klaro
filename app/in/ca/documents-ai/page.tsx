@@ -76,9 +76,9 @@ const SUGGESTED_PROMPTS = [
 function DocumentsAIPageInner() {
   const searchParams = useSearchParams()
   const [clients, setClients] = useState<ClientItem[]>([])
-  const initialClientId = searchParams.get("client_id") || ""
-  const initialDocumentId = searchParams.get("document_id") || ""
-  const initialWorkItemId = searchParams.get("work_item_id") || ""
+  const initialClientId = searchParams?.get("client_id") || ""
+  const initialDocumentId = searchParams?.get("document_id") || ""
+  const initialWorkItemId = searchParams?.get("work_item_id") || ""
   const [selectedClientId, setSelectedClientId] = useState(initialClientId)
   const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [loadingDocs, setLoadingDocs] = useState(false)

@@ -6,7 +6,8 @@ import FileUpload from "@/components/file-upload"
 const DOC_TYPES = ["ID", "Contract", "Invoice", "Evidence", "Other"]
 
 export default function ClientPage() {
-  const { id } = useParams()
+  const params = useParams()
+  const id = Array.isArray(params?.id) ? params.id[0] : params?.id
 
   const [client, setClient] = useState<any>(null)
   const [docs, setDocs] = useState<any[]>([])

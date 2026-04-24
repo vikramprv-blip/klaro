@@ -32,7 +32,8 @@ const NAV: NavSection[] = [
 interface Props { merchant: { email: string; plan: string; full_name: string } }
 
 export default function KlaroSidebar({ merchant }: Props) {
-  const path   = usePathname()
+  const pathname = usePathname()
+  const path = pathname || ""
   const router = useRouter()
 
   const isActive = (href: string) =>

@@ -14,8 +14,8 @@ const VERTICALS = [
 export default function SignupClient() {
   const params    = useSearchParams()
   const router    = useRouter()
-  const [step, setStep]           = useState<"vertical"|"details">(params.get("vertical") ? "details" : "vertical")
-  const [vertical, setVertical]   = useState(params.get("vertical") ?? "")
+  const [step, setStep]           = useState<"vertical"|"details">(params?.get("vertical") ? "details" : "vertical")
+  const [vertical, setVertical]   = useState(params?.get("vertical") ?? "")
   const [name, setName]           = useState("")
   const [email, setEmail]         = useState("")
   const [password, setPassword]   = useState("")

@@ -14,7 +14,7 @@ const AI_SERVICES = [
 ]
 
 export default function CAAILayout({ children }: { children: React.ReactNode }) {
-  const path = usePathname()
+  const path = usePathname() || ""
   return (
     <div className="flex min-h-screen">
       <aside className="w-56 border-r border-gray-100 px-3 py-6 flex flex-col gap-1 shrink-0">

@@ -18,7 +18,8 @@ const NAV = [
 interface Props { merchant: { email: string; plan: string; full_name: string } }
 
 export default function SparoSidebar({ merchant }: Props) {
-  const path   = usePathname()
+  const pathname = usePathname()
+  const path = pathname || ""
   const router = useRouter()
   const isActive = (href: string) => href === "/sparo/app" ? path === href : path.startsWith(href)
 
