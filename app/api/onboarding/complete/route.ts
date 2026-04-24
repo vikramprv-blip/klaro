@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 
   if (!user) return new NextResponse("Unauthorized", { status: 401 });
 
-  await prisma.organization.create({
+  const org = await prisma.organization.create({
     data: {
       userId: user.id,
       email: user.email || "",
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
     data: {
       name: client || firm || "First Client",
       email: "",
+      organizationId: org.id,
     },
   });
 
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
       description: "Auto-created to get you started",
       status: "TODO",
       clientId: createdClient.id,
+      organizationId: org.id,
     },
   });
 

@@ -1,8 +1,24 @@
 import { prisma } from "@/lib/prisma";
+import { createServerClient } from "@supabase/ssr";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function CADashboard() {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll() { return []; }, setAll() {} } }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/signin");
+  }
+
   const tasks = await prisma.workItem.findMany({
     orderBy: { createdAt: "desc" },
     take: 5,
@@ -15,7 +31,6 @@ export default async function CADashboard() {
     <main className="p-6 space-y-6">
       <h1 className="text-2xl font-semibold">Your workspace</h1>
 
-      {/* Top stats */}
       <div className="grid grid-cols-2 gap-4">
         <div className="border rounded-lg p-4">
           <p className="text-sm text-gray-500">Clients</p>
@@ -28,13 +43,12 @@ export default async function CADashboard() {
         </div>
       </div>
 
-      {/* What to do today */}
       <div>
         <h2 className="text-lg font-semibold mb-3">What to do today</h2>
 
         {tasks.length === 0 ? (
           <div className="border rounded-lg p-4 text-sm text-gray-500">
-            No tasks yet. Add a client to get started.
+            No tasks yet.
           </div>
         ) : (
           <div className="space-y-3">
@@ -53,16 +67,6 @@ export default async function CADashboard() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Quick actions */}
-      <div className="flex gap-3">
-        <a href="/clients" className="border px-4 py-2 rounded-lg text-sm">
-          + Add client
-        </a>
-        <a href="/documents" className="border px-4 py-2 rounded-lg text-sm">
-          Upload document
-        </a>
       </div>
     </main>
   );
