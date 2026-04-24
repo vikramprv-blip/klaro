@@ -1,23 +1,39 @@
-import { NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { data, error } = await supabaseAdmin
-    .from("ca_clients")
-    .select("*")
-    .eq("is_active", true)
-    .order("name")
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  const clients = await prisma.client.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      gstin: true,
+    },
+  });
+
+  return NextResponse.json(clients);
 }
 
-export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { data, error } = await supabaseAdmin
-    .from("ca_clients")
-    .insert(body)
-    .select()
-    .single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+
+    const client = await prisma.client.create({
+      data: {
+        name: body.name,
+        email: body.email || null,
+        phone: body.phone || null,
+        gstin: body.gstin || null,
+      },
+    });
+
+    return NextResponse.json({ ok: true, client });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ ok: false }, { status: 500 });
+  }
 }
