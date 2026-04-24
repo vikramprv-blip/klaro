@@ -17,11 +17,3 @@ SET
 WHERE payment_status = 'PAID'
   AND paid_until IS NOT NULL
   AND paid_until < now();
-
--- HARD DELETE placeholder (customize tables before using)
--- Example:
--- DELETE FROM public."WorkItem"
--- WHERE "userId" IN (
---   SELECT user_id FROM public.user_billing
---   WHERE data_delete_at < now()
--- );
