@@ -56,7 +56,7 @@ export default function CACompliancePage() {
     setGenerating(false);
   }
 
-  async function generateFollowup(task: ComplianceTask) {
+  async function generateFollowup(task: ComplianceTask, openWhatsapp = false) {
     const res = await fetch("/api/ca/followup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -74,6 +74,15 @@ export default function CACompliancePage() {
     if (data?.message) {
       setFollowupMessage(data.message);
       await navigator.clipboard?.writeText(data.message);
+
+      if (openWhatsapp) {
+        window.open(
+          `https://wa.me/?text=${encodeURIComponent(data.message)}`,
+          "_blank",
+          "noopener,noreferrer"
+        );
+      }
+
       await loadTasks();
     }
   }
@@ -230,12 +239,20 @@ export default function CACompliancePage() {
                         : "—"}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => generateFollowup(task)}
-                        className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
-                      >
-                        Generate follow-up
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => generateFollowup(task)}
+                          className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                        >
+                          Copy
+                        </button>
+                        <button
+                          onClick={() => generateFollowup(task, true)}
+                          className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-lg hover:bg-gray-700"
+                        >
+                          WhatsApp
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
