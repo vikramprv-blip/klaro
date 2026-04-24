@@ -1,23 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-const hostToPath: Record<string, string> = {
-  'in.klaro.services': '/india',
-  'ae.klaro.services': '/uae',
-  'us.klaro.services': '/us',
-  'eu.klaro.services': '/eu',
-}
+const protectedPrefixes = [
+  "/dashboard",
+  "/in",
+  "/us",
+  "/uk",
+  "/eu",
+  "/uae",
+  "/asia",
+  "/work-items",
+  "/documents",
+  "/clients",
+  "/invoices",
+  "/settings",
+];
 
 export function middleware(req: NextRequest) {
-  const host = (req.headers.get('host') || '').split(':')[0]
-  const pathname = req.nextUrl.pathname
+  const { pathname, search } = req.nextUrl;
 
-  if (pathname === '/' && hostToPath[host]) {
-    return NextResponse.redirect(new URL(hostToPath[host], req.url))
+  const isProtected = protectedPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+
+  if (!isProtected) return NextResponse.next();
+
+  const hasSession =
+    req.cookies.has("next-auth.session-token") ||
+    req.cookies.has("__Secure-next-auth.session-token") ||
+    req.cookies.has("authjs.session-token") ||
+    req.cookies.has("__Secure-authjs.session-token");
+
+  if (!hasSession) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/signin";
+    url.searchParams.set("callbackUrl", pathname + search);
+    return NextResponse.redirect(url);
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/'],
-}
+  matcher: [
+    "/dashboard/:path*",
+    "/in/:path*",
+    "/us/:path*",
+    "/uk/:path*",
+    "/eu/:path*",
+    "/uae/:path*",
+    "/asia/:path*",
+    "/work-items/:path*",
+    "/documents/:path*",
+    "/clients/:path*",
+    "/invoices/:path*",
+    "/settings/:path*",
+  ],
+};
