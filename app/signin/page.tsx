@@ -19,6 +19,43 @@ export default function SignInPage() {
 
     if (error) {
       alert(error.message);
+      return;
+    }
+
+    const session = await supabase.auth.getUser();
+    const user = session.data.user;
+
+    const signupIntent = localStorage.getItem("klaro:signup");
+    if (user && signupIntent) {
+      const { vertical, plan } = JSON.parse(signupIntent);
+
+      await fetch("/api/onboarding", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          vertical,
+          plan
+        })
+      });
+    }
+
+
+    const redirectIntent = localStorage.getItem("klaro:signup");
+
+    if (redirectIntent) {
+      const { vertical } = JSON.parse(redirectIntent);
+
+      if (vertical === "ca") {
+        window.location.href = "/in/ca";
+      } else if (vertical === "lawyer") {
+        window.location.href = "/in/lawyer";
+      } else {
+        window.location.href = "/";
+      }
     } else {
       window.location.href = "/in/ca";
     }
