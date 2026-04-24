@@ -11,6 +11,7 @@ const NAV = [
   { label: "ITR tracker",     href: "/in/ca/itr",         icon: "◎" },
   { label: "Advance tax",     href: "/in/ca/advance-tax", icon: "◆" },
   { label: "Deadlines",       href: "/in/ca/deadlines",   icon: "◷" },
+  { label: "Compliance",      href: "/in/ca/compliance",  icon: "▤" },
   { label: "Documents",       href: "/in/ca/documents",   icon: "▣" },
 { label: "AI Documents", href: "/in/ca/documents-ai", icon: "✺" },
 ]
