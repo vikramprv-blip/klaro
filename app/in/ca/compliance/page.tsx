@@ -31,6 +31,7 @@ export default function CACompliancePage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [followupMessage, setFollowupMessage] = useState("");
 
   async function loadTasks() {
     const res = await fetch("/api/ca/compliance/tasks", { cache: "no-store" });
@@ -52,6 +53,27 @@ export default function CACompliancePage() {
     });
     await loadTasks();
     setGenerating(false);
+  }
+
+  async function generateFollowup(task: ComplianceTask) {
+    const res = await fetch("/api/ca/followup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        complianceTaskId: task.id,
+        clientId: task.client_id,
+        clientName: task.client_name,
+        taskType: task.task_type,
+        period: task.period,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data?.message) {
+      setFollowupMessage(data.message);
+      await navigator.clipboard?.writeText(data.message);
+    }
   }
 
   async function updateStatus(id: string, status: string) {
@@ -132,6 +154,23 @@ export default function CACompliancePage() {
           </button>
         ))}
       </div>
+
+      {followupMessage ? (
+        <div className="border border-gray-200 rounded-xl p-4 mb-4 bg-gray-50">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Follow-up copied</p>
+              <p className="text-sm text-gray-700">{followupMessage}</p>
+            </div>
+            <button
+              onClick={() => navigator.clipboard?.writeText(followupMessage)}
+              className="text-xs border px-3 py-1.5 rounded-lg hover:bg-white"
+            >
+              Copy again
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="border border-gray-100 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
