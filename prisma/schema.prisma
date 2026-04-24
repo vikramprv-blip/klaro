@@ -1196,3 +1196,15 @@ model WhatsappOutbox {
   @@index([status, createdAt])
   @@schema("public")
 }
+
+model Organization {
+  id        String   @id @default(cuid())
+  userId    String   @db.Uuid
+  email     String
+  vertical  String
+  plan      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@schema("public")
+}

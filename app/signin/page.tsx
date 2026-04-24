@@ -50,14 +50,14 @@ export default function SignInPage() {
       const { vertical } = JSON.parse(redirectIntent);
 
       if (vertical === "ca") {
-        window.location.href = "/in/ca";
+        window.location.href = "/post-login";
       } else if (vertical === "lawyer") {
-        window.location.href = "/in/lawyer";
+        window.location.href = "/post-login";
       } else {
         window.location.href = "/";
       }
     } else {
-      window.location.href = "/in/ca";
+      window.location.href = "/post-login";
     }
   }
 
