@@ -1332,4 +1332,5 @@ model CompanySettings {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@map("company_settings")
+  @@schema("public")
 }
