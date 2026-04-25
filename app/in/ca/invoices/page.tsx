@@ -8,6 +8,10 @@ export default function InvoicesPage() {
   const [form, setForm] = useState({
     client_id: "",
     amount: "",
+    service_type: "Professional Services",
+    gst_rate: "18",
+    due_date: "",
+    payment_method: "",
   });
 
   async function load() {
@@ -26,10 +30,21 @@ export default function InvoicesPage() {
       body: JSON.stringify({
         client_id: form.client_id,
         amount: Number(form.amount),
+        service_type: form.service_type,
+        gst_rate: Number(form.gst_rate || 18),
+        due_date: form.due_date || null,
+        payment_method: form.payment_method || null,
       }),
     });
 
-    setForm({ client_id: "", amount: "" });
+    setForm({
+      client_id: "",
+      amount: "",
+      service_type: "Professional Services",
+      gst_rate: "18",
+      due_date: "",
+      payment_method: "",
+    });
     load();
   }
 
@@ -77,6 +92,39 @@ export default function InvoicesPage() {
           className="border p-2 mr-2"
         />
 
+        <input
+          placeholder="Service Type"
+          value={form.service_type}
+          onChange={(e) => setForm({ ...form, service_type: e.target.value })}
+          className="border p-2 mr-2"
+        />
+
+        <input
+          placeholder="GST %"
+          value={form.gst_rate}
+          onChange={(e) => setForm({ ...form, gst_rate: e.target.value })}
+          className="border p-2 mr-2 w-24"
+        />
+
+        <input
+          type="date"
+          value={form.due_date}
+          onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+          className="border p-2 mr-2"
+        />
+
+        <select
+          value={form.payment_method}
+          onChange={(e) => setForm({ ...form, payment_method: e.target.value })}
+          className="border p-2 mr-2"
+        >
+          <option value="">Payment Mode</option>
+          <option value="upi">UPI</option>
+          <option value="bank_transfer">Bank Transfer</option>
+          <option value="cash">Cash</option>
+          <option value="cheque">Cheque</option>
+        </select>
+
         <button
           onClick={createInvoice}
           className="bg-black text-white px-4 py-2"
@@ -91,6 +139,9 @@ export default function InvoicesPage() {
           <tr className="bg-gray-100">
             <th className="p-2">Number</th>
             <th className="p-2">Client</th>
+            <th className="p-2">Service</th>
+            <th className="p-2">Base</th>
+            <th className="p-2">GST</th>
             <th className="p-2">Total</th>
             <th className="p-2">Status</th>
             <th className="p-2">Due</th>
@@ -107,6 +158,9 @@ export default function InvoicesPage() {
             >
               <td className="p-2">{inv.invoice_number}</td>
               <td className="p-2">{inv.ca_clients?.name || "-"}</td>
+              <td className="p-2">{inv.service_type || "-"}</td>
+              <td className="p-2">₹{inv.amount}</td>
+              <td className="p-2">₹{inv.gst_amount}</td>
               <td className="p-2">₹{inv.total_amount}</td>
               <td className="p-2">{inv.status}</td>
               <td className="p-2">
