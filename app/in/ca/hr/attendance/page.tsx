@@ -44,6 +44,7 @@ export default function AttendancePage() {
   return (
     <main className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Attendance</h1>
+<div className="mt-2"><a href="/in/ca/hr/attendance/leave" className="text-blue-600 text-sm">Apply Leave</a></div>
 
       <form onSubmit={handleSubmit} className="grid gap-3 border p-4 rounded-xl md:grid-cols-2">
         <select name="employeeId" className="border p-2 rounded" required>
