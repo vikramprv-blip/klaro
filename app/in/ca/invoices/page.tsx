@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
   const [form, setForm] = useState({
     client_id: "",
     amount: "",
@@ -15,13 +16,15 @@ export default function InvoicesPage() {
   });
 
   async function load() {
-    const [invRes, clientRes] = await Promise.all([
+    const [invRes, clientRes, summaryRes] = await Promise.all([
       fetch("/api/invoices"),
       fetch("/api/ca/clients"),
+      fetch("/api/invoices/summary"),
     ]);
 
     setInvoices(await invRes.json());
     setClients(await clientRes.json());
+    setSummary(await summaryRes.json());
   }
 
   async function createInvoice() {
@@ -67,6 +70,31 @@ export default function InvoicesPage() {
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Invoices</h1>
+
+      {summary && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="border rounded p-4">
+            <div className="text-sm text-gray-500">Total</div>
+            <div className="text-xl font-bold">₹{summary.totalAmount}</div>
+            <div className="text-xs">{summary.totalInvoices} invoices</div>
+          </div>
+          <div className="border rounded p-4">
+            <div className="text-sm text-gray-500">Paid</div>
+            <div className="text-xl font-bold">₹{summary.paidAmount}</div>
+            <div className="text-xs">{summary.paidInvoices} invoices</div>
+          </div>
+          <div className="border rounded p-4">
+            <div className="text-sm text-gray-500">Unpaid</div>
+            <div className="text-xl font-bold">₹{summary.unpaidAmount}</div>
+            <div className="text-xs">{summary.unpaidInvoices} invoices</div>
+          </div>
+          <div className="border rounded p-4 bg-red-50">
+            <div className="text-sm text-gray-500">Overdue</div>
+            <div className="text-xl font-bold">₹{summary.overdueAmount}</div>
+            <div className="text-xs">{summary.overdueInvoices} invoices</div>
+          </div>
+        </div>
+      )}
 
       {/* CREATE */}
       <div className="border p-4 rounded">
