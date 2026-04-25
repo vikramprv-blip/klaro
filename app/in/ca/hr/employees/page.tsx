@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([])
+  const [error, setError] = useState<string>("")
   const [editing, setEditing] = useState<any>(null)
 
   async function load() {
@@ -18,6 +19,7 @@ export default function EmployeesPage() {
 
   async function handleSubmit(e: any) {
     e.preventDefault()
+    setError("")
     const form = new FormData(e.target)
 
     const payload = {
@@ -30,19 +32,19 @@ export default function EmployeesPage() {
       salary: Number(form.get("salary"))
     }
 
-    if (editing) {
-      await fetch(`/api/hr/employees/${editing.id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload)
-      })
-      setEditing(null)
-    } else {
-      await fetch("/api/hr/employees", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      })
+    const res = await fetch("/api/hr/employees", {
+      method: editing ? "PUT" : "POST",
+      body: JSON.stringify(payload)
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.error || "Something went wrong")
+      return
     }
 
+    setEditing(null)
     e.target.reset()
     load()
   }
@@ -61,6 +63,8 @@ export default function EmployeesPage() {
   return (
     <main className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Employees</h1>
+
+      {error && <div className="text-red-600 text-sm">{error}</div>}
 
       <form onSubmit={handleSubmit} className="grid gap-3 border p-4 rounded-xl md:grid-cols-2">
         <input name="name" defaultValue={editing?.name} placeholder="Name" className="border p-2 rounded" />
@@ -89,17 +93,10 @@ export default function EmployeesPage() {
             </div>
 
             <div className="flex gap-3">
-              <button
-                onClick={() => startEdit(e)}
-                className="text-blue-600 text-xs"
-              >
+              <button onClick={() => startEdit(e)} className="text-blue-600 text-xs">
                 Edit
               </button>
-
-              <button
-                onClick={() => handleDelete(e.id)}
-                className="text-red-600 text-xs"
-              >
+              <button onClick={() => handleDelete(e.id)} className="text-red-600 text-xs">
                 Delete
               </button>
             </div>

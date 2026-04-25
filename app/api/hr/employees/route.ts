@@ -1,32 +1,39 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const orgId = searchParams.get("orgId")
-
-  const employees = await prisma.employee.findMany({
-    where: { orgId: orgId || undefined },
-    orderBy: { createdAt: "desc" }
-  })
-
-  return NextResponse.json(employees)
+export async function GET() {
+  try {
+    const employees = await prisma.employee.findMany({
+      orderBy: { createdAt: "desc" }
+    })
+    return NextResponse.json(employees)
+  } catch (e) {
+    return NextResponse.json({ error: "Failed to fetch employees" }, { status: 500 })
+  }
 }
 
 export async function POST(req: Request) {
-  const body = await req.json()
+  try {
+    const body = await req.json()
 
-  const employee = await prisma.employee.create({
-    data: {
-      orgId: body.orgId,
-      name: body.name,
-      email: body.email,
-      phone: body.phone,
-      role: body.role,
-      department: body.department,
-      salary: body.salary
+    if (!body.name || !body.email) {
+      return NextResponse.json({ error: "Name and email are required" }, { status: 400 })
     }
-  })
 
-  return NextResponse.json(employee)
+    const employee = await prisma.employee.create({
+      data: {
+        orgId: body.orgId || "demo-org",
+        name: body.name,
+        email: body.email,
+        phone: body.phone || null,
+        role: body.role || "staff",
+        department: body.department || null,
+        salary: Number(body.salary || 0)
+      }
+    })
+
+    return NextResponse.json(employee)
+  } catch (e) {
+    return NextResponse.json({ error: "Failed to create employee" }, { status: 500 })
+  }
 }
