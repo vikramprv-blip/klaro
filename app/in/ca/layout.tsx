@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation"
 const NAV = [
   { label: "Overview",        href: "/in/ca",             icon: "⊞" },
   { label: "AI services",     href: "/in/ca/ai",          icon: "✦" },
-  { label: "Clients",         href: "/in/ca/clients",     icon: "◉" },
+  { label: "Clients", href: "/in/ca/clients", icon: "◉" },
+  { label: "HR", href: "/in/ca/hr", icon: "👥" },
   { label: "GST filings",     href: "/in/ca/gst",         icon: "◈" },
   { label: "TDS compliance",  href: "/in/ca/tds",         icon: "◇" },
   { label: "ITR tracker",     href: "/in/ca/itr",         icon: "◎" },
