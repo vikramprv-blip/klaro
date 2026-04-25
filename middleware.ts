@@ -57,11 +57,13 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  const isApi = pathname.startsWith("/api");
+
   const isProtected = protectedPrefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 
-  if (isProtected && !user) {
+  if ((isProtected || isApi) && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/signin";
     url.searchParams.set("callbackUrl", pathname + request.nextUrl.search);
@@ -79,10 +81,12 @@ export async function middleware(request: NextRequest) {
   if (user) {
     const email = user.email || "";
 
+    const isPublicApi = pathname.startsWith("/api/auth") || pathname.startsWith("/api/billing") || pathname.startsWith("/api/payments");
+
     const isBillingPage = pathname.startsWith("/billing");
     const isPublic = pathname === "/" || pathname.startsWith("/pricing");
 
-    if (!isBillingPage && !isPublic) {
+    if (!isBillingPage && !isPublic && !(isApi && isPublicApi)) {
       const hasPlan = await hasActivePlan(email);
 
       if (!hasPlan) {
