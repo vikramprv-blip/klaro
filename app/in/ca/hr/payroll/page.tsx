@@ -5,13 +5,13 @@ import { useEffect, useState } from "react"
 export default function PayrollPage() {
   const [records, setRecords] = useState<any[]>([])
   const [employees, setEmployees] = useState<any[]>([])
+  const [syncMsg, setSyncMsg] = useState<string>("")
 
   async function load() {
     const [payrollRes, employeesRes] = await Promise.all([
       fetch("/api/hr/payroll"),
       fetch("/api/hr/employees")
     ])
-
     setRecords(await payrollRes.json())
     setEmployees(await employeesRes.json())
   }
@@ -41,9 +41,26 @@ export default function PayrollPage() {
     load()
   }
 
+  async function syncToBilling() {
+    setSyncMsg("Syncing...")
+    const res = await fetch("/api/hr/payroll/summary", {
+      method: "POST",
+      body: JSON.stringify({ orgId: "demo-org" })
+    })
+    const data = await res.json()
+    setSyncMsg(`Synced. Payroll Cost: ₹${data.payrollCost}`)
+  }
+
   return (
     <main className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Payroll</h1>
+
+      <div className="flex items-center gap-3">
+        <button onClick={syncToBilling} className="bg-black text-white px-4 py-2 rounded">
+          Sync to Billing
+        </button>
+        {syncMsg && <span className="text-sm text-gray-600">{syncMsg}</span>}
+      </div>
 
       <form onSubmit={handleSubmit} className="grid gap-3 border p-4 rounded-xl md:grid-cols-2">
         <select name="employeeId" className="border p-2 rounded" required>
