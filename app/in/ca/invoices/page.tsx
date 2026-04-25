@@ -10,6 +10,7 @@ export default function InvoicesPage() {
   const [reminders, setReminders] = useState<any[]>([]);
   const [reminderCount, setReminderCount] = useState(0);
   const [analytics, setAnalytics] = useState<any[]>([]);
+  const [statusFilter, setStatusFilter] = useState("all");
   const [form, setForm] = useState({
     client_id: "",
     amount: "",
@@ -254,6 +255,20 @@ export default function InvoicesPage() {
         </button>
       </div>
 
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">Filter:</span>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="all">All</option>
+          <option value="draft">Draft</option>
+          <option value="paid">Paid</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </div>
+
       {/* LIST */}
       <table className="w-full border">
         <thead>
@@ -270,7 +285,13 @@ export default function InvoicesPage() {
           </tr>
         </thead>
         <tbody>
-          {invoices.map((inv) => (
+          {invoices
+            .filter((inv) => {
+              if (statusFilter === "all") return true;
+              if (statusFilter === "overdue") return inv.isOverdue;
+              return inv.status === statusFilter;
+            })
+            .map((inv) => (
             <tr
               key={inv.id}
               className={`border-t ${
