@@ -33,6 +33,18 @@ export default function InvoicesPage() {
     load();
   }
 
+  async function markPaid(id: string) {
+    await fetch(`/api/invoices/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        status: "paid",
+        paid_date: new Date().toISOString(),
+      }),
+    });
+
+    load();
+  }
+
   useEffect(() => {
     load();
   }, []);
@@ -82,24 +94,35 @@ export default function InvoicesPage() {
             <th className="p-2">Total</th>
             <th className="p-2">Status</th>
             <th className="p-2">Due</th>
+            <th className="p-2">Action</th>
           </tr>
         </thead>
         <tbody>
           {invoices.map((inv) => (
-            <tr key={inv.id} className="border-t">
+            <tr
+              key={inv.id}
+              className={`border-t ${
+                inv.isOverdue ? "bg-red-50" : ""
+              }`}
+            >
               <td className="p-2">{inv.invoice_number}</td>
               <td className="p-2">{inv.ca_clients?.name || "-"}</td>
               <td className="p-2">₹{inv.total_amount}</td>
-              <td className="p-2">
-                {inv.status}
-                {inv.isOverdue && (
-                  <span className="text-red-500 ml-2">OVERDUE</span>
-                )}
-              </td>
+              <td className="p-2">{inv.status}</td>
               <td className="p-2">
                 {inv.due_date
                   ? new Date(inv.due_date).toLocaleDateString()
                   : "-"}
+              </td>
+              <td className="p-2">
+                {inv.status !== "paid" && (
+                  <button
+                    onClick={() => markPaid(inv.id)}
+                    className="bg-green-600 text-white px-3 py-1"
+                  >
+                    Mark Paid
+                  </button>
+                )}
               </td>
             </tr>
           ))}
