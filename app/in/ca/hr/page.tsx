@@ -1,30 +1,39 @@
-import Link from "next/link"
+"use client"
 
-export default function HRPage() {
+import { useEffect, useState } from "react"
+
+export default function HRDashboard() {
+  const [data, setData] = useState<any>(null)
+
+  useEffect(() => {
+    fetch("/api/hr/summary")
+      .then(res => res.json())
+      .then(setData)
+  }, [])
+
+  if (!data) {
+    return <div className="p-6">Loading HR dashboard...</div>
+  }
+
   return (
     <main className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">HR + Compliance</h1>
-        <p className="text-sm text-gray-600">
-          Manage employees, attendance, payroll, and HR audit readiness.
-        </p>
-      </div>
+      <h1 className="text-2xl font-bold">HR Dashboard</h1>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Link href="/admin/hr/employees" className="rounded-xl border p-5 hover:bg-gray-50">
-          <h2 className="font-semibold">Employees</h2>
-          <p className="text-sm text-gray-600">Employee master records and roles.</p>
-        </Link>
+        <div className="border p-4 rounded-xl">
+          <h2 className="text-sm text-gray-500">Employees</h2>
+          <p className="text-xl font-semibold">{data.totalEmployees}</p>
+        </div>
 
-        <Link href="/admin/hr/attendance" className="rounded-xl border p-5 hover:bg-gray-50">
-          <h2 className="font-semibold">Attendance</h2>
-          <p className="text-sm text-gray-600">Daily attendance and leave tracking.</p>
-        </Link>
+        <div className="border p-4 rounded-xl">
+          <h2 className="text-sm text-gray-500">Attendance Records</h2>
+          <p className="text-xl font-semibold">{data.totalAttendanceRecords}</p>
+        </div>
 
-        <Link href="/admin/hr/payroll" className="rounded-xl border p-5 hover:bg-gray-50">
-          <h2 className="font-semibold">Payroll</h2>
-          <p className="text-sm text-gray-600">Payroll records, deductions, and payouts.</p>
-        </Link>
+        <div className="border p-4 rounded-xl">
+          <h2 className="text-sm text-gray-500">Total Payroll</h2>
+          <p className="text-xl font-semibold">₹{data.totalPayroll}</p>
+        </div>
       </div>
     </main>
   )
