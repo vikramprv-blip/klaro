@@ -78,6 +78,16 @@ export default function InvoicesPage() {
     load();
   }
 
+  async function deleteInvoice(id: string) {
+    if (!confirm("Delete this invoice?")) return;
+
+    await fetch(`/api/invoices/${id}`, {
+      method: "DELETE",
+    });
+
+    load();
+  }
+
   async function markPaid(id: string) {
     await fetch(`/api/invoices/${id}`, {
       method: "PATCH",
@@ -327,14 +337,23 @@ export default function InvoicesPage() {
                   : "-"}
               </td>
               <td className="p-2">
-                {inv.status !== "paid" && (
+                <div className="flex gap-2">
+                  {inv.status !== "paid" && (
+                    <button
+                      onClick={() => markPaid(inv.id)}
+                      className="bg-green-600 text-white px-3 py-1"
+                    >
+                      Mark Paid
+                    </button>
+                  )}
+
                   <button
-                    onClick={() => markPaid(inv.id)}
-                    className="bg-green-600 text-white px-3 py-1"
+                    onClick={() => deleteInvoice(inv.id)}
+                    className="bg-red-600 text-white px-3 py-1"
                   >
-                    Mark Paid
+                    Delete
                   </button>
-                )}
+                </div>
               </td>
             </tr>
           ))}
