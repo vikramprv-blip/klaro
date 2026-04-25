@@ -11,6 +11,7 @@ export default function InvoicesPage() {
   const [reminderCount, setReminderCount] = useState(0);
   const [analytics, setAnalytics] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const [form, setForm] = useState({
     client_id: "",
     amount: "",
@@ -256,6 +257,13 @@ export default function InvoicesPage() {
       </div>
 
       <div className="flex items-center gap-2">
+        <input
+          placeholder="Search invoice, client, service..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border p-2 rounded w-72"
+        />
+
         <span className="text-sm font-medium">Filter:</span>
         <select
           value={statusFilter}
@@ -287,6 +295,14 @@ export default function InvoicesPage() {
         <tbody>
           {invoices
             .filter((inv) => {
+              const q = search.toLowerCase().trim();
+              const matchesSearch =
+                !q ||
+                String(inv.invoice_number || "").toLowerCase().includes(q) ||
+                String(inv.ca_clients?.name || "").toLowerCase().includes(q) ||
+                String(inv.service_type || "").toLowerCase().includes(q);
+
+              if (!matchesSearch) return false;
               if (statusFilter === "all") return true;
               if (statusFilter === "overdue") return inv.isOverdue;
               return inv.status === statusFilter;
