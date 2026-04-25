@@ -364,6 +364,13 @@ export default function InvoicesPage() {
               </td>
               <td className="p-2">
                 <div className="flex gap-2">
+                  <a
+                    href={`/in/ca/invoices/${inv.id}`}
+                    className="bg-black text-white px-3 py-1"
+                  >
+                    View
+                  </a>
+
                   {inv.status !== "paid" && (
                     <button
                       onClick={() => markPaid(inv.id)}
