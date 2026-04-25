@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url)
+    const orgId = searchParams.get("orgId") || "demo-org"
+
     const employees = await prisma.employee.findMany({
+      where: { orgId },
       orderBy: { createdAt: "desc" }
     })
+
     return NextResponse.json(employees)
   } catch (e) {
     return NextResponse.json({ error: "Failed to fetch employees" }, { status: 500 })

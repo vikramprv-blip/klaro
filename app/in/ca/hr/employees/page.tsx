@@ -8,7 +8,7 @@ export default function EmployeesPage() {
   const [editing, setEditing] = useState<any>(null)
 
   async function load() {
-    const res = await fetch("/api/hr/employees")
+    const res = await fetch("/api/hr/employees?orgId=demo-org")
     const data = await res.json()
     setEmployees(data)
   }
