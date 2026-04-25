@@ -91,12 +91,20 @@ export default function InvoicesPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Invoices</h1>
-        <button
-          onClick={queueReminders}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Queue Overdue WhatsApp Reminders
-        </button>
+        <div className="flex gap-2">
+          <a
+            href="/api/invoices/export"
+            className="bg-black text-white px-4 py-2 rounded"
+          >
+            Export CSV
+          </a>
+          <button
+            onClick={queueReminders}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Queue Overdue WhatsApp Reminders
+          </button>
+        </div>
       </div>
 
       {summary && (
