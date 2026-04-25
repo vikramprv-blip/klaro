@@ -55,6 +55,15 @@ export default function InvoicesPage() {
     load();
   }
 
+  async function queueReminders() {
+    const res = await fetch("/api/invoices/reminders", {
+      method: "POST",
+    });
+    const data = await res.json();
+    alert(`Overdue found: ${data.overdueFound}\nReminders queued: ${data.remindersQueued}`);
+    load();
+  }
+
   async function markPaid(id: string) {
     await fetch(`/api/invoices/${id}`, {
       method: "PATCH",
@@ -73,7 +82,15 @@ export default function InvoicesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Invoices</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Invoices</h1>
+        <button
+          onClick={queueReminders}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Queue Overdue WhatsApp Reminders
+        </button>
+      </div>
 
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
