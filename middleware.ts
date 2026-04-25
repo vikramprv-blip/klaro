@@ -81,10 +81,10 @@ export async function middleware(request: NextRequest) {
   if (user) {
     const email = user.email || "";
 
-    const isPublicApi = pathname.startsWith("/api/auth") || pathname.startsWith("/api/billing") || pathname.startsWith("/api/payments");
+    const isPublicApi = pathname.startsWith("/api/auth") || pathname.startsWith("/api/billing") || pathname.startsWith("/api/payments") || pathname.startsWith("/api/onboarding") || pathname.startsWith("/api/me");
 
     const isBillingPage = pathname.startsWith("/billing");
-    const isPublic = pathname === "/" || pathname.startsWith("/pricing");
+    const isPublic = pathname === "/" || pathname.startsWith("/pricing") || pathname.startsWith("/post-login") || pathname.startsWith("/onboarding");
 
     if (!isBillingPage && !isPublic && !(isApi && isPublicApi)) {
       const hasPlan = await hasActivePlan(email);
