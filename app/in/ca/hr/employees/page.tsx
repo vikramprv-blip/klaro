@@ -78,7 +78,7 @@ export default function EmployeesPage() {
     <main className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Employees</h1>
-<a href="/api/hr/reports/employees" className="text-blue-600 text-sm">Export CSV</a>
+<a href="/api/hr/reports/employees?orgId=demo-org" className="text-blue-600 text-sm">Export CSV</a>
         <p className="text-sm text-gray-600">Manage employee master records.</p>
       </div>
 
