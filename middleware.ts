@@ -10,7 +10,6 @@ const PAID_LOCKED_PATHS = [
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { hasActivePlan } from "@/lib/billing/check";
 
 const protectedPrefixes = [
   "/admin",
@@ -77,25 +76,9 @@ export async function middleware(request: NextRequest) {
   }
 
   
-  // 🔒 BILLING LOCK
-  if (user) {
-    const email = user.email || "";
-
-    const isPublicApi = pathname.startsWith("/api/auth") || pathname.startsWith("/api/billing") || pathname.startsWith("/api/payments") || pathname.startsWith("/api/onboarding") || pathname.startsWith("/api/me");
-
-    const isBillingPage = pathname.startsWith("/billing");
-    const isPublic = pathname === "/" || pathname.startsWith("/pricing") || pathname.startsWith("/post-login") || pathname.startsWith("/onboarding");
-
-    if (!isBillingPage && !isPublic && !(isApi && isPublicApi)) {
-      const hasPlan = await hasActivePlan(email);
-
-      if (!hasPlan) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/billing";
-        return NextResponse.redirect(url);
-      }
-    }
-  }
+  // 🔒 Billing lock disabled in middleware for now.
+  // Prisma cannot run inside Next.js Edge middleware.
+  // Billing enforcement should happen in pages/API routes, not here.
 
   return response;
 }

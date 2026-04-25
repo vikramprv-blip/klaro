@@ -26,8 +26,8 @@ const caPlans = [
   {
     name: "Firm",
     price: "₹14,999",
-    desc: "Mid-size firm, 10–50 staff",
-    features: ["Unlimited clients", "50 users", "All Practice features", "Workload dashboard", "Partner sign-off chain", "Tally / Zoho push", "Dedicated support"],
+    desc: "Mid-size firm, up to Up to 50 users",
+    features: ["Unlimited clients", "Up to 50 users", "All Practice features", "Workload dashboard", "Partner sign-off chain", "Tally / Zoho push", "Dedicated support; 50+ users contact us"],
   },
 ];
 
@@ -48,8 +48,8 @@ const lawyerPlans = [
   {
     name: "Firm",
     price: "₹11,999",
-    desc: "Full firm, up to 50 staff",
-    features: ["Unlimited matters", "50 users", "All Chamber features", "Billing & time tracking", "Voice notes → tasks", "Custom workflows", "Dedicated support"],
+    desc: "Full firm, up to Up to 50 users",
+    features: ["Unlimited matters", "Up to 50 users", "All Chamber features", "Billing & time tracking", "Voice notes → tasks", "Custom workflows", "Dedicated support; 50+ users contact us"],
   },
 ];
 

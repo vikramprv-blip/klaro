@@ -24,10 +24,10 @@ const CA_PLANS = [
     name: "Firm",
     price: "₹17,698.82",
     period: "/month",
-    desc: "Mid-size firm, 10–50 staff",
+    desc: "Mid-size firm, up to Up to 50 users",
     highlight: false,
-    features: ["Unlimited clients", "50 users", "All Practice features", "Workload dashboard", "Partner sign-off chain", "Tally / Zoho push", "Dedicated support"],
-    cta: "Contact us →",
+    features: ["Unlimited clients", "Up to 50 users", "All Practice features", "Workload dashboard", "Partner sign-off chain", "Tally / Zoho push", "Dedicated support; 50+ users contact us"],
+    cta: "Pay online →",
   },
 ]
 
@@ -54,10 +54,10 @@ const LAWYER_PLANS = [
     name: "Firm",
     price: "₹11,999",
     period: "/month",
-    desc: "Full firm, up to 50 staff",
+    desc: "Full firm, up to Up to 50 users",
     highlight: false,
-    features: ["Unlimited matters", "50 users", "All Chamber features", "Billing & time tracking", "Voice notes → tasks", "Custom workflows", "Dedicated support"],
-    cta: "Contact us →",
+    features: ["Unlimited matters", "Up to 50 users", "All Chamber features", "Billing & time tracking", "Voice notes → tasks", "Custom workflows", "Dedicated support; 50+ users contact us"],
+    cta: "Pay online →",
   },
 ]
 
@@ -120,11 +120,11 @@ export default function PricingPage() {
         {/* Header */}
         <div className="text-center mb-20">
           <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 text-xs font-medium px-3 py-1.5 rounded-full mb-6 border border-green-100">
-            Free during beta — all plans
+            Firm plan: ₹23,598.82/month including 18% GST
           </div>
           <h1 className="text-4xl font-semibold text-gray-900 mb-4 tracking-tight">Simple pricing</h1>
           <p className="text-gray-500 text-lg">Pay by team size, not by feature. All plans include the full module set.</p>
-          <p className="text-xs text-gray-400 mt-2">Prices include 18% GST</p>
+          <p className="text-xs text-gray-400 mt-2">Prices shown include 18% GST</p>
         </div>
 
         {/* Individual */}
