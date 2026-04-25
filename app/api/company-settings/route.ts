@@ -16,6 +16,16 @@ function clean(value: unknown) {
 
 export async function GET() {
   const userId = await getCurrentUserId();
+  if (!userId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { requireCompany } = await import("@/lib/server/require-company");
+    await requireCompany(userId);
+  } catch (e) {
+    return Response.json({ error: "COMPANY_SETUP_REQUIRED" }, { status: 403 });
+  }
 
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -32,6 +42,16 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const userId = await getCurrentUserId();
+  if (!userId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { requireCompany } = await import("@/lib/server/require-company");
+    await requireCompany(userId);
+  } catch (e) {
+    return Response.json({ error: "COMPANY_SETUP_REQUIRED" }, { status: 403 });
+  }
 
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
