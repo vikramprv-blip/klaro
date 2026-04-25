@@ -37,5 +37,15 @@ export async function POST(req: Request) {
     }
   })
 
+  if (body.status === "present" && !body.checkIn) {
+    const { logHRAudit } = await import("@/lib/audit/hr-audit");
+    await logHRAudit({
+      type: "ATTENDANCE_ANOMALY",
+      message: "Present without check-in",
+      orgId: body.orgId,
+      meta: { employeeId: body.employeeId }
+    });
+  }
+
   return NextResponse.json(attendance)
 }

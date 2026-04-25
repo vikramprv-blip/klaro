@@ -47,5 +47,16 @@ export async function POST(req: Request) {
     }
   })
 
+  const avg = baseSalary;
+  if (baseSalary > avg * 1.3) {
+    const { logHRAudit } = await import("@/lib/audit/hr-audit");
+    await logHRAudit({
+      type: "PAYROLL_ANOMALY",
+      message: "Unusual salary detected",
+      orgId: body.orgId,
+      meta: { employeeId: body.employeeId, baseSalary }
+    });
+  }
+
   return NextResponse.json(payroll)
 }
