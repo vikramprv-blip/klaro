@@ -4,11 +4,33 @@ import { useEffect, useState } from "react";
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [form, setForm] = useState({
+    client_id: "",
+    amount: "",
+  });
 
   async function load() {
-    const res = await fetch("/api/invoices");
-    const data = await res.json();
-    setInvoices(data);
+    const [invRes, clientRes] = await Promise.all([
+      fetch("/api/invoices"),
+      fetch("/api/ca/clients"),
+    ]);
+
+    setInvoices(await invRes.json());
+    setClients(await clientRes.json());
+  }
+
+  async function createInvoice() {
+    await fetch("/api/invoices", {
+      method: "POST",
+      body: JSON.stringify({
+        client_id: form.client_id,
+        amount: Number(form.amount),
+      }),
+    });
+
+    setForm({ client_id: "", amount: "" });
+    load();
   }
 
   useEffect(() => {
@@ -16,15 +38,48 @@ export default function InvoicesPage() {
   }, []);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Invoices</h1>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold">Invoices</h1>
 
+      {/* CREATE */}
+      <div className="border p-4 rounded">
+        <h2 className="font-semibold mb-2">Create Invoice</h2>
+
+        <select
+          value={form.client_id}
+          onChange={(e) => setForm({ ...form, client_id: e.target.value })}
+          className="border p-2 mr-2"
+        >
+          <option value="">Select Client</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        <input
+          placeholder="Amount"
+          value={form.amount}
+          onChange={(e) => setForm({ ...form, amount: e.target.value })}
+          className="border p-2 mr-2"
+        />
+
+        <button
+          onClick={createInvoice}
+          className="bg-black text-white px-4 py-2"
+        >
+          Create
+        </button>
+      </div>
+
+      {/* LIST */}
       <table className="w-full border">
         <thead>
           <tr className="bg-gray-100">
             <th className="p-2">Number</th>
             <th className="p-2">Client</th>
-            <th className="p-2">Amount</th>
+            <th className="p-2">Total</th>
             <th className="p-2">Status</th>
             <th className="p-2">Due</th>
           </tr>
@@ -37,10 +92,14 @@ export default function InvoicesPage() {
               <td className="p-2">₹{inv.total_amount}</td>
               <td className="p-2">
                 {inv.status}
-                {inv.isOverdue && <span className="text-red-500 ml-2">OVERDUE</span>}
+                {inv.isOverdue && (
+                  <span className="text-red-500 ml-2">OVERDUE</span>
+                )}
               </td>
               <td className="p-2">
-                {inv.due_date ? new Date(inv.due_date).toLocaleDateString() : "-"}
+                {inv.due_date
+                  ? new Date(inv.due_date).toLocaleDateString()
+                  : "-"}
               </td>
             </tr>
           ))}
