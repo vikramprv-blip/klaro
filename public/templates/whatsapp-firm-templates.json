@@ -1,0 +1,6 @@
+{
+  "invoice_ready": "Hi {{customer_name}}, your invoice {{invoice_number}} from {{firm_name}} is ready. Total: {{amount}}. {{payment_link}}",
+  "payment_reminder": "Hi {{customer_name}}, this is a reminder from {{firm_name}} for invoice {{invoice_number}} due on {{due_date}}. Amount: {{amount}}.",
+  "payment_received": "Hi {{customer_name}}, {{firm_name}} has received your payment for invoice {{invoice_number}}. Thank you.",
+  "appointment_confirmation": "Hi {{customer_name}}, your appointment with {{firm_name}} is confirmed for {{date}} at {{time}}."
+}
