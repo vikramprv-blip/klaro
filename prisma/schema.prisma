@@ -10,20 +10,20 @@ datasource db {
 }
 
 model Client {
-  id        String      @id @default(cuid())
+  id             String        @id @default(cuid())
   organizationId String?
-  code      String?
-  name      String
-phone String?
-  email     String?
-  address   String?
-  gstin     String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  documents documents[]
-  invoices  Invoice[]
-  workItems WorkItem[]
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  code           String?
+  name           String
+  phone          String?
+  email          String?
+  address        String?
+  gstin          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  documents      documents[]
+  invoices       Invoice[]
+  workItems      WorkItem[]
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@schema("public")
@@ -44,22 +44,22 @@ model Invoice {
 }
 
 model WorkItem {
-  id          String    @id @default(cuid())
-  organizationId String?
-  title       String
-  description String?
-  status      String    @default("TODO")
-  priority    String    @default("MEDIUM")
-  dueDate     DateTime?
-  clientId    String?
-  assigneeId  String?   @db.Uuid
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-lastFollowedUpAt DateTime?
-  client      Client?       @relation(fields: [clientId], references: [id])
-  assignee    users?        @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
-  followUps   FollowUpLog[]
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id               String        @id @default(cuid())
+  organizationId   String?
+  title            String
+  description      String?
+  status           String        @default("TODO")
+  priority         String        @default("MEDIUM")
+  dueDate          DateTime?
+  clientId         String?
+  assigneeId       String?       @db.Uuid
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  lastFollowedUpAt DateTime?
+  client           Client?       @relation(fields: [clientId], references: [id])
+  assignee         users?        @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  followUps        FollowUpLog[]
+  organization     Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([assigneeId])
   @@index([organizationId])
@@ -72,7 +72,7 @@ model FollowUpLog {
   message    String
   createdAt  DateTime @default(now())
 
-  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  workItem WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
 
   @@index([workItemId])
   @@index([createdAt])
@@ -82,7 +82,7 @@ model FollowUpLog {
 model ServiceTemplate {
   id             String   @id @default(cuid())
   name           String
-phone String?
+  phone          String?
   code           String?  @unique
   description    String?
   department     String?
@@ -115,7 +115,7 @@ model custom_oauth_providers {
   provider_type         String
   identifier            String    @unique
   name                  String
-phone String?
+  phone                 String?
   client_id             String
   client_secret         String
   acceptable_client_ids String[]  @default([])
@@ -240,7 +240,7 @@ model mfa_factors {
   id                           String           @id @db.Uuid
   user_id                      String           @db.Uuid
   friendly_name                String?
-phone String?
+  phone                        String?
   factor_type                  factor_type
   status                       factor_status
   created_at                   DateTime         @db.Timestamptz(6)
@@ -303,7 +303,7 @@ model oauth_clients {
   redirect_uris              String
   grant_types                String
   client_name                String?
-phone String?
+  phone                      String?
   client_uri                 String?
   logo_uri                   String?
   created_at                 DateTime                @default(now()) @db.Timestamptz(6)
@@ -388,7 +388,7 @@ model saml_providers {
   created_at        DateTime?     @db.Timestamptz(6)
   updated_at        DateTime?     @db.Timestamptz(6)
   name_id_format    String?
-phone String?
+  phone             String?
   sso_providers     sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([sso_provider_id])
@@ -494,30 +494,30 @@ model sso_providers {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model users {
-  instance_id                 String?                  @db.Uuid
-  id                          String                   @id @db.Uuid
-  aud                         String?                  @db.VarChar(255)
-  role                        String?                  @db.VarChar(255)
-  email                       String?                  @db.VarChar(255)
-  encrypted_password          String?                  @db.VarChar(255)
-  email_confirmed_at          DateTime?                @db.Timestamptz(6)
-  invited_at                  DateTime?                @db.Timestamptz(6)
-  confirmation_token          String?                  @db.VarChar(255)
-  confirmation_sent_at        DateTime?                @db.Timestamptz(6)
-  recovery_token              String?                  @db.VarChar(255)
-  recovery_sent_at            DateTime?                @db.Timestamptz(6)
-  email_change_token_new      String?                  @db.VarChar(255)
-  email_change                String?                  @db.VarChar(255)
-  email_change_sent_at        DateTime?                @db.Timestamptz(6)
-  last_sign_in_at             DateTime?                @db.Timestamptz(6)
-  raw_app_meta_data           Json?
-  raw_user_meta_data          Json?
-  is_super_admin              Boolean?
-  created_at                  DateTime?                @db.Timestamptz(6)
-  updated_at                  DateTime?                @db.Timestamptz(6)
-  paymentStatus PaymentStatus @default(FREE)
-  paidUntil DateTime?
-  trialEndsAt DateTime?
+  instance_id            String?       @db.Uuid
+  id                     String        @id @db.Uuid
+  aud                    String?       @db.VarChar(255)
+  role                   String?       @db.VarChar(255)
+  email                  String?       @db.VarChar(255)
+  encrypted_password     String?       @db.VarChar(255)
+  email_confirmed_at     DateTime?     @db.Timestamptz(6)
+  invited_at             DateTime?     @db.Timestamptz(6)
+  confirmation_token     String?       @db.VarChar(255)
+  confirmation_sent_at   DateTime?     @db.Timestamptz(6)
+  recovery_token         String?       @db.VarChar(255)
+  recovery_sent_at       DateTime?     @db.Timestamptz(6)
+  email_change_token_new String?       @db.VarChar(255)
+  email_change           String?       @db.VarChar(255)
+  email_change_sent_at   DateTime?     @db.Timestamptz(6)
+  last_sign_in_at        DateTime?     @db.Timestamptz(6)
+  raw_app_meta_data      Json?
+  raw_user_meta_data     Json?
+  is_super_admin         Boolean?
+  created_at             DateTime?     @db.Timestamptz(6)
+  updated_at             DateTime?     @db.Timestamptz(6)
+  paymentStatus          PaymentStatus @default(FREE)
+  paidUntil              DateTime?
+  trialEndsAt            DateTime?
 
   phone                       String?                  @unique
   phone_confirmed_at          DateTime?                @db.Timestamptz(6)
@@ -581,7 +581,7 @@ model webauthn_credentials {
   backup_eligible  Boolean   @default(false)
   backed_up        Boolean   @default(false)
   friendly_name    String    @default("")
-phone String?
+  phone            String?
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
   updated_at       DateTime  @default(now()) @db.Timestamptz(6)
   last_used_at     DateTime? @db.Timestamptz(6)
@@ -619,7 +619,7 @@ model ca_clients {
   id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   merchant_id          String?                @db.Uuid
   name                 String
-phone String?
+  phone                String?
   pan                  String?
   gstin                String?
   email                String?
@@ -716,7 +716,7 @@ model documents {
   merchant_id    String?     @db.Uuid
   client_id      String?     @db.Uuid
   file_name      String
-phone String?
+  phone          String?
   file_url       String
   file_size      BigInt?
   file_type      String?
@@ -858,7 +858,7 @@ model legal_documents {
   merchant_id    String?        @db.Uuid
   matter_id      String?        @db.Uuid
   file_name      String
-phone String?
+  phone          String?
   file_url       String
   file_size      BigInt?
   file_type      String?
@@ -903,7 +903,7 @@ model legal_hearings {
   id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   matter_id     String?        @db.Uuid
   client_name   String?
-phone String?
+  phone         String?
   matter_title  String?
   hearing_date  DateTime?      @db.Date
   court         String?
@@ -921,7 +921,7 @@ model legal_matters {
   id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   merchant_id     String?           @db.Uuid
   client_name     String
-phone String?
+  phone           String?
   client_email    String?
   client_phone    String?
   matter_title    String
@@ -977,7 +977,7 @@ model merchants {
   id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email                String                 @unique
   full_name            String?
-phone String?
+  phone                String?
   business_name        String?
   business_type        String?                @default("freelancer")
   country              String?                @default("IN")
@@ -1015,7 +1015,7 @@ model payment_links {
   currency       String?    @default("INR")
   status         String?    @default("active")
   customer_name  String?
-phone String?
+  phone          String?
   customer_email String?
   customer_phone String?
   paid_at        DateTime?  @db.Timestamptz(6)
@@ -1032,7 +1032,7 @@ model regions {
   code                    String                    @unique @db.VarChar(8)
   slug                    String                    @unique @db.VarChar(32)
   name                    String                    @db.VarChar(128)
-phone String?
+  phone                   String?
   app_base_url            String                    @db.VarChar(255)
   signin_url              String                    @db.VarChar(255)
   signup_url              String                    @db.VarChar(255)
@@ -1189,38 +1189,36 @@ enum one_time_token_type {
   @@schema("auth")
 }
 
-
 model WhatsappOutbox {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   toPhone      String
   templateName String
-  templateLang String   @default("en")
-  payload      Json     @default("{}")
-  status       String   @default("pending")
-  attempts     Int      @default(0)
+  templateLang String    @default("en")
+  payload      Json      @default("{}")
+  status       String    @default("pending")
+  attempts     Int       @default(0)
   lastError    String?
   sentAt       DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([status, createdAt])
   @@schema("public")
 }
 
 model Organization {
-  id        String   @id @default(cuid())
-  userId    String   @db.Uuid
+  id        String     @id @default(cuid())
+  userId    String     @db.Uuid
   email     String
   vertical  String
   plan      String
   clients   Client[]
   workItems WorkItem[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   @@schema("public")
 }
-
 
 enum PaymentStatus {
   FREE
@@ -1232,14 +1230,82 @@ enum PaymentStatus {
   @@schema("public")
 }
 
-
 model user_billing {
-  user_id        String   @id @db.Uuid
-  payment_status String   @default("FREE")
+  user_id        String    @id @db.Uuid
+  payment_status String    @default("FREE")
   paid_until     DateTime?
   trial_ends_at  DateTime?
-  created_at     DateTime @default(now())
+  created_at     DateTime  @default(now())
 
   @@map("user_billing")
+  @@schema("public")
+}
+
+model Employee {
+  id         String   @id @default(cuid())
+  orgId      String
+  userId     String?
+  name       String
+  email      String
+  phone      String?
+  role       String
+  department String?
+  salary     Float    @default(0)
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  attendance Attendance[]
+  payrolls   Payroll[]
+
+  @@index([orgId])
+  @@index([email])
+  @@index([status])
+  @@schema("public")
+}
+
+model Attendance {
+  id         String    @id @default(cuid())
+  employeeId String
+  orgId      String
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  status     String    @default("present")
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+  @@index([orgId])
+  @@index([date])
+  @@schema("public")
+}
+
+model Payroll {
+  id          String    @id @default(cuid())
+  employeeId  String
+  orgId       String
+  month       String
+  baseSalary  Float     @default(0)
+  deductions  Float     @default(0)
+  bonus       Float     @default(0)
+  netPay      Float     @default(0)
+  status      String    @default("pending")
+  paidAt      DateTime?
+  paymentMode String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, month])
+  @@index([employeeId])
+  @@index([orgId])
+  @@index([month])
+  @@index([status])
   @@schema("public")
 }
