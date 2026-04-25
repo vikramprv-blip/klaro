@@ -46,19 +46,25 @@ export async function POST(req: Request) {
 
       await prisma.$queryRaw`
         INSERT INTO public.user_billing (email, plan, status, started_at, expires_at)
-        VALUES (${payment.email}, ${payment.plan}, 'active', now(), now() + (${days} || ' days')::interval)
+        VALUES (${payment.email}, ${payment.plan}, 'active', now(), now() + make_interval(days => ${days}))
         ON CONFLICT (email)
         DO UPDATE SET
           plan = EXCLUDED.plan,
           status = 'active',
           started_at = now(),
-          expires_at = now() + (${days} || ' days')::interval,
+          expires_at = now() + make_interval(days => ${days}),
           updated_at = now()
       `;
     }
 
+    await prisma.$queryRaw`
+      INSERT INTO public.upi_payment_events (payment_request_id, event_type, payload)
+      VALUES (${paymentRequestId}::uuid, ${status}, ${JSON.stringify(body)}::jsonb)
+    `;
+
     return NextResponse.json({ ok: true, payment });
   } catch (err) {
+    console.error("UPI webhook error", err);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
