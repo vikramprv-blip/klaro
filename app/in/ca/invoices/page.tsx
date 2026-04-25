@@ -9,6 +9,7 @@ export default function InvoicesPage() {
   const [audit, setAudit] = useState<any[]>([]);
   const [reminders, setReminders] = useState<any[]>([]);
   const [reminderCount, setReminderCount] = useState(0);
+  const [analytics, setAnalytics] = useState<any[]>([]);
   const [form, setForm] = useState({
     client_id: "",
     amount: "",
@@ -19,12 +20,13 @@ export default function InvoicesPage() {
   });
 
   async function load() {
-    const [invRes, clientRes, summaryRes, auditRes, reminderRes] = await Promise.all([
+    const [invRes, clientRes, summaryRes, auditRes, reminderRes, analyticsRes] = await Promise.all([
       fetch("/api/invoices"),
       fetch("/api/ca/clients"),
       fetch("/api/invoices/summary"),
       fetch("/api/invoices/audit"),
       fetch("/api/invoices/reminders/preview"),
+      fetch("/api/invoices/analytics"),
     ]);
 
     setInvoices(await invRes.json());
@@ -36,6 +38,9 @@ export default function InvoicesPage() {
     const reminderData = await reminderRes.json();
     setReminders(reminderData.invoices || []);
     setReminderCount(reminderData.count || 0);
+
+    const analyticsData = await analyticsRes.json();
+    setAnalytics(analyticsData || []);
   }
 
   async function createInvoice() {
@@ -128,6 +133,19 @@ export default function InvoicesPage() {
             <div className="text-sm text-gray-500">Overdue</div>
             <div className="text-xl font-bold">₹{summary.overdueAmount}</div>
             <div className="text-xs">{summary.overdueInvoices} invoices</div>
+          </div>
+        </div>
+      )}
+
+      {analytics.length > 0 && (
+        <div className="border rounded p-4">
+          <h2 className="font-semibold mb-3">Revenue vs Collection</h2>
+          <div className="space-y-1 text-sm">
+            {analytics.slice(-6).map((a) => (
+              <div key={a.month}>
+                {a.month} → Invoiced: ₹{a.invoiced} | Collected: ₹{a.collected}
+              </div>
+            ))}
           </div>
         </div>
       )}
