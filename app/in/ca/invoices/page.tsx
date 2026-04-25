@@ -12,6 +12,7 @@ export default function InvoicesPage() {
   const [analytics, setAnalytics] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     client_id: "",
     amount: "",
@@ -75,6 +76,31 @@ export default function InvoicesPage() {
     });
     const data = await res.json();
     alert(`Overdue found: ${data.overdueFound}\nReminders queued: ${data.remindersQueued}`);
+    load();
+  }
+
+  async function editInvoice(inv: any) {
+    const amount = prompt("Amount", String(inv.amount || ""));
+    if (amount === null) return;
+
+    const service_type = prompt("Service Type", String(inv.service_type || "Professional Services"));
+    if (service_type === null) return;
+
+    const gst_rate = prompt("GST %", String(inv.gst_rate || "18"));
+    if (gst_rate === null) return;
+
+    setEditingId(inv.id);
+
+    await fetch(`/api/invoices/${inv.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        amount: Number(amount),
+        service_type,
+        gst_rate: Number(gst_rate),
+      }),
+    });
+
+    setEditingId(null);
     load();
   }
 
@@ -346,6 +372,14 @@ export default function InvoicesPage() {
                       Mark Paid
                     </button>
                   )}
+
+                  <button
+                    onClick={() => editInvoice(inv)}
+                    disabled={editingId === inv.id}
+                    className="bg-gray-700 text-white px-3 py-1"
+                  >
+                    {editingId === inv.id ? "Saving..." : "Edit"}
+                  </button>
 
                   <button
                     onClick={() => deleteInvoice(inv.id)}
