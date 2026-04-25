@@ -6,6 +6,7 @@ const NAV = [
   { label: "Overview",        href: "/in/ca",             icon: "⊞" },
   { label: "AI services",     href: "/in/ca/ai",          icon: "✦" },
   { label: "Clients", href: "/in/ca/clients", icon: "◉" },
+  { label: "Invoices", href: "/in/ca/invoices", icon: "₹" },
   { label: "HR", href: "/in/ca/hr", icon: "👥" },
   { label: "  Employees", href: "/in/ca/hr/employees", icon: "↳" },
   { label: "  Attendance", href: "/in/ca/hr/attendance", icon: "↳" },
