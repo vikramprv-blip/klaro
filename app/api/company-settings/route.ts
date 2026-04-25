@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUserId } from "@/lib/auth";
+import { cookies } from "next/headers";
+
+
+async function getCurrentUserId() {
+  const cookieStore = await cookies();
+  return cookieStore.get("klaro_user_id")?.value || cookieStore.get("user_id")?.value || null;
+}
 
 function clean(value: unknown) {
   if (typeof value !== "string") return null;
