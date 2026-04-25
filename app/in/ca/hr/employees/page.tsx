@@ -1,21 +1,35 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([])
   const [error, setError] = useState<string>("")
   const [editing, setEditing] = useState<any>(null)
+  const [query, setQuery] = useState("")
 
   async function load() {
     const res = await fetch("/api/hr/employees?orgId=demo-org")
     const data = await res.json()
-    setEmployees(data)
+    setEmployees(Array.isArray(data) ? data : [])
   }
 
   useEffect(() => {
     load()
   }, [])
+
+  const filteredEmployees = useMemo(() => {
+    const q = query.toLowerCase().trim()
+    if (!q) return employees
+
+    return employees.filter((e) =>
+      [e.name, e.email, e.phone, e.role, e.department, e.status]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    )
+  }, [employees, query])
 
   async function handleSubmit(e: any) {
     e.preventDefault()
@@ -32,7 +46,7 @@ export default function EmployeesPage() {
       salary: Number(form.get("salary"))
     }
 
-    const res = await fetch("/api/hr/employees", {
+    const res = await fetch(editing ? `/api/hr/employees/${editing.id}` : "/api/hr/employees", {
       method: editing ? "PUT" : "POST",
       body: JSON.stringify(payload)
     })
@@ -62,7 +76,10 @@ export default function EmployeesPage() {
 
   return (
     <main className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Employees</h1>
+      <div>
+        <h1 className="text-2xl font-bold">Employees</h1>
+        <p className="text-sm text-gray-600">Manage employee master records.</p>
+      </div>
 
       {error && <div className="text-red-600 text-sm">{error}</div>}
 
@@ -77,19 +94,41 @@ export default function EmployeesPage() {
         <button className="bg-black text-white p-2 rounded md:col-span-2">
           {editing ? "Update Employee" : "Add Employee"}
         </button>
+
+        {editing && (
+          <button
+            type="button"
+            onClick={() => setEditing(null)}
+            className="border p-2 rounded md:col-span-2"
+          >
+            Cancel Edit
+          </button>
+        )}
       </form>
 
-      <div className="border rounded-xl p-4">
-        <h2 className="font-semibold mb-3">Employee List</h2>
+      <div className="border rounded-xl p-4 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-semibold">Employee List</h2>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search employees..."
+            className="border p-2 rounded text-sm"
+          />
+        </div>
 
-        {employees.length === 0 && (
-          <p className="text-sm text-gray-500">No employees yet</p>
+        {filteredEmployees.length === 0 && (
+          <p className="text-sm text-gray-500">No employees found</p>
         )}
 
-        {employees.map((e) => (
+        {filteredEmployees.map((e) => (
           <div key={e.id} className="flex justify-between items-center border-b py-2 text-sm">
             <div>
-              {e.name} — {e.role} — ₹{e.salary}
+              <div className="font-medium">{e.name}</div>
+              <div className="text-gray-600">
+                {e.role || "staff"} — {e.department || "No department"} — ₹{e.salary}
+              </div>
+              <div className="text-xs text-gray-500">{e.email}</div>
             </div>
 
             <div className="flex gap-3">
