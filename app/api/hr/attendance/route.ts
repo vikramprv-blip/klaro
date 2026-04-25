@@ -2,50 +2,48 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const orgId = searchParams.get("orgId")
-  const employeeId = searchParams.get("employeeId")
+  try {
+    const { searchParams } = new URL(req.url)
+    const orgId = searchParams.get("orgId") || "demo-org"
+    const employeeId = searchParams.get("employeeId")
 
-  const attendance = await prisma.attendance.findMany({
-    where: {
-      orgId: orgId || undefined,
-      employeeId: employeeId || undefined
-    },
-    include: {
-      employee: true
-    },
-    orderBy: {
-      date: "desc"
-    }
-  })
+    const attendance = await prisma.attendance.findMany({
+      where: {
+        orgId,
+        ...(employeeId ? { employeeId } : {})
+      },
+      include: { employee: true },
+      orderBy: { date: "desc" }
+    })
 
-  return NextResponse.json(attendance)
+    return NextResponse.json(attendance)
+  } catch (e) {
+    return NextResponse.json({ error: "Failed to fetch attendance" }, { status: 500 })
+  }
 }
 
 export async function POST(req: Request) {
-  const body = await req.json()
+  try {
+    const body = await req.json()
 
-  const attendance = await prisma.attendance.create({
-    data: {
-      orgId: body.orgId,
-      employeeId: body.employeeId,
-      date: new Date(body.date),
-      checkIn: body.checkIn ? new Date(body.checkIn) : null,
-      checkOut: body.checkOut ? new Date(body.checkOut) : null,
-      status: body.status || "present",
-      notes: body.notes
+    if (!body.employeeId || !body.date) {
+      return NextResponse.json({ error: "employeeId and date are required" }, { status: 400 })
     }
-  })
 
-  if (body.status === "present" && !body.checkIn) {
-    const { logHRAudit } = await import("@/lib/audit/hr-audit");
-    await logHRAudit({
-      type: "ATTENDANCE_ANOMALY",
-      message: "Present without check-in",
-      orgId: body.orgId,
-      meta: { employeeId: body.employeeId }
-    });
+    const attendance = await prisma.attendance.create({
+      data: {
+        orgId: body.orgId || "demo-org",
+        employeeId: body.employeeId,
+        date: new Date(body.date),
+        checkIn: body.checkIn ? new Date(body.checkIn) : null,
+        checkOut: body.checkOut ? new Date(body.checkOut) : null,
+        status: body.status || "present",
+        notes: body.notes || null
+      }
+    })
+
+    return NextResponse.json(attendance)
+  } catch (e) {
+    return NextResponse.json({ error: "Failed to create attendance" }, { status: 500 })
   }
-
-  return NextResponse.json(attendance)
 }

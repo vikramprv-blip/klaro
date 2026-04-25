@@ -9,7 +9,7 @@ export default function PayrollPage() {
 
   async function load() {
     const [payrollRes, employeesRes] = await Promise.all([
-      fetch("/api/hr/payroll"),
+      fetch("/api/hr/payroll?orgId=demo-org"),
       fetch("/api/hr/employees")
     ])
     setRecords(await payrollRes.json())

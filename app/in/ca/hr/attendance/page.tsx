@@ -8,7 +8,7 @@ export default function AttendancePage() {
 
   async function load() {
     const [attendanceRes, employeesRes] = await Promise.all([
-      fetch("/api/hr/attendance"),
+      fetch("/api/hr/attendance?orgId=demo-org"),
       fetch("/api/hr/employees")
     ])
 
