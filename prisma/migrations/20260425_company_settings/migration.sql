@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS public.company_settings (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  user_id TEXT NOT NULL UNIQUE,
+  company_name TEXT NOT NULL DEFAULT '',
+  legal_name TEXT,
+  gstin TEXT,
+  pan TEXT,
+  email TEXT,
+  phone TEXT,
+  whatsapp_number TEXT,
+  address_line1 TEXT,
+  address_line2 TEXT,
+  city TEXT,
+  state TEXT,
+  pincode TEXT,
+  country TEXT NOT NULL DEFAULT 'India',
+  invoice_prefix TEXT NOT NULL DEFAULT 'INV',
+  invoice_notes TEXT,
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

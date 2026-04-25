@@ -1309,3 +1309,27 @@ model Payroll {
   @@index([status])
   @@schema("public")
 }
+
+model CompanySettings {
+  id             String   @id @default(cuid())
+  userId         String   @unique @map("user_id")
+  companyName    String   @default("") @map("company_name")
+  legalName      String?  @map("legal_name")
+  gstin          String?
+  pan            String?
+  email          String?
+  phone          String?
+  whatsappNumber String?  @map("whatsapp_number")
+  addressLine1   String?  @map("address_line1")
+  addressLine2   String?  @map("address_line2")
+  city           String?
+  state          String?
+  pincode        String?
+  country        String   @default("India")
+  invoicePrefix  String   @default("INV") @map("invoice_prefix")
+  invoiceNotes   String?  @map("invoice_notes")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("company_settings")
+}
