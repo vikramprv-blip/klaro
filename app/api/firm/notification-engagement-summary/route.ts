@@ -4,10 +4,10 @@ export async function GET(request: Request) {
   try {
     const { firm_id } = new URL(request.url).searchParams;
 
-    // Logic to track the engagement summary of notifications for the firm
+    // Logic to measure the engagement effectiveness of notification summaries for the firm
 
     return NextResponse.json({ notification_engagement_summary: {} }, { status: 200 }); // Replace with actual engagement summary data
   } catch (error) {
-    return NextResponse.json({ message: 'Error tracking notification engagement summary: ' + error.message }, { status: 500 });
+    return NextResponse.json({ message: 'Error measuring notification engagement summary: ' + error.message }, { status: 500 });
   }
 }
