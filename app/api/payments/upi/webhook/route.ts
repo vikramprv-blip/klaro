@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+const PLAN_DAYS: Record<string, number> = {
+  starter: 30,
+  pro: 30,
+  business: 30,
+};
+
 export async function POST(req: Request) {
   try {
     const secret = req.headers.get("x-klaro-admin-secret");
@@ -14,18 +20,16 @@ export async function POST(req: Request) {
     const paymentRequestId = String(body.paymentRequestId || body.id || "");
     const upiRef = String(body.upiRef || body.utr || "").trim();
     const status = String(body.status || "verified").toLowerCase();
-    const notes = body.notes ? String(body.notes) : null;
 
     if (!paymentRequestId || !["verified", "failed", "rejected"].includes(status)) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    const rows = await prisma.$queryRaw<Array<{ id: string; email: string | null; plan: string }>>`
+    const rows = await prisma.$queryRaw<Array<{ id: string; email: string; plan: string }>>`
       UPDATE public.upi_payment_requests
       SET
         status = ${status},
         upi_ref = NULLIF(${upiRef}, ''),
-        notes = ${notes},
         verified_at = CASE WHEN ${status} = 'verified' THEN now() ELSE verified_at END
       WHERE id = ${paymentRequestId}::uuid
       RETURNING id, email, plan
@@ -35,14 +39,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Payment request not found" }, { status: 404 });
     }
 
-    await prisma.$queryRaw`
-      INSERT INTO public.upi_payment_events (payment_request_id, event_type, payload)
-      VALUES (${paymentRequestId}::uuid, ${status}, ${JSON.stringify(body)}::jsonb)
-    `;
+    const payment = rows[0];
 
-    return NextResponse.json({ ok: true, payment: rows[0] });
+    if (status === "verified") {
+      const days = PLAN_DAYS[payment.plan] || 30;
+
+      await prisma.$queryRaw`
+        INSERT INTO public.user_billing (email, plan, status, started_at, expires_at)
+        VALUES (${payment.email}, ${payment.plan}, 'active', now(), now() + (${days} || ' days')::interval)
+        ON CONFLICT (email)
+        DO UPDATE SET
+          plan = EXCLUDED.plan,
+          status = 'active',
+          started_at = now(),
+          expires_at = now() + (${days} || ' days')::interval,
+          updated_at = now()
+      `;
+    }
+
+    return NextResponse.json({ ok: true, payment });
   } catch (err) {
-    console.error("UPI webhook error", err);
-    return NextResponse.json({ error: "Failed to process UPI webhook" }, { status: 500 });
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
