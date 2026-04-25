@@ -4,11 +4,16 @@ import { useEffect, useState } from "react"
 
 export default function PayrollPage() {
   const [records, setRecords] = useState<any[]>([])
+  const [employees, setEmployees] = useState<any[]>([])
 
   async function load() {
-    const res = await fetch("/api/hr/payroll")
-    const data = await res.json()
-    setRecords(data)
+    const [payrollRes, employeesRes] = await Promise.all([
+      fetch("/api/hr/payroll"),
+      fetch("/api/hr/employees")
+    ])
+
+    setRecords(await payrollRes.json())
+    setEmployees(await employeesRes.json())
   }
 
   useEffect(() => {
@@ -41,9 +46,17 @@ export default function PayrollPage() {
       <h1 className="text-2xl font-bold">Payroll</h1>
 
       <form onSubmit={handleSubmit} className="grid gap-3 border p-4 rounded-xl md:grid-cols-2">
-        <input name="employeeId" placeholder="Employee ID" className="border p-2 rounded" />
-        <input name="month" placeholder="Month (e.g. 2026-04)" className="border p-2 rounded" />
-        <input name="baseSalary" placeholder="Base Salary" className="border p-2 rounded" />
+        <select name="employeeId" className="border p-2 rounded" required>
+          <option value="">Select employee</option>
+          {employees.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.name} — ₹{e.salary}
+            </option>
+          ))}
+        </select>
+
+        <input name="month" placeholder="Month (e.g. 2026-04)" className="border p-2 rounded" required />
+        <input name="baseSalary" placeholder="Base Salary" className="border p-2 rounded" required />
         <input name="deductions" placeholder="Deductions" className="border p-2 rounded" />
         <input name="bonus" placeholder="Bonus" className="border p-2 rounded" />
 

@@ -4,11 +4,16 @@ import { useEffect, useState } from "react"
 
 export default function AttendancePage() {
   const [records, setRecords] = useState<any[]>([])
+  const [employees, setEmployees] = useState<any[]>([])
 
   async function load() {
-    const res = await fetch("/api/hr/attendance")
-    const data = await res.json()
-    setRecords(data)
+    const [attendanceRes, employeesRes] = await Promise.all([
+      fetch("/api/hr/attendance"),
+      fetch("/api/hr/employees")
+    ])
+
+    setRecords(await attendanceRes.json())
+    setEmployees(await employeesRes.json())
   }
 
   useEffect(() => {
@@ -41,15 +46,25 @@ export default function AttendancePage() {
       <h1 className="text-2xl font-bold">Attendance</h1>
 
       <form onSubmit={handleSubmit} className="grid gap-3 border p-4 rounded-xl md:grid-cols-2">
-        <input name="employeeId" placeholder="Employee ID" className="border p-2 rounded" />
-        <input name="date" type="date" className="border p-2 rounded" />
+        <select name="employeeId" className="border p-2 rounded" required>
+          <option value="">Select employee</option>
+          {employees.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.name} — {e.role}
+            </option>
+          ))}
+        </select>
+
+        <input name="date" type="date" className="border p-2 rounded" required />
         <input name="checkIn" type="datetime-local" className="border p-2 rounded" />
         <input name="checkOut" type="datetime-local" className="border p-2 rounded" />
+
         <select name="status" className="border p-2 rounded">
           <option value="present">Present</option>
           <option value="absent">Absent</option>
           <option value="leave">Leave</option>
         </select>
+
         <input name="notes" placeholder="Notes" className="border p-2 rounded" />
 
         <button className="bg-black text-white p-2 rounded md:col-span-2">
