@@ -4,7 +4,7 @@ export async function GET(request: Request) {
   try {
     const { firm_id } = new URL(request.url).searchParams;
 
-    // Logic to export the notification summary data for the firm
+    // Logic to export a notification summary for the firm
 
     return NextResponse.json({ message: 'Notification summary exported successfully' }, { status: 200 });
   } catch (error) {
