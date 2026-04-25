@@ -10,6 +10,7 @@ const PAID_LOCKED_PATHS = [
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { hasActivePlan } from "@/lib/billing/check";
 
 const protectedPrefixes = [
   "/admin",
@@ -73,6 +74,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  
+  // 🔒 BILLING LOCK
+  if (user) {
+    const email = user.email || "";
+
+    const isBillingPage = pathname.startsWith("/billing");
+    const isPublic = pathname === "/" || pathname.startsWith("/pricing");
+
+    if (!isBillingPage && !isPublic) {
+      const hasPlan = await hasActivePlan(email);
+
+      if (!hasPlan) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/billing";
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   return response;
 }
 
@@ -91,6 +111,7 @@ export const config = {
     "/clients/:path*",
     "/invoices/:path*",
     "/settings/:path*",
+    "/billing",
     "/signin",
     "/signup",
   ],
