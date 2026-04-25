@@ -6,6 +6,7 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
+  const [audit, setAudit] = useState<any[]>([]);
   const [form, setForm] = useState({
     client_id: "",
     amount: "",
@@ -16,15 +17,18 @@ export default function InvoicesPage() {
   });
 
   async function load() {
-    const [invRes, clientRes, summaryRes] = await Promise.all([
+    const [invRes, clientRes, summaryRes, auditRes] = await Promise.all([
       fetch("/api/invoices"),
       fetch("/api/ca/clients"),
       fetch("/api/invoices/summary"),
+      fetch("/api/invoices/audit"),
     ]);
 
     setInvoices(await invRes.json());
     setClients(await clientRes.json());
     setSummary(await summaryRes.json());
+    const auditData = await auditRes.json();
+    setAudit(auditData.audit || []);
   }
 
   async function createInvoice() {
@@ -92,6 +96,27 @@ export default function InvoicesPage() {
             <div className="text-sm text-gray-500">Overdue</div>
             <div className="text-xl font-bold">₹{summary.overdueAmount}</div>
             <div className="text-xs">{summary.overdueInvoices} invoices</div>
+          </div>
+        </div>
+      )}
+
+      {audit.length > 0 && (
+        <div className="border rounded p-4">
+          <h2 className="font-semibold mb-3">AI Invoice Risk Audit</h2>
+          <div className="space-y-2">
+            {audit
+              .filter((a) => a.riskLevel !== "LOW")
+              .slice(0, 5)
+              .map((a) => (
+                <div key={a.invoiceId} className="border rounded p-3 bg-yellow-50">
+                  <div className="font-medium">
+                    {a.invoiceNumber} · {a.client} · ₹{a.amount}
+                  </div>
+                  <div className="text-sm">
+                    Risk: {a.riskLevel} · {a.risks.join(", ")}
+                  </div>
+                </div>
+              ))}
           </div>
         </div>
       )}
