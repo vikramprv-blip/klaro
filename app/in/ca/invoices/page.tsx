@@ -7,6 +7,8 @@ export default function InvoicesPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [audit, setAudit] = useState<any[]>([]);
+  const [reminders, setReminders] = useState<any[]>([]);
+  const [reminderCount, setReminderCount] = useState(0);
   const [form, setForm] = useState({
     client_id: "",
     amount: "",
@@ -17,11 +19,12 @@ export default function InvoicesPage() {
   });
 
   async function load() {
-    const [invRes, clientRes, summaryRes, auditRes] = await Promise.all([
+    const [invRes, clientRes, summaryRes, auditRes, reminderRes] = await Promise.all([
       fetch("/api/invoices"),
       fetch("/api/ca/clients"),
       fetch("/api/invoices/summary"),
       fetch("/api/invoices/audit"),
+      fetch("/api/invoices/reminders/preview"),
     ]);
 
     setInvoices(await invRes.json());
@@ -29,6 +32,10 @@ export default function InvoicesPage() {
     setSummary(await summaryRes.json());
     const auditData = await auditRes.json();
     setAudit(auditData.audit || []);
+
+    const reminderData = await reminderRes.json();
+    setReminders(reminderData.invoices || []);
+    setReminderCount(reminderData.count || 0);
   }
 
   async function createInvoice() {
@@ -113,6 +120,24 @@ export default function InvoicesPage() {
             <div className="text-sm text-gray-500">Overdue</div>
             <div className="text-xl font-bold">₹{summary.overdueAmount}</div>
             <div className="text-xs">{summary.overdueInvoices} invoices</div>
+          </div>
+        </div>
+      )}
+
+      {reminderCount > 0 && (
+        <div className="border rounded p-4 bg-blue-50">
+          <h2 className="font-semibold mb-3">
+            Upcoming WhatsApp Reminders ({reminderCount})
+          </h2>
+          <div className="space-y-2">
+            {reminders.slice(0,5).map((r) => (
+              <div key={r.id} className="text-sm border p-2 rounded">
+                {r.invoiceNumber} · {r.clientName} · ₹{r.amount}
+                {!r.canSendWhatsApp && (
+                  <span className="text-red-500 ml-2">(No phone)</span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
