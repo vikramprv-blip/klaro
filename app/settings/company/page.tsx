@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 const fields = [
   ["companyName", "Company / Firm Name", true],
@@ -22,6 +23,8 @@ const fields = [
 export default function CompanySettingsPage() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("");
+  const searchParams = useSearchParams();
+  const isSetup = searchParams.get("setup") === "true";
 
   useEffect(() => {
     fetch("/api/company-settings")
@@ -51,20 +54,27 @@ export default function CompanySettingsPage() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setStatus("Saving...");
-
     const res = await fetch("/api/company-settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
-
+    if (res.ok && isSetup) {
+      window.location.href = "/in/ca";
+      return;
+    }
     setStatus(res.ok ? "Company settings saved." : "Could not save company settings.");
   }
 
   return (
     <main className="mx-auto max-w-5xl p-6">
       <div className="mb-6 rounded-2xl border bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">Company Settings</h1>n        {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("setup") && (n          <div className="mt-2 rounded-lg bg-blue-50 border border-blue-200 px-4 py-2 text-sm text-blue-700">👋 Welcome! Please fill in your company details before continuing.</div>n        )}
+        <h1 className="text-2xl font-semibold">Company Settings</h1>
+        {isSetup && (
+          <div className="mt-3 rounded-lg bg-blue-50 border border-blue-200 px-4 py-2 text-sm text-blue-700">
+            Welcome! Please fill in your company details before continuing.
+          </div>
+        )}
         <p className="mt-2 text-sm text-gray-600">
           This identity is used for invoice headers, WhatsApp sender details, and compliance records.
         </p>
@@ -74,8 +84,7 @@ export default function CompanySettingsPage() {
         <div className="grid gap-4 md:grid-cols-2">
           {fields.map(([name, label, required]) => (
             <label key={name} className="text-sm font-medium text-gray-700">
-              {label}
-              {required ? " *" : ""}
+              {label}{required ? " *" : ""}
               <input
                 className="mt-1 w-full rounded-xl border px-3 py-2"
                 value={form[name] || ""}
@@ -97,7 +106,7 @@ export default function CompanySettingsPage() {
 
         <div className="mt-6 flex items-center gap-4">
           <button className="rounded-xl bg-black px-5 py-2 text-white" type="submit">
-            Save Company Settings
+            {isSetup ? "Save & Continue" : "Save Company Settings"}
           </button>
           <span className="text-sm text-gray-600">{status}</span>
         </div>
