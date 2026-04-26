@@ -26,6 +26,12 @@ const SETTINGS_SECTIONS = [
     desc: "Invoice prefix, GST rate, payment terms, bank details, print layout.",
   },
   {
+    href: "/settings/data",
+    icon: "🔒",
+    title: "Data & Privacy",
+    desc: "Export your data as CSV, full account export, or delete your account.",
+  },
+  {
     href: "/settings/billing",
     icon: "💳",
     title: "Subscription & Billing",

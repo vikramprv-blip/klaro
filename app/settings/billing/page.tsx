@@ -40,7 +40,7 @@ export default function BillingPage() {
                 {billing?.expires_at && ` · Renews ${new Date(billing.expires_at).toLocaleDateString("en-IN")}`}
               </p>
             </div>
-            <Link href="/pricing"
+            <Link href="/settings/data"
               className="px-4 py-2 bg-black text-white rounded-xl text-sm font-medium">
               Upgrade Plan
             </Link>
