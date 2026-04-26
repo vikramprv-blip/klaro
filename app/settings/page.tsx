@@ -26,6 +26,12 @@ const SETTINGS_SECTIONS = [
     desc: "Invoice prefix, GST rate, payment terms, bank details, print layout.",
   },
   {
+    href: "/settings/tally",
+    icon: "🧾",
+    title: "Tally Export",
+    desc: "Export invoices and ledgers to Tally XML format for direct import.",
+  },
+  {
     href: "/settings/data",
     icon: "🔒",
     title: "Data & Privacy",
