@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const fields = [
@@ -20,11 +20,11 @@ const fields = [
   ["invoicePrefix", "Invoice Prefix", false],
 ] as const;
 
-export default function CompanySettingsPage() {
+function CompanySettingsForm() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("");
   const searchParams = useSearchParams();
-  const isSetup = searchParams.get("setup") === "true";
+  const isSetup = searchParams?.get("setup") === "true";
 
   useEffect(() => {
     fetch("/api/company-settings")
@@ -112,5 +112,13 @@ export default function CompanySettingsPage() {
         </div>
       </form>
     </main>
+  );
+}
+
+export default function CompanySettingsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading...</div>}>
+      <CompanySettingsForm />
+    </Suspense>
   );
 }
