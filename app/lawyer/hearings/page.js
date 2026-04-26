@@ -3,6 +3,15 @@
 import { useEffect, useState } from "react";
 
 export default function HearingsPage() {
+
+  async function handleAction(id, status) {
+    await fetch("/api/lawyer/actions/update", {
+      method: "POST",
+      body: JSON.stringify({ id, status }),
+    });
+    location.reload();
+  }
+
   const [hearings, setHearings] = useState([]);
   const [actions, setActions] = useState([]);
   const [syncing, setSyncing] = useState(false);
@@ -67,6 +76,14 @@ export default function HearingsPage() {
               <p>{item.message}</p>
               <p><b>Matter:</b> {item.lawyer_matters?.title || "—"}</p>
               <p><b>Client:</b> {item.lawyer_matters?.client_name || "—"}</p>
+            <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
+                <button onClick={() => handleAction(item.id, "done")}>
+                  Mark Done
+                </button>
+                <button onClick={() => handleAction(item.id, "dismissed")}>
+                  Dismiss
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -84,6 +101,14 @@ export default function HearingsPage() {
               <p><b>Client:</b> {item.client_name || "—"}</p>
               <p><b>Court:</b> {item.court_name || "—"}</p>
               <p><b>Date:</b> {item.next_hearing_date}</p>
+            <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
+                <button onClick={() => handleAction(item.id, "done")}>
+                  Mark Done
+                </button>
+                <button onClick={() => handleAction(item.id, "dismissed")}>
+                  Dismiss
+                </button>
+              </div>
             </div>
           ))}
         </div>

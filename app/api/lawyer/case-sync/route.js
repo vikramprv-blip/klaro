@@ -6,20 +6,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-function tomorrowDate() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().split("T")[0];
-}
-
-async function fetchCourtUpdate(matter) {
-  return {
-    next_hearing_date: matter.next_hearing_date || tomorrowDate(),
-    latest_order_summary: "Court sync placeholder. Connect eCourts/Vakeel360 API here.",
-    source: "manual_placeholder"
-  };
-}
-
 async function runCaseSync() {
   const { data: matters, error } = await supabase
     .from("lawyer_matters")
@@ -31,54 +17,61 @@ async function runCaseSync() {
   const results = [];
 
   for (const matter of matters || []) {
-    const update = await fetchCourtUpdate(matter);
     const oldDate = matter.next_hearing_date;
-    const newDate = update.next_hearing_date;
-    const changed = oldDate !== newDate;
+    const newDate = matter.next_hearing_date;
+    const changed = false;
 
-    await supabase
-      .from("lawyer_matters")
-      .update({ next_hearing_date: newDate })
-      .eq("id", matter.id);
+    const { data: existingInvoice } = await supabase
+      .from("lawyer_action_suggestions")
+      .select("id")
+      .eq("matter_id", matter.id)
+      .eq("suggestion_type", "invoice")
+      .eq("status", "pending");
+
+    let invoice_created = false;
+
+    if (!existingInvoice || existingInvoice.length === 0) {
+      const { error: invoiceError } = await supabase
+        .from("lawyer_action_suggestions")
+        .insert({
+          firm_id: matter.firm_id,
+          matter_id: matter.id,
+          suggestion_type: "invoice",
+          message: `Send invoice for ${matter.title}`,
+          status: "pending"
+        });
+
+      if (!invoiceError) invoice_created = true;
+    }
 
     await supabase.from("lawyer_secure_file_events").insert({
       firm_id: matter.firm_id,
-      event_type: changed ? "hearing_date_changed" : "case_sync_checked",
+      event_type: "case_sync_checked",
       metadata: {
         matter_id: matter.id,
         cnr_number: matter.cnr_number,
         old_hearing_date: oldDate,
-        new_hearing_date: newDate,
-        source: update.source,
-        latest_order_summary: update.latest_order_summary
+        new_hearing_date: newDate
       }
     });
-
-    if (changed) {
-      await supabase.from("lawyer_action_suggestions").insert({
-        firm_id: matter.firm_id,
-        matter_id: matter.id,
-        suggestion_type: "hearing_change",
-        message: `Hearing date changed from ${oldDate || "not set"} to ${newDate}. Prepare brief, notify client, and review billing.`
-      });
-    }
 
     results.push({
       matter_id: matter.id,
       cnr_number: matter.cnr_number,
       old_hearing_date: oldDate,
       new_hearing_date: newDate,
-      changed
+      changed,
+      invoice_created
     });
   }
 
   return NextResponse.json({ synced: results.length, results });
 }
 
-export async function POST() {
+export async function GET() {
   return runCaseSync();
 }
 
-export async function GET() {
+export async function POST() {
   return runCaseSync();
 }

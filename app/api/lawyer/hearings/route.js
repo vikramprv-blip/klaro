@@ -11,18 +11,10 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("lawyer_matters")
-    .select(`
-      id,
-      title,
-      client_name,
-      court_name,
-      next_hearing_date
-    `)
+    .select("id, title, client_name, court_name, next_hearing_date")
     .eq("next_hearing_date", today);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ hearings: data });
+  return NextResponse.json({ hearings: data || [] });
 }
