@@ -145,7 +145,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   } catch (error) {
     console.error("WORK_ITEM_DOCUMENTS_POST_ERROR:", error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to attach documents" },
+      { error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Failed to attach documents" },
       { status: 500 }
     )
   }

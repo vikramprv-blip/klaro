@@ -11,21 +11,14 @@ export function getVoyageClient() {
 export async function embedTexts(input: string | string[]) {
   const client = getVoyageClient();
   const texts = Array.isArray(input) ? input : [input];
-
-  const res = await client.embed({
-    input: texts,
-    model,
-  });
-
+  const res = await client.embed({ input: texts, model });
   const rows = res.data ?? [];
   const embeddings = rows
     .map((row: any) => row?.embedding)
     .filter((embedding: any) => Array.isArray(embedding));
-
   if (embeddings.length !== texts.length) {
     throw new Error(`Expected ${texts.length} embeddings, got ${embeddings.length}`);
   }
-
   return embeddings as number[][];
 }
 

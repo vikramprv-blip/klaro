@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error(error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to list documents" },
+      { error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Failed to list documents" },
       { status: 500 }
     )
   }

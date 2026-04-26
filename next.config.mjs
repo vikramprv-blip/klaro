@@ -1,20 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {},
-  pageExtensions: ["ts", "tsx", "js", "jsx"],
-  webpack: (config) => {
-    config.watchOptions = {
-      ...(config.watchOptions || {}),
-      ignored: [
-        "**/node_modules/**",
-        "**/.git/**",
-        "**/.next/**",
-        "**/app_backup_min/**",
-        "**/backup/**",
-      ],
+  serverExternalPackages: ["voyageai"],
+  turbopack: {
+    resolveAlias: {
+      'voyageai': 'voyageai/dist/cjs/index.js'
     }
-    return config
   },
-}
+  pageExtensions: ["ts", "tsx", "js", "jsx"],
+  async redirects() {
+    return [
+      { source: '/ca', destination: '/in/ca', permanent: true },
+      { source: '/lawyer', destination: '/in/lawyer', permanent: true },
+      { source: '/india', destination: '/in', permanent: true },
+    ];
+  },
+};
 
-export default nextConfig
+export default nextConfig;

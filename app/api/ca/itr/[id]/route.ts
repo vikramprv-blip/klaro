@@ -12,6 +12,6 @@ export async function PATCH(
     .from("itr_filings")
     .update({ ...body, updatedAt: new Date().toISOString() })
     .eq("id", id).select().single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) }, { status: 500 })
   return NextResponse.json(data)
 }

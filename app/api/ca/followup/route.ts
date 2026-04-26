@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const complianceTaskId = body?.complianceTaskId || null;
     const clientId = body?.clientId || null;
     const clientName = body?.clientName || "Client";
     const taskType = body?.taskType || "task";
     const period = body?.period || "the current period";
-
     let message = "";
-
     if (taskType === "gst") {
       message = `Hi ${clientName}, please share your GST purchase and sales data for ${period} so we can proceed with filing before the due date.`;
     } else if (taskType === "tds") {
@@ -25,22 +21,16 @@ export async function POST(req: Request) {
     } else {
       message = `Hi ${clientName}, please share the required details for ${period} so we can complete this work on time.`;
     }
-
-    // 1. Insert follow-up log
-    await prisma.$executeRaw`
-      insert into ca_client_followups
-      (compliance_task_id, client_id, client_name, channel, message, status)
-      values
-      (${complianceTaskId}::uuid, ${clientId}, ${clientName}, 'manual', ${message}, 'drafted')
-    `;
-
-    // 2. Update LAST FOLLOWED UP
-    await prisma.$executeRaw`
-      update ca_compliance_tasks
-      set last_followed_up_at = now()
-      where id::text = ${complianceTaskId}
-    `;
-
+    await prisma.$queryRawUnsafe(
+      `INSERT INTO ca_client_followups
+       (compliance_task_id, client_id, client_name, channel, message, status)
+       VALUES ($1::uuid, $2, $3, 'manual', $4, 'drafted')`,
+      complianceTaskId, clientId, clientName, message
+    );
+    await prisma.$queryRawUnsafe(
+      `UPDATE ca_compliance_tasks SET last_followed_up_at = now() WHERE id::text = $1`,
+      complianceTaskId
+    );
     return NextResponse.json({ ok: true, message });
   } catch (e) {
     console.error("POST /api/ca/followup failed:", e);

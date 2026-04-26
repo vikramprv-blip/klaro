@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ results: rows });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Search failed";
+    const message = error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Search failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

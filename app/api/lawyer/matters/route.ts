@@ -5,13 +5,13 @@ import { supabaseAdmin } from "@/lib/supabase"
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("legal_matters").select("*").order("next_date", { ascending: true, nullsFirst: false })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) }, { status: 500 })
   return NextResponse.json(data)
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { data, error } = await supabaseAdmin.from("legal_matters").insert(body).select().single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) }, { status: 500 })
   return NextResponse.json(data)
 }

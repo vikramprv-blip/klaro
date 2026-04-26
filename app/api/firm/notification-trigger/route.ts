@@ -8,6 +8,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ message: 'Notification triggered successfully' }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: 'Error triggering notification: ' + error.message }, { status: 500 });
+    return NextResponse.json({ message: 'Error triggering notification: ' + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

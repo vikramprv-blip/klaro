@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   try {
-    const { firm_id } = new URL(request.url).searchParams;
+    const firm_id = new URL(request.url).searchParams.get("firm_id");
 
     // Logic to retrieve invite logs for the given firm_id
 
     return NextResponse.json({ invite_logs: [] }, { status: 200 }); // Replace with actual invite log data
   } catch (error) {
-    return NextResponse.json({ message: 'Error retrieving invite logs: ' + error.message }, { status: 500 });
+    return NextResponse.json({ message: 'Error retrieving invite logs: ' + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

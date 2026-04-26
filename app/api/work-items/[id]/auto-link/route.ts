@@ -12,7 +12,7 @@ export async function POST(
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Auto-link failed",
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Auto-link failed",
       },
       { status: 500 }
     )

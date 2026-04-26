@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error(error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Search failed" },
+      { error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Search failed" },
       { status: 500 }
     )
   }

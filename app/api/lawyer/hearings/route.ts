@@ -10,7 +10,7 @@ export async function GET() {
 
   if (error) {
     console.error("LAWYER_HEARINGS_GET_ERROR:", error)
-    return NextResponse.json({ error: error.message, details: error }, { status: 500 })
+    return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)), details: error }, { status: 500 })
   }
 
   return NextResponse.json(data)
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error("LAWYER_HEARINGS_POST_ERROR:", error)
-    return NextResponse.json({ error: error.message, details: error }, { status: 500 })
+    return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)), details: error }, { status: 500 })
   }
 
   return NextResponse.json(data)

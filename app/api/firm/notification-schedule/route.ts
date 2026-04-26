@@ -8,6 +8,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ message: 'Notification schedule set successfully' }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: 'Error setting notification schedule: ' + error.message }, { status: 500 });
+    return NextResponse.json({ message: 'Error setting notification schedule: ' + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

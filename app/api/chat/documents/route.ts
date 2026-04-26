@@ -132,7 +132,7 @@ ${question}
   } catch (error) {
     console.error("CHAT_DOCUMENTS_ERROR:", error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Chat failed" },
+      { error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Chat failed" },
       { status: 500 }
     )
   }

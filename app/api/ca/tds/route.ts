@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   if (quarter)  q = q.eq("quarter", quarter)
 
   const { data, error } = await q
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) }, { status: 500 })
   return NextResponse.json(data)
 }
 
@@ -29,6 +29,6 @@ export async function POST(req: NextRequest) {
     .from("tds_filings")
     .insert(rows)
     .select()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) }, { status: 500 })
   return NextResponse.json(data)
 }

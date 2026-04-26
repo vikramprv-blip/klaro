@@ -8,6 +8,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ message: 'Ownership transferred successfully' }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: 'Error transferring ownership: ' + error.message }, { status: 500 });
+    return NextResponse.json({ message: 'Error transferring ownership: ' + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

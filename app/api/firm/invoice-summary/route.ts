@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   try {
-    const { firm_id } = new URL(request.url).searchParams;
+    const firm_id = new URL(request.url).searchParams.get("firm_id");
 
     // Logic to fetch invoice summary for the firm
 
     return NextResponse.json({ invoice_summary: {} }, { status: 200 }); // Replace with actual invoice summary data
   } catch (error) {
-    return NextResponse.json({ message: 'Error retrieving invoice summary: ' + error.message }, { status: 500 });
+    return NextResponse.json({ message: 'Error retrieving invoice summary: ' + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

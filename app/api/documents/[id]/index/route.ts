@@ -10,7 +10,7 @@ export async function POST(
     const result = await indexDocument(id);
     return NextResponse.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Indexing failed";
+    const message = error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Indexing failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

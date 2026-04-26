@@ -147,7 +147,7 @@ export async function POST(
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Something went wrong",
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Something went wrong",
       },
       { status: 500 }
     )
