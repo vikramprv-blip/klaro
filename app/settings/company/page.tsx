@@ -64,7 +64,7 @@ export default function CompanySettingsPage() {
   return (
     <main className="mx-auto max-w-5xl p-6">
       <div className="mb-6 rounded-2xl border bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">Company Settings</h1>
+        <h1 className="text-2xl font-semibold">Company Settings</h1>n        {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("setup") && (n          <div className="mt-2 rounded-lg bg-blue-50 border border-blue-200 px-4 py-2 text-sm text-blue-700">👋 Welcome! Please fill in your company details before continuing.</div>n        )}
         <p className="mt-2 text-sm text-gray-600">
           This identity is used for invoice headers, WhatsApp sender details, and compliance records.
         </p>
