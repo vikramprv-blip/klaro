@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         status = ${status},
         upi_ref = NULLIF(${upiRef}, ''),
         verified_at = CASE WHEN ${status} = 'verified' THEN now() ELSE verified_at END
-      WHERE id = ${paymentRequestId}::uuid
+      WHERE id = ${paymentRequestId}
       RETURNING id, email, plan
     `;
 
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
     await prisma.$queryRaw`
       INSERT INTO public.upi_payment_events (payment_request_id, event_type, payload)
-      VALUES (${paymentRequestId}::uuid, ${status}, ${JSON.stringify(body)}::jsonb)
+      VALUES (${paymentRequestId}::uuid, ${status}, ${JSON.stringify(body)})
     `;
 
     return NextResponse.json({ ok: true, payment });

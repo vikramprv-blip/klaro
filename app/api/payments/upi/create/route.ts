@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
     await prisma.$queryRaw`
       INSERT INTO public.upi_payment_events (payment_request_id, event_type, payload)
-      VALUES (${id}::uuid, 'created', ${JSON.stringify({ email, plan, amountPaise, upiUrl })}::jsonb)
+      VALUES (${id}, 'created', ${JSON.stringify({ email, plan, amountPaise, upiUrl })})
     `;
 
     return NextResponse.json({ id, status: "pending", amount, currency: "INR", upiId, upiUrl });

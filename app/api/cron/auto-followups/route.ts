@@ -27,13 +27,13 @@ export async function GET() {
         insert into ca_client_followups
         (compliance_task_id, client_id, client_name, channel, message, status)
         values
-        (${task.id}::uuid, ${task.client_id}, ${task.client_name}, 'auto', ${message}, 'drafted')
+        (${task.id}, ${task.client_id}, ${task.client_name}, 'auto', ${message}, 'drafted')
       `;
 
       await prisma.$executeRaw`
         update ca_compliance_tasks
         set last_followed_up_at = now()
-        where id::text = ${task.id}
+        where id = ${task.id}
       `;
 
       count++;
