@@ -22,6 +22,8 @@ const NAV = [
   { label: "Compliance",      href: "/in/ca/compliance",           icon: "▤" },
   { label: "Documents",       href: "/in/ca/documents",            icon: "▣" },
   { label: "AI Documents",    href: "/in/ca/documents-ai",         icon: "✺" },
+  { label: "Bulk Import",     href: "/in/ca/bulk-import",          icon: "⬆" },
+  { label: "Bulk Import",     href: "/in/ca/bulk-import",          icon: "⬆" },
 ]
 
 export default function CALayout({ children }: { children: React.ReactNode }) {
