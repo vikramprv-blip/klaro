@@ -17,13 +17,27 @@ export async function GET() {
       file_hash,
       integrity_status,
       uploaded_at,
-      last_verified_at
+      last_verified_at,
+      lawyer_matters (
+        title,
+        client_name,
+        court_name
+      ),
+      lawyer_evidence_certificates (
+        certificate_file_path
+      )
     `)
     .order("uploaded_at", { ascending: false });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ evidence: data });
+  const formatted = data.map(item => ({
+    ...item,
+    matter_title: item.lawyer_matters?.title,
+    client_name: item.lawyer_matters?.client_name,
+    court_name: item.lawyer_matters?.court_name,
+    certificate_file_path: item.lawyer_evidence_certificates?.[0]?.certificate_file_path
+  }));
+
+  return NextResponse.json({ evidence: formatted });
 }
