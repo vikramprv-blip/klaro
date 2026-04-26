@@ -38,6 +38,13 @@ async function run() {
       entity_id: matter.id
     });
 
+    await supabase.from("lawyer_action_suggestions").insert({
+      firm_id: matter.firm_id,
+      matter_id: matter.id,
+      suggestion_type: "invoice",
+      message: "Hearing updated. Send invoice to client?"
+    });
+
     console.log("Updated matter:", matter.id);
   }
 }
