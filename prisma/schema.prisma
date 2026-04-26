@@ -1255,7 +1255,13 @@ model Employee {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  attendance Attendance[]
+  attendance  Attendance[]
+  timeEntries TimeEntry[]
+  leaveBalance LeaveBalance?
+  leaveRequests LeaveRequest[]
+  billingRates BillingRate[]
+  branch      Branch?   @relation(fields: [branchId], references: [id])
+  branchId    String?
   payrolls   Payroll[]
 
   @@index([orgId])
@@ -1278,6 +1284,13 @@ model Attendance {
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
+  punchInLat  Float?
+  punchInLng  Float?
+  punchOutLat Float?
+  punchOutLng Float?
+  branchId    String?
+  isRemote    Boolean  @default(false)
+  branch      Branch?  @relation(fields: [branchId], references: [id])
   @@unique([employeeId, date])
   @@index([employeeId])
   @@index([orgId])
@@ -1332,5 +1345,111 @@ model CompanySettings {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@map("company_settings")
+  @@schema("public")
+}
+
+model Branch {
+  id          String       @id @default(cuid())
+  orgId       String
+  name        String
+  address     String?
+  city        String?
+  state       String?
+  lat         Float?
+  lng         Float?
+  radiusMeters Int         @default(200)
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  attendance  Attendance[]
+  employees   Employee[]
+  @@index([orgId])
+  @@schema("public")
+}
+
+model BillingRate {
+  id          String    @id @default(cuid())
+  orgId       String
+  employeeId  String?
+  clientId    String?
+  serviceType String?
+  ratePerHour Float     @default(0)
+  currency    String    @default("INR")
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  employee    Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  @@index([orgId])
+  @@index([employeeId])
+  @@schema("public")
+}
+
+model TimeEntry {
+  id          String    @id @default(cuid())
+  orgId       String
+  employeeId  String
+  clientId    String?
+  clientName  String?
+  serviceType String?
+  description String?
+  date        DateTime
+  hours       Float     @default(0)
+  ratePerHour Float     @default(0)
+  billable    Boolean   @default(true)
+  billed      Boolean   @default(false)
+  invoiceId   String?
+  approvedBy  String?
+  approvedAt  DateTime?
+  status      String    @default("draft")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  @@index([orgId])
+  @@index([employeeId])
+  @@index([clientId])
+  @@index([date])
+  @@index([status])
+  @@schema("public")
+}
+
+model LeaveBalance {
+  id          String   @id @default(cuid())
+  orgId       String
+  employeeId  String   @unique
+  casual      Int      @default(12)
+  sick        Int      @default(12)
+  earned      Int      @default(15)
+  holiday     Int      @default(10)
+  casualUsed  Int      @default(0)
+  sickUsed    Int      @default(0)
+  earnedUsed  Int      @default(0)
+  year        Int      @default(2026)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  @@index([orgId])
+  @@schema("public")
+}
+
+model LeaveRequest {
+  id          String    @id @default(cuid())
+  orgId       String
+  employeeId  String
+  leaveType   String
+  fromDate    DateTime
+  toDate      DateTime
+  days        Float     @default(1)
+  reason      String?
+  status      String    @default("pending")
+  approvedBy  String?
+  approvedAt  DateTime?
+  rejectedBy  String?
+  rejectedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  @@index([orgId])
+  @@index([employeeId])
+  @@index([status])
   @@schema("public")
 }
