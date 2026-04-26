@@ -1,11 +1,13 @@
+import "dotenv/config";
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 import { sha256File } from "./hash.js";
 import { generate65BCertificate } from "./certificate.js";
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
@@ -78,6 +80,25 @@ const certificateText = generate65BCertificate({
   uploadedAt: evidence.uploaded_at
 });
 
+const pdfPath = `certificate-${Date.now()}.pdf`;
+fs.writeFileSync("certificate-text.txt", certificateText);
+execSync(`python3 generate-pdf.py certificate-text.txt ${pdfPath}`);
+
+const pdfBuffer = fs.readFileSync(pdfPath);
+const certificateStoragePath = `certificates/${firmId}/${matterId}/${Date.now()}-${filename}.pdf`;
+
+const pdfUpload = await supabase.storage
+  .from("lawyer-evidence")
+  .upload(certificateStoragePath, pdfBuffer, {
+    contentType: "application/pdf",
+    upsert: false
+  });
+
+if (pdfUpload.error) {
+  console.error(pdfUpload.error);
+  process.exit(1);
+}
+
 await supabase.from("lawyer_evidence_certificates").insert({
   firm_id: firmId,
   evidence_id: evidence.id,
@@ -89,3 +110,4 @@ await supabase.from("lawyer_evidence_certificates").insert({
 console.log("Evidence uploaded successfully");
 console.log("Evidence ID:", evidence.id);
 console.log("SHA-256:", fileHash);
+console.log("Certificate PDF:", certificateStoragePath);
