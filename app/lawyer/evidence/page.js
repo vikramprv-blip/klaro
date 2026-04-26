@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+const TEST_FIRM_ID = "c07446d6-da3a-438f-93ca-90eff2c7bb70";
+const TEST_MATTER_ID = "06f1120c-aff3-46b5-931a-c8e98fbf30bd";
+
 export default function EvidenceVaultPage() {
   const [evidence, setEvidence] = useState([]);
   const [loadingId, setLoadingId] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   async function loadEvidence() {
     const res = await fetch("/api/lawyer/evidence");
@@ -16,9 +20,42 @@ export default function EvidenceVaultPage() {
     loadEvidence();
   }, []);
 
+  async function uploadEvidence(e) {
+    e.preventDefault();
+
+    const file = e.target.file.files[0];
+    if (!file) {
+      alert("Please choose a file");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("firmId", TEST_FIRM_ID);
+    formData.append("matterId", TEST_MATTER_ID);
+
+    setUploading(true);
+
+    const res = await fetch("/api/lawyer/evidence/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    setUploading(false);
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    e.target.reset();
+    await loadEvidence();
+  }
+
   async function getLink(item) {
     if (!item.certificate_file_path) {
-      alert("Certificate path missing. Re-upload evidence to generate a certificate path.");
+      alert("Certificate path missing. CLI-generated certificates only for now.");
       return;
     }
 
@@ -55,7 +92,15 @@ export default function EvidenceVaultPage() {
   return (
     <main style={{ padding: 32 }}>
       <h1>Evidence Vault</h1>
-      <p>Section 65B-ready evidence records with hash verification.</p>
+      <p>Upload, hash, verify, and prepare Section 65B-ready evidence.</p>
+
+      <form onSubmit={uploadEvidence} style={{ marginTop: 24, padding: 16, border: "1px solid #ddd", borderRadius: 12 }}>
+        <h2>Upload Evidence</h2>
+        <input name="file" type="file" />
+        <button style={{ marginLeft: 12 }} disabled={uploading}>
+          {uploading ? "Uploading..." : "Upload"}
+        </button>
+      </form>
 
       <div style={{ marginTop: 24, display: "grid", gap: 16 }}>
         {evidence.map((item) => (
