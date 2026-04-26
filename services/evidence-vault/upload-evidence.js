@@ -1,4 +1,5 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ override: true });
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
@@ -100,6 +101,7 @@ if (pdfUpload.error) {
 }
 
 await supabase.from("lawyer_evidence_certificates").insert({
+  certificate_file_path: certificateStoragePath,
   firm_id: firmId,
   evidence_id: evidence.id,
   certificate_text: certificateText,
