@@ -50,3 +50,13 @@ async function run() {
 }
 
 run();
+
+async function logSecureEvent({ firm_id, evidence_id, actor_id, event_type }) {
+  await supabase.from("lawyer_secure_file_events").insert({
+    firm_id,
+    evidence_id,
+    actor_id,
+    event_type,
+    metadata: { timestamp: new Date().toISOString() }
+  });
+}
