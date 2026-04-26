@@ -165,6 +165,9 @@ export default async function AdminPage() {
         </table>
       </div>
 
+      {/* AI Usage */}
+      <AIUsageSection />
+
       {/* Quick Links */}
       <div className="bg-white rounded-2xl border shadow-sm p-6">
         <h2 className="font-semibold text-lg mb-4">Quick Actions</h2>
@@ -185,6 +188,39 @@ export default async function AdminPage() {
       </div>
     </main>
   );
+}
+
+async function AIUsageSection() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL ? "" : "http://localhost:3000"}/api/admin/ai-usage`, {
+      cache: "no-store",
+      headers: { "Cookie": "" },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (
+      <div className="bg-white rounded-2xl border shadow-sm p-6">
+        <h2 className="font-semibold text-lg mb-4">AI Usage — Voyage AI</h2>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="border rounded-xl p-4">
+            <p className="text-xs text-gray-500">Total Documents</p>
+            <p className="text-2xl font-bold">{data.totalDocuments}</p>
+          </div>
+          <div className="border rounded-xl p-4">
+            <p className="text-xs text-gray-500">Indexed Chunks</p>
+            <p className="text-2xl font-bold">{data.totalChunks}</p>
+          </div>
+          <div className="border rounded-xl p-4">
+            <p className="text-xs text-gray-500">Last 7 Days</p>
+            <p className="text-2xl font-bold">{data.recentDocuments}</p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-400">Model: {data.voyageModel}</p>
+      </div>
+    );
+  } catch {
+    return null;
+  }
 }
 
 function FreeAccessForm() {
