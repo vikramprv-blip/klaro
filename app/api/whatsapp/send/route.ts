@@ -1,13 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { sendWhatsApp } from "@/lib/twilio";
 
-export async function POST(request: Request) {
+export const runtime = "nodejs";
+
+export async function POST(req: NextRequest) {
   try {
-    const { phone, message } = await request.json();
+    const body = await req.json();
+    const { phone, message } = body;
 
-    // Logic to send WhatsApp message using API
+    if (!phone || !message) {
+      return NextResponse.json({ error: "phone and message required" }, { status: 400 });
+    }
 
-    return NextResponse.json({ message: 'Message sent successfully' }, { status: 200 });
-  } catch (error) {
-    return NextResponse.json({ message: 'Error sending message: ' + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    const result = await sendWhatsApp(phone, message);
+    if (result.ok) {
+      return NextResponse.json({ ok: true, sid: result.sid });
+    }
+    return NextResponse.json({ error: result.error }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

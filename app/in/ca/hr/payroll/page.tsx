@@ -283,7 +283,19 @@ export default function PayrollPage() {
                     }`}>{r.status}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <button className="text-xs text-gray-400 hover:text-gray-700">Payslip</button>
+                    <button
+                      onClick={async () => {
+                        const res = await fetch("/api/hr/payroll/send-payslip", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ payrollId: r.id }),
+                        })
+                        const data = await res.json()
+                        alert(data.ok ? "Payslip sent via WhatsApp!" : `Error: ${data.error}`)
+                      }}
+                      className="text-xs px-2 py-1 border rounded-lg hover:bg-gray-50 text-gray-600">
+                      Send Payslip
+                    </button>
                   </td>
                 </tr>
               ))}
