@@ -10,7 +10,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "clientId and entryIds required" }, { status: 400 });
     }
 
-    // Get all approved unbilled entries for this client
     const entries = await prisma.timeEntry.findMany({
       where: {
         id: { in: entryIds },
@@ -25,17 +24,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No approved unbilled entries found" }, { status: 400 });
     }
 
-    // Calculate totals
     const subtotal = entries.reduce((sum, e) => sum + e.hours * e.ratePerHour, 0);
     const gstAmount = subtotal * 0.18;
     const total = subtotal + gstAmount;
 
-    // Generate invoice number
-    const count = await prisma.caInvoices.count();
+    const count = await prisma.ca_invoices.count();
     const invoiceNumber = `INV-TS-${String(count + 1).padStart(4, "0")}`;
 
-    // Create invoice
-    const invoice = await prisma.caInvoices.create({
+    const invoice = await prisma.ca_invoices.create({
       data: {
         invoice_number: invoiceNumber,
         amount: subtotal,
@@ -46,7 +42,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Mark entries as billed
     await prisma.timeEntry.updateMany({
       where: { id: { in: entryIds } },
       data: { billed: true, invoiceId: invoice.id },
