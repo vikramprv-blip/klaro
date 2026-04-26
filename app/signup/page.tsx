@@ -59,6 +59,20 @@ function SignupForm() {
         required
       />
 
+        {/* DPDP Consent — DPDP Rules 2025, required separate from T&C */}
+        <div className="flex items-start gap-3 mt-2">
+          <input type="checkbox" id="dpdp-consent" required
+            className="mt-1 w-4 h-4 rounded border-gray-300 cursor-pointer" />
+          <label htmlFor="dpdp-consent" className="text-sm text-gray-600 leading-relaxed">
+            I consent to Klaro processing my personal data (name, email, phone,
+            business records) as described in the{" "}
+            <a href="/privacy" className="underline text-blue-600 hover:text-blue-800">
+              Privacy Policy
+            </a>
+            {" "}for CA practice management, invoicing, HR, and compliance services.
+            I can withdraw this consent at any time from Settings.
+          </label>
+        </div>
       <button className="w-full bg-black text-white py-2 rounded-lg">
         Sign up
       </button>
