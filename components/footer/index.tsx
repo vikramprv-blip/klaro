@@ -9,7 +9,7 @@ const FOOTER_LINKS = [
   { label: "Contact", href: "/contact" },
 ]
 
-const HIDE_ON = ["/signin", "/signup", "/onboarding", "/post-login", "/in/"]
+const HIDE_ON = ["/signin", "/signup", "/onboarding", "/post-login", "/in/ca", "/in/lawyer", "/in/us", "/in/uk"]
 
 export default function Footer() {
   const path = usePathname() || ""
