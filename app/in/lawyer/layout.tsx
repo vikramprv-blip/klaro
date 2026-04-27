@@ -1,16 +1,17 @@
 "use client"
-// ── app/lawyer/layout.tsx ─────────────────────────────────────────────────────
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 const NAV = [
-  { label: "Overview",    href: "/in/lawyer",           icon: "⊞" },
-  { label: "Matters",     href: "/in/lawyer/matters",   icon: "◉" },
-  { label: "Hearings",    href: "/in/lawyer/hearings",  icon: "◷" },
-  { label: "Tasks",       href: "/in/lawyer/tasks",     icon: "◈" },
-  { label: "Drafts",      href: "/in/lawyer/drafts",    icon: "▣" },
-  { label: "Documents",   href: "/in/lawyer/documents", icon: "◎" },
-  { label: "Billing",     href: "/in/lawyer/billing",   icon: "◆" },
+  { label: "Overview",   href: "/in/lawyer",              icon: "⊞" },
+  { label: "Matters",    href: "/in/lawyer/matters",      icon: "◉" },
+  { label: "Hearings",   href: "/in/lawyer/hearings",     icon: "◷" },
+  { label: "Tasks",      href: "/in/lawyer/tasks",        icon: "◈" },
+  { label: "Drafts",     href: "/in/lawyer/drafts",       icon: "▣" },
+  { label: "Documents",  href: "/in/lawyer/documents",    icon: "◎" },
+  { label: "Billing",    href: "/in/lawyer/billing",      icon: "◆" },
+  { label: "HR",         href: "/in/lawyer/hr",           icon: "👥" },
+  { label: "Settings",   href: "/in/lawyer/settings",     icon: "⚙" },
 ]
 
 export default function LawyerLayout({ children }: { children: React.ReactNode }) {

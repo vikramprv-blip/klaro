@@ -247,7 +247,6 @@ export default async function AdminPage() {
         <h2 className="font-semibold text-lg mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
           {[
-            { label: "🤖 AI Audit Log", href: "/admin/ai-audit" },
             { label: "🔄 Generate Compliance Tasks", href: "/api/ca/compliance/generate" },
             { label: "🤖 Run AI Misuse Detection",   href: "/api/cron/ai-misuse-detect" },
             { label: "📨 Run Auto Follow-ups",        href: "/api/cron/auto-followups" },

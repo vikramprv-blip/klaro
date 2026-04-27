@@ -1,3 +1,4 @@
+import { logAiUsage } from "@/lib/logAiUsage";
 import { NextRequest, NextResponse } from "next/server"
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
     }),
   })
   const data = await res.json()
+  if (res.ok) { logAiUsage({ feature: "doc-chaser", model: "llama-3.3-70b-versatile", tokens_used: data.usage?.total_tokens || 0 }); }
   if (!res.ok) return NextResponse.json({ error: data.error?.message ?? "Groq error" }, { status: 500 })
   const txt = data.choices?.[0]?.message?.content ?? ""
   try { return NextResponse.json(JSON.parse(txt)) }

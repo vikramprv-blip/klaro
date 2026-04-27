@@ -6,44 +6,54 @@ export default function PostLoginPage() {
   useEffect(() => {
     async function redirect() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (!user) {
+      if (!session) {
         window.location.href = "/signin";
         return;
       }
 
-      // Check if organization exists
-      const orgRes = await fetch("/api/onboarding/check");
+      const token = session.access_token;
+      const headers = {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      };
+
+      const orgRes = await fetch("/api/onboarding/check", { headers });
       const orgData = await orgRes.json();
 
       if (!orgData.hasOrg) {
-        // New user — go to onboarding
         window.location.href = "/onboarding";
         return;
       }
 
-      // Check if company settings exist
-      const settingsRes = await fetch("/api/company-settings/check");
+      // Admin goes straight to admin dashboard
+      if (orgData.vertical === "admin") {
+        window.location.href = "/admin";
+        return;
+      }
+
+      const settingsRes = await fetch("/api/company-settings/check", { headers });
       const settingsData = await settingsRes.json();
 
       if (!settingsData.hasSettings) {
-        // Has org but no company profile — go to company setup
         window.location.href = "/settings/company?setup=true";
         return;
       }
 
-      // Fully onboarded — go to dashboard
-      const vertical = orgData.vertical || "ca";
-      window.location.href = vertical === "lawyer" ? "/in/lawyer" : "/in/ca";
+      const vertical = orgData.vertical || "lawyer";
+      window.location.href = vertical === "ca" ? "/in/ca" : "/in/lawyer";
     }
 
     redirect();
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-sm text-gray-500 animate-pulse">Setting up your workspace…</div>
-    </div>
+    <main className="min-h-screen flex items-center justify-center">
+      <div className="text-center space-y-3">
+        <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-sm text-gray-500">Signing you in...</p>
+      </div>
+    </main>
   );
 }
