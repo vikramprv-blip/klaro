@@ -36,19 +36,28 @@ export async function POST(req: Request) {
 
   // Create user record
   const role = vertical === "ca" ? "ca" : "lawyer";
+
+  // Check if user already exists — never overwrite admin role
+  const { data: existingUser } = await supabase
+    .from("users").select("role, is_firm_admin").eq("id", userId).single();
+
+  const finalRole = existingUser?.role === "admin" ? "admin" : role;
+  const isFirmAdmin = !existingUser || existingUser.role !== "admin"; // first-time user = firm_admin
+
   await supabase.from("users").upsert([{
     id: userId,
     firm_id: firm.id,
     email: userEmail,
     full_name: admin_name,
-    role
+    role: finalRole,
+    is_firm_admin: existingUser?.is_firm_admin || isFirmAdmin,
   }]);
 
-  // Add to firm_members
+  // Add to firm_members — creator of firm is always firm_admin
   await supabase.from("firm_members").upsert([{
     firm_id: firm.id,
     user_id: userId,
-    role
+    role: existingUser?.role === "admin" ? "firm_admin" : "firm_admin", // creator = firm_admin
   }]);
 
   // Seed firm billing as free

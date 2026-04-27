@@ -1,18 +1,19 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import SupportChat from "@/components/SupportChat"
 
 const NAV = [
-  { label: "Overview",   href: "/in/lawyer",              icon: "⊞" },
-  { label: "Matters",    href: "/in/lawyer/matters",      icon: "◉" },
-  { label: "Hearings",   href: "/in/lawyer/hearings",     icon: "◷" },
-  { label: "Tasks",      href: "/in/lawyer/tasks",        icon: "◈" },
-  { label: "Drafts",     href: "/in/lawyer/drafts",       icon: "▣" },
-  { label: "Evidence",   href: "/in/lawyer/evidence",     icon: "🔐" },
-  { label: "Documents",  href: "/in/lawyer/documents",    icon: "◎" },
-  { label: "Billing",    href: "/in/lawyer/billing",      icon: "◆" },
-  { label: "HR",         href: "/in/lawyer/hr",           icon: "👥" },
-  { label: "Settings",   href: "/in/lawyer/settings",     icon: "⚙" },
+  { label: "Overview",  href: "/in/lawyer",             icon: "⊞" },
+  { label: "Matters",   href: "/in/lawyer/matters",     icon: "◉" },
+  { label: "Hearings",  href: "/in/lawyer/hearings",    icon: "◷" },
+  { label: "Evidence",  href: "/in/lawyer/evidence",    icon: "🔐" },
+  { label: "Tasks",     href: "/in/lawyer/tasks",       icon: "◈" },
+  { label: "Drafts",    href: "/in/lawyer/drafts",      icon: "▣" },
+  { label: "Documents", href: "/in/lawyer/documents",   icon: "◎" },
+  { label: "Billing",   href: "/in/lawyer/billing",     icon: "◆" },
+  { label: "HR",        href: "/in/lawyer/hr",          icon: "👥" },
+  { label: "Settings",  href: "/in/lawyer/settings",    icon: "⚙" },
 ]
 
 export default function LawyerLayout({ children }: { children: React.ReactNode }) {
@@ -34,13 +35,8 @@ export default function LawyerLayout({ children }: { children: React.ReactNode }
           )
         })}
       </aside>
-      <div className="mt-auto pt-4 border-t border-gray-100 px-3 pb-2">
-        <Link href="/in/ca"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-50">
-          <span>📊</span> Switch to CA Suite
-        </Link>
-      </div>
       <main className="flex-1 overflow-auto">{children}</main>
+      <SupportChat />
     </div>
   )
 }

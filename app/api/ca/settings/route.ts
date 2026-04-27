@@ -1,66 +1,51 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-async function getFirmAndUser(req) {
-  // Get user from auth header (client-side calls pass token)
-  const authHeader = req.headers.get("authorization") || "";
-  const token = authHeader.replace("Bearer ", "");
+async function getAuth(req: Request) {
+  const token = (req.headers.get("authorization") || "").replace("Bearer ", "");
   if (!token) return { error: "Unauthorized" };
-
   const { data: { user } } = await supabase.auth.getUser(token);
   if (!user) return { error: "Unauthorized" };
 
   const { data: userData } = await supabase
     .from("users").select("firm_id, is_firm_admin, role").eq("id", user.id).single();
-
   const { data: firmMember } = await supabase
     .from("firm_members").select("role").eq("user_id", user.id).single();
 
   const isFirmAdmin = userData?.is_firm_admin || firmMember?.role === "firm_admin" || userData?.role === "admin";
-
   return { user, userData, isFirmAdmin, firm_id: userData?.firm_id };
 }
 
-export async function GET(req) {
-  const { user, userData, isFirmAdmin, firm_id, error } = await getFirmAndUser(req);
+export async function GET(req: Request) {
+  const { error, isFirmAdmin, firm_id } = await getAuth(req);
   if (error) return NextResponse.json({ error }, { status: 401 });
 
   const { data, error: dbErr } = await supabase
     .from("firms").select("*").eq("id", firm_id).single();
-
   if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
 
-  // Return full data to admins, limited data to others
   if (!isFirmAdmin) {
-    return NextResponse.json({
-      name: data.name,
-      city: data.city,
-      state: data.state,
-      is_firm_admin: false,
-    });
+    return NextResponse.json({ name: data.name, city: data.city, state: data.state, is_firm_admin: false });
   }
-
   return NextResponse.json({ ...data, is_firm_admin: true });
 }
 
-export async function POST(req) {
-  const { user, isFirmAdmin, firm_id, error } = await getFirmAndUser(req);
+export async function POST(req: Request) {
+  const { error, isFirmAdmin, firm_id } = await getAuth(req);
   if (error) return NextResponse.json({ error }, { status: 401 });
   if (!isFirmAdmin) return NextResponse.json({ error: "Only firm admins can update settings" }, { status: 403 });
 
   const body = await req.json();
-  const { name, address, city, state, pincode, phone, email, gst_number, bar_council, admin_name } = body;
+  const { name, address, city, state, pincode, phone, email, gst_number, admin_name } = body;
 
   const { data, error: dbErr } = await supabase
     .from("firms")
-    .update({ name, address, city, state, pincode, phone, email, gst_number, bar_council, admin_name, updated_at: new Date().toISOString() })
+    .update({ name, address, city, state, pincode, phone, email, gst_number, admin_name, updated_at: new Date().toISOString() })
     .eq("id", firm_id)
     .select().single();
 
