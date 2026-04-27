@@ -4,23 +4,27 @@ import { usePathname } from "next/navigation"
 import SupportChat from "@/components/SupportChat"
 
 const NAV = [
-  { label: "Overview",  href: "/in/lawyer",             icon: "⊞" },
-  { label: "Matters",   href: "/in/lawyer/matters",     icon: "◉" },
-  { label: "Hearings",  href: "/in/lawyer/hearings",    icon: "◷" },
-  { label: "Evidence",  href: "/in/lawyer/evidence",    icon: "🔐" },
-  { label: "Tasks",     href: "/in/lawyer/tasks",       icon: "◈" },
-  { label: "Drafts",    href: "/in/lawyer/drafts",      icon: "▣" },
-  { label: "Documents", href: "/in/lawyer/documents",   icon: "◎" },
-  { label: "Billing",   href: "/in/lawyer/billing",     icon: "◆" },
-  { label: "HR",        href: "/in/lawyer/hr",          icon: "👥" },
-  { label: "Settings",  href: "/in/lawyer/settings",    icon: "⚙" },
+  { label: "Overview",    href: "/in/lawyer",                  icon: "⊞" },
+  { label: "Matters",     href: "/in/lawyer/matters",          icon: "◉" },
+  { label: "Hearings",    href: "/in/lawyer/hearings",         icon: "◷" },
+  { label: "Evidence",    href: "/in/lawyer/evidence",         icon: "🔐" },
+  { label: "Notices",     href: "/in/lawyer/notices",          icon: "📨" },
+  { label: "Limitation",  href: "/in/lawyer/limitation",       icon: "⏳" },
+  { label: "Time Billing",href: "/in/lawyer/time-billing",     icon: "⏱" },
+  { label: "Research",    href: "/in/lawyer/research",         icon: "🔍" },
+  { label: "Tasks",       href: "/in/lawyer/tasks",            icon: "◈" },
+  { label: "Drafts",      href: "/in/lawyer/drafts",           icon: "▣" },
+  { label: "Documents",   href: "/in/lawyer/documents",        icon: "◎" },
+  { label: "Billing",     href: "/in/lawyer/billing",          icon: "◆" },
+  { label: "HR",          href: "/in/lawyer/hr",               icon: "👥" },
+  { label: "Settings",    href: "/in/lawyer/settings",         icon: "⚙" },
 ]
 
 export default function LawyerLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname() || ""
   return (
     <div className="flex min-h-screen">
-      <aside className="w-52 border-r border-gray-100 px-3 py-6 flex flex-col gap-1 shrink-0">
+      <aside className="w-52 border-r border-gray-100 px-3 py-6 flex flex-col gap-1 shrink-0 overflow-y-auto">
         <p className="text-xs font-medium text-gray-400 uppercase tracking-wider px-3 mb-3">Lawyer Suite</p>
         {NAV.map(({ label, href, icon }) => {
           const active = path === href || (href !== "/in/lawyer" && path.startsWith(href))
