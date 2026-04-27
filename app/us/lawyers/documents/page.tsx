@@ -2,15 +2,14 @@ import UploadForm from "@/app/us/components/upload-form"
 import DocumentList from "@/app/us/components/document-list"
 import DocumentActivity from "@/app/us/components/document-activity"
 
-export default function USLawyersDashboardPage() {
+export default function USLawyerDocumentsPage() {
   return (
     <main className="min-h-screen p-8">
       <section className="mx-auto max-w-6xl space-y-6">
-        <h1 className="text-3xl font-bold">US Lawyer Dashboard</h1>
+        <h1 className="text-3xl font-bold">US Lawyer Document Vault</h1>
         <UploadForm />
         <DocumentList />
         <DocumentActivity />
-      <a href="/us/lawyers/documents" className="inline-block rounded-xl border px-5 py-3 font-medium">Open Lawyer Document Vault</a>
       </section>
     </main>
   )

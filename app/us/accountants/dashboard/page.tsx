@@ -9,6 +9,7 @@ export default function USAccountantsDashboardPage() {
           <div className="rounded-2xl border p-5">Tax Forms</div>
           <div className="rounded-2xl border p-5">Document Vault</div>
         </div>
+      <a href="/us/accountants/documents" className="inline-block rounded-xl border px-5 py-3 font-medium">Open Accountant Document Vault</a>
       </section>
     </main>
   );
