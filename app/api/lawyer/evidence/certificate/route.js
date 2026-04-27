@@ -7,55 +7,103 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-function certificateText(evidence) {
+function certificateLines(evidence, firm, matter) {
+  const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
   return [
-    "DRAFT CERTIFICATE UNDER SECTION 65B OF THE INDIAN EVIDENCE ACT",
+    "CERTIFICATE UNDER SECTION 65B OF THE INDIAN EVIDENCE ACT, 1872",
     "",
-    "This certificate records the production, storage, and integrity verification of the electronic record described below.",
+    `Issuing Firm: ${firm?.name || "Law Firm"}`,
+    `Bar Council Reg: ${firm?.bar_council || "N/A"}`,
+    `Address: ${[firm?.address, firm?.city, firm?.state].filter(Boolean).join(", ") || "N/A"}`,
     "",
-    `Electronic Record: ${evidence.original_filename}`,
-    `Evidence ID: ${evidence.id}`,
-    `Matter ID: ${evidence.matter_id}`,
-    `Hash Algorithm: SHA-256`,
-    `File Hash: ${evidence.file_hash}`,
-    `Uploaded At: ${evidence.uploaded_at}`,
-    `Last Verified At: ${evidence.last_verified_at || "Not verified"}`,
+    "DETAILS OF ELECTRONIC RECORD",
     "",
-    "The above electronic record was stored in the ordinary course of professional activity and its integrity has been verified by comparing its SHA-256 hash.",
+    `File Name       : ${evidence.file_name}`,
+    `Matter          : ${matter?.matter_title || matter?.title || "N/A"}`,
+    `Client          : ${matter?.client_name || "N/A"}`,
+    `CNR Number      : ${matter?.cnr_number || "N/A"}`,
+    `Evidence ID     : ${evidence.id}`,
+    `Hash Algorithm  : SHA-256`,
+    `SHA-256 Hash    : ${evidence.sha256_hash}`,
+    `File Size       : ${evidence.file_size ? (evidence.file_size / 1024).toFixed(2) + " KB" : "N/A"}`,
+    `MIME Type       : ${evidence.mime_type || "N/A"}`,
+    `Uploaded At     : ${new Date(evidence.created_at).toLocaleString("en-IN")}`,
+    `Certificate Gen : ${now} IST`,
+    `Verified        : ${evidence.verified ? "Yes" : "No"}`,
     "",
-    "This is a draft certificate and should be reviewed and signed by the responsible legal professional before filing.",
+    "CERTIFICATION",
     "",
-    "Name: ____________________",
-    "Designation: ____________________",
-    "Signature: ____________________",
-    "Date: ____________________"
+    "I hereby certify that:",
+    "",
+    "1. The electronic record described above was produced from a computer system",
+    "   used regularly in the course of professional legal activities.",
+    "",
+    "2. The computer system was operating properly at the time of storage.",
+    "",
+    "3. The SHA-256 hash value above uniquely identifies this electronic record",
+    "   and can be used to verify its integrity at any future time.",
+    "",
+    "4. The information contained in this certificate is to the best of my",
+    "   knowledge and belief, true and correct.",
+    "",
+    "This certificate is issued under Section 65B(4) of the Indian Evidence Act, 1872.",
+    "",
+    "",
+    "Name         : ____________________________",
+    "",
+    "Designation  : ____________________________",
+    "",
+    "Signature    : ____________________________",
+    "",
+    `Date         : ${new Date().toLocaleDateString("en-IN")}`,
+    "",
+    "Place        : ____________________________",
+    "",
+    "",
+    "[ Official Seal / Stamp ]",
   ];
 }
 
-async function makePdf(lines) {
+async function makePdf(lines, firm) {
   const pdfDoc = await PDFDocument.create();
   let page = pdfDoc.addPage([595, 842]);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const mono = await pdfDoc.embedFont(StandardFonts.Courier);
 
-  let y = 790;
+  // Header bar
+  page.drawRectangle({ x: 0, y: 800, width: 595, height: 42, color: rgb(0.05, 0.05, 0.15) });
+  page.drawText("SECTION 65B CERTIFICATE — INDIAN EVIDENCE ACT 1872", {
+    x: 30, y: 815, size: 11, font: bold, color: rgb(1, 1, 1)
+  });
 
+  let y = 780;
   for (const line of lines) {
-    const isTitle = line.includes("SECTION 65B");
-    page.drawText(line || " ", {
-      x: 50,
-      y,
-      size: isTitle ? 13 : 10,
-      font: isTitle ? bold : font,
-      color: rgb(0, 0, 0)
-    });
-    y -= isTitle ? 24 : 18;
+    const isSection = line === "DETAILS OF ELECTRONIC RECORD" || line === "CERTIFICATION" || line.startsWith("CERTIFICATE UNDER");
+    const isHash = line.startsWith("SHA-256 Hash");
+    const size = isSection ? 11 : line.startsWith("Issuing Firm") ? 10 : 9;
+    const f = isSection ? bold : isHash ? mono : font;
+    const color = isSection ? rgb(0.1, 0.1, 0.5) : rgb(0, 0, 0);
+
+    if (isSection) {
+      page.drawLine({ start: { x: 30, y: y - 2 }, end: { x: 565, y: y - 2 }, thickness: 0.5, color: rgb(0.7, 0.7, 0.7) });
+      y -= 4;
+    }
+
+    page.drawText(line || " ", { x: 30, y, size, font: f, color });
+    y -= line === "" ? 8 : size + 6;
 
     if (y < 60) {
       page = pdfDoc.addPage([595, 842]);
-      y = 790;
+      y = 780;
     }
   }
+
+  // Footer
+  page.drawLine({ start: { x: 30, y: 40 }, end: { x: 565, y: 40 }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) });
+  page.drawText("This is a computer-generated certificate. Verify authenticity using the SHA-256 hash.", {
+    x: 30, y: 25, size: 7, font, color: rgb(0.5, 0.5, 0.5)
+  });
 
   return Buffer.from(await pdfDoc.save());
 }
@@ -64,38 +112,61 @@ export async function POST(req) {
   const { evidenceId } = await req.json();
 
   const { data: evidence, error } = await supabase
-    .from("lawyer_evidence_vault")
+    .from("evidence_files")
     .select("*")
     .eq("id", evidenceId)
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || !evidence) return NextResponse.json({ error: error?.message || "Not found" }, { status: 404 });
 
-  const lines = certificateText(evidence);
-  const pdfBuffer = await makePdf(lines);
+  const { data: firm } = await supabase.from("firms").select("*").eq("id", evidence.firm_id).single();
+  const { data: matter } = await supabase.from("legal_matters").select("*").eq("id", evidence.matter_id).single();
 
-  const certificatePath = `certificates/${evidence.firm_id}/${evidence.matter_id}/${Date.now()}-${evidence.original_filename}.pdf`;
+  const lines = certificateLines(evidence, firm, matter);
+  const pdfBuffer = await makePdf(lines, firm);
 
-  const upload = await supabase.storage
+  const certPath = `certificates/${evidence.firm_id}/${evidence.matter_id}/${Date.now()}-cert.pdf`;
+
+  const { error: uploadError } = await supabase.storage
     .from("lawyer-evidence")
-    .upload(certificatePath, pdfBuffer, {
-      contentType: "application/pdf",
-      upsert: false
+    .upload(certPath, pdfBuffer, { contentType: "application/pdf", upsert: true });
+
+  if (uploadError) {
+    // If bucket doesn't exist, return PDF directly
+    return new Response(pdfBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="65B-certificate-${evidenceId}.pdf"`,
+      },
     });
+  }
 
-  if (upload.error) return NextResponse.json({ error: upload.error.message }, { status: 500 });
+  // Update evidence_files with certificate_url
+  await supabase.from("evidence_files").update({ certificate_url: certPath }).eq("id", evidenceId);
 
-  const { error: insertError } = await supabase
-    .from("lawyer_evidence_certificates")
-    .insert({
-      firm_id: evidence.firm_id,
-      evidence_id: evidence.id,
-      certificate_text: lines.join("\n"),
-      certificate_file_path: certificatePath,
-      status: "draft"
-    });
+  const { data: { publicUrl } } = supabase.storage.from("lawyer-evidence").getPublicUrl(certPath);
 
-  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
+  return NextResponse.json({ certificate_url: publicUrl, certificate_path: certPath });
+}
 
-  return NextResponse.json({ certificate_file_path: certificatePath });
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const evidenceId = searchParams.get("id");
+  if (!evidenceId) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  const { data: evidence } = await supabase.from("evidence_files").select("*").eq("id", evidenceId).single();
+  if (!evidence) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const { data: firm } = await supabase.from("firms").select("*").eq("id", evidence.firm_id).single();
+  const { data: matter } = await supabase.from("legal_matters").select("*").eq("id", evidence.matter_id).single();
+
+  const lines = certificateLines(evidence, firm, matter);
+  const pdfBuffer = await makePdf(lines, firm);
+
+  return new Response(pdfBuffer, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="65B-${evidence.file_name}.pdf"`,
+    },
+  });
 }

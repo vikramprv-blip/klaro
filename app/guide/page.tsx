@@ -1,109 +1,100 @@
 export const dynamic = "force-dynamic";
-import Link from "next/link"
+import Link from "next/link";
 
 const CA_GUIDE = [
-  {
-    step: "1",
-    title: "Add your clients",
-    desc: "Go to CA Suite → Clients → Add client. Enter client name, entity type (Individual, Pvt Ltd, LLP etc.), PAN, and GSTIN. Assign a tier (A/B/C) and staff member.",
-    path: "/ca/clients",
-  },
-  {
-    step: "2",
-    title: "Generate GST filings",
-    desc: "Go to GST Filings → click the client rows to update status as you file. Use the status dropdown: Pending → In Progress → Filed. Enter the filed date when done.",
-    path: "/ca/gst",
-  },
-  {
-    step: "3",
-    title: "Track TDS compliance",
-    desc: "Go to TDS Compliance → Generate filings → select form type (24Q/26Q), quarter, and clients. Update challan numbers and filed dates as you complete each filing.",
-    path: "/ca/tds",
-  },
-  {
-    step: "4",
-    title: "Manage ITR filings",
-    desc: "Go to ITR Tracker → Generate filings. The ITR form is auto-selected based on entity type. Update status from Pending → Docs Pending → In Progress → Review Pending → Filed.",
-    path: "/ca/itr",
-  },
-  {
-    step: "5",
-    title: "Track advance tax",
-    desc: "Go to Advance Tax → Generate instalments. All 4 instalments are created per client for the assessment year. Mark each as Paid when the challan is deposited.",
-    path: "/ca/advance-tax",
-  },
-  {
-    step: "6",
-    title: "Check compliance deadlines",
-    desc: "Go to Deadlines to see all FY 2026-27 compliance dates for GST, TDS, ITR, advance tax, and ROC. Switch between list and calendar view. Red = overdue, amber = due soon.",
-    path: "/ca/deadlines",
-  },
-]
+  { step: "1", title: "Add your clients", desc: "Go to CA Suite → Clients → Add client. Enter name, entity type (Individual, Pvt Ltd, LLP), PAN and GSTIN. Assign a tier (A/B/C) and staff member.", path: "/in/ca/clients" },
+  { step: "2", title: "Set up firm settings", desc: "Go to Settings → Firm profile. Enter your firm name, address, GST number, email and admin name. This appears on all invoices and certificates.", path: "/in/ca" },
+  { step: "3", title: "Generate GST filings", desc: "Go to GST Filings → select clients → generate. Track GSTR-1, 3B, 9 status per client. Use the status dropdown: Pending → In Progress → Filed. Enter the filed date when done.", path: "/in/ca/gst" },
+  { step: "4", title: "Track TDS compliance", desc: "Go to TDS → Generate filings → select form type (24Q/26Q/27Q), quarter and clients. Update challan numbers and filed dates as you complete each filing.", path: "/in/ca/tds" },
+  { step: "5", title: "Manage ITR filings", desc: "Go to ITR Tracker → Generate. The ITR form auto-selects by entity type. 5-stage workflow: Pending → Docs Pending → In Progress → Review Pending → Filed.", path: "/in/ca/itr" },
+  { step: "6", title: "Track advance tax", desc: "Go to Advance Tax → Generate instalments. All 4 instalments are created per client per AY. Mark each as Paid when the challan is deposited.", path: "/in/ca/advance-tax" },
+  { step: "7", title: "Check compliance deadlines", desc: "Go to Deadlines to see all FY 2026-27 compliance dates for GST, TDS, ITR, advance tax and ROC. Switch between list and calendar view. Red = overdue, amber = due soon.", path: "/in/ca/deadlines" },
+  { step: "8", title: "Use AI tools", desc: "Go to AI Tools to access Tax Optimiser, GST Health Check, GSTR-2B Reconciliation, Notice Reader, P&L Parser, Penalty Calculator, Form 26AS analyser and Doc Chaser.", path: "/in/ca/ai/tax-optimiser" },
+  { step: "9", title: "Manage documents", desc: "Go to Documents → Upload. All documents are indexed for AI search. Use the search bar to find any document by content, not just filename.", path: "/in/ca/documents" },
+  { step: "10", title: "Create invoices", desc: "Go to Invoices → New invoice. Select client, add line items with GST rates. Generate PDF, send via WhatsApp or email directly from the platform.", path: "/in/ca/invoices" },
+  { step: "11", title: "Set up HR module", desc: "Go to HR → Employees → Add employee. Enter name, role, department and salary. Then manage attendance, leave requests and generate payslips with PF/ESIC/TDS calculations.", path: "/in/ca/hr" },
+  { step: "12", title: "Send follow-up reminders", desc: "Go to Follow-ups. The AI drafts a WhatsApp or email message to chase clients for documents. Review, edit and send. Track delivery and response status.", path: "/in/ca/followups" },
+];
 
 const LAWYER_GUIDE = [
-  {
-    step: "1",
-    title: "Add a matter",
-    desc: "Go to Lawyer Suite → Matters → New matter. Enter client name, matter title, type (civil/criminal/family etc.), court, and case number. Set priority and next hearing date.",
-    path: "/lawyer/matters",
-  },
-  {
-    step: "2",
-    title: "Track hearings",
-    desc: "Go to Hearings → Add hearing. Select the matter, enter the hearing date and court. The dashboard shows today's hearings and upcoming dates with countdown.",
-    path: "/lawyer/hearings",
-  },
-  {
-    step: "3",
-    title: "Manage tasks",
-    desc: "Go to Tasks → Add task. Assign tasks to matters with due dates. Click the checkbox to move: Pending → In Progress → Done. Overdue tasks are highlighted in red.",
-    path: "/lawyer/tasks",
-  },
-]
+  { step: "1", title: "Set up firm profile", desc: "Go to Lawyer Suite → Settings. Enter firm name, Bar Council registration number, GST, address and admin name. This appears on all certificates and invoices.", path: "/in/lawyer/settings" },
+  { step: "2", title: "Add a matter", desc: "Go to Matters → New matter. Enter client name, matter title, type (civil/criminal/family/corporate), court name, CNR number and opposing party. Set priority.", path: "/in/lawyer/matters" },
+  { step: "3", title: "Sync hearings via eCourts", desc: "On any matter with a CNR number, click Sync. Klaro fetches the latest hearing dates from eCourts automatically. The Action Engine then auto-creates prep reminders.", path: "/in/lawyer/hearings" },
+  { step: "4", title: "Upload evidence to the vault", desc: "Go to Evidence → select matter → upload file. Every file is SHA-256 hashed automatically. A cryptographic fingerprint is stored — no one can alter the file without detection.", path: "/in/lawyer/evidence" },
+  { step: "5", title: "Generate a Section 65B certificate", desc: "In the Evidence Vault, click '65B Cert' on any file. Klaro generates a court-ready PDF certificate with the SHA-256 hash, firm details and certification statement.", path: "/in/lawyer/evidence" },
+  { step: "6", title: "Manage tasks", desc: "Go to Tasks → Add task. Assign to a matter with a due date. Status flow: Pending → In Progress → Done. Overdue tasks are highlighted in red across the dashboard.", path: "/in/lawyer/tasks" },
+  { step: "7", title: "Use AI drafting", desc: "Go to Drafts → New draft. Select document type (petition, notice, agreement, letter). Enter the key facts and let the AI generate a first draft. Review and edit before use.", path: "/in/lawyer/drafts" },
+  { step: "8", title: "Manage documents", desc: "Go to Documents to store all matter-related files — pleadings, orders, agreements, correspondence. Files are linked to matters and accessible from the matter view.", path: "/in/lawyer/documents" },
+  { step: "9", title: "Create invoices and billing", desc: "Go to Billing → New invoice. Select matter, add time entries or fixed fees, apply GST. Generate PDF and send to client. Track payment status.", path: "/in/lawyer/billing" },
+  { step: "10", title: "Set up HR module", desc: "Go to HR → Employees. Add associates, clerks and support staff. Manage attendance, approve leave requests, run payroll and track billable hours via timesheets.", path: "/in/lawyer/hr" },
+  { step: "11", title: "Review action alerts", desc: "The Action Engine auto-creates alerts when hearings change, when prep is due or when invoices should be sent. Go to the Overview dashboard to see and act on pending actions.", path: "/in/lawyer" },
+];
+
+const STATUS_GST = [
+  { label: "Pending", color: "bg-amber-50 text-amber-700", desc: "Not yet started" },
+  { label: "In progress", color: "bg-blue-50 text-blue-700", desc: "Work has begun" },
+  { label: "Filed", color: "bg-green-50 text-green-700", desc: "Successfully filed on portal" },
+  { label: "Late filed", color: "bg-red-50 text-red-600", desc: "Filed after due date — late fee may apply" },
+  { label: "N/A", color: "bg-gray-50 text-gray-400", desc: "Not applicable for this client" },
+];
+
+const STATUS_ITR = [
+  { label: "Pending", color: "bg-amber-50 text-amber-700", desc: "Not started" },
+  { label: "Docs pending", color: "bg-orange-50 text-orange-700", desc: "Waiting for client documents" },
+  { label: "In progress", color: "bg-blue-50 text-blue-700", desc: "Being prepared" },
+  { label: "Review pending", color: "bg-purple-50 text-purple-700", desc: "Ready for partner review" },
+  { label: "Filed", color: "bg-green-50 text-green-700", desc: "Filed and acknowledged" },
+];
 
 const FAQS = [
-  { q: "How do I add more users to my firm?", a: "Currently in beta — contact us and we'll add users manually. Multi-user self-serve is coming in the next release." },
-  { q: "Can I import my existing client list?", a: "CSV import is coming soon. For now, add clients manually via the Clients page. It takes about 30 seconds per client." },
-  { q: "How does the compliance calendar work?", a: "The calendar is pre-seeded with all FY 2026-27 deadlines — GST, TDS, ITR, advance tax, ROC. It's not client-specific; it shows all national compliance dates." },
-  { q: "Can my clients see their filing status?", a: "Client portal is on the roadmap. Coming in the next major release — clients will get a shareable link to see their own status." },
-  { q: "Is the data backed up?", a: "Yes. Data is stored on Supabase (AWS infrastructure) with automatic daily backups and point-in-time recovery." },
-  { q: "How do I report a bug?", a: "Email vikramch@hotmail.com or use the feedback link in the app. We typically respond within 24 hours during beta." },
-]
+  { q: "How do I add more users to my firm?", a: "Go to Settings → Team → Invite member. Enter their email and assign a role (admin, lawyer, associate, staff). They'll receive an invite email to join your firm workspace." },
+  { q: "Can I import my existing client list?", a: "Yes — go to Clients → Bulk import → upload a CSV file. The template is available on the import page. Map your columns and import in one go." },
+  { q: "How does the eCourts hearing sync work?", a: "Enter the CNR number on a matter. Click Sync — Klaro calls the eCourts API, fetches the latest hearing dates and updates your calendar automatically. The Action Engine then creates prep reminders." },
+  { q: "What is a Section 65B certificate?", a: "Section 65B of the Indian Evidence Act requires a certificate to admit electronic records as evidence in court. Klaro generates this automatically using the SHA-256 hash of your uploaded file. The certificate contains the file hash, firm details and certification statement." },
+  { q: "How does the evidence vault work?", a: "Every file uploaded to the Evidence Vault is SHA-256 hashed — a unique cryptographic fingerprint. If the file is altered in any way, the hash changes and verification fails. This creates a tamper-proof audit trail admissible in court." },
+  { q: "Is my data backed up?", a: "Yes. Data is stored on Supabase (AWS infrastructure) with automatic daily backups and point-in-time recovery. Files are stored on Cloudflare R2 with geo-redundancy. Your data is never lost." },
+  { q: "Is Klaro DPDP compliant?", a: "Yes. Klaro complies with India's Digital Personal Data Protection Act. Each firm's data is isolated at the database level using row-level security. No firm can access another firm's data under any circumstance." },
+  { q: "How do I generate a payslip?", a: "Go to HR → Payroll → select employee and month → enter basic, allowances and deductions. Klaro auto-calculates PF (12%), ESIC (3.25% if applicable), PT and TDS. Click Generate to create the payslip and send via WhatsApp." },
+  { q: "Can I use Klaro on mobile?", a: "Yes — Klaro is fully responsive and works on mobile browsers. A dedicated mobile app is on the roadmap." },
+  { q: "How do I report a bug or request a feature?", a: "Use the feedback button in the app or email support@klaro.services. We review all feedback and typically respond within 24 hours." },
+];
 
 export default function GuidePage() {
   return (
     <div className="min-h-screen bg-white">
-      <nav className="border-b border-gray-100 px-8 py-4 flex items-center justify-between">
-        <Link href="/" className="text-xl font-semibold tracking-tight text-gray-900">Klaro</Link>
+      <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 bg-white z-50">
+        <Link href="/" className="text-xl font-bold tracking-tight text-gray-900">Klaro</Link>
         <div className="flex items-center gap-4">
-          <Link href="/ca" className="text-sm text-gray-500 hover:text-gray-900">CA Suite</Link>
-          <Link href="/lawyer" className="text-sm text-gray-500 hover:text-gray-900">Lawyer Suite</Link>
-          <Link href="/signup" className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Get started</Link>
+          <Link href="/" className="text-sm text-gray-500 hover:text-gray-900">Home</Link>
+          <Link href="/pricing" className="text-sm text-gray-500 hover:text-gray-900">Pricing</Link>
+          <Link href="/signup" className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700">Get started free</Link>
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-8 py-16">
+      <div className="max-w-4xl mx-auto px-6 py-16">
         <div className="mb-12">
-          <h1 className="text-3xl font-semibold text-gray-900 mb-3 tracking-tight">User Guide</h1>
-          <p className="text-gray-500">Everything you need to get started with Klaro. Beta version — more features are being added weekly.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">User Guide</h1>
+          <p className="text-gray-500">Step-by-step instructions for every feature in Klaro. Use the section links to jump to your product.</p>
+          <div className="flex gap-3 mt-4">
+            <a href="#ca" className="text-xs font-medium bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-100">Jump to CA Suite</a>
+            <a href="#lawyer" className="text-xs font-medium bg-gray-900 text-white px-3 py-1.5 rounded-full hover:bg-gray-700">Jump to Lawyer Suite</a>
+          </div>
         </div>
 
         {/* CA Suite Guide */}
-        <section className="mb-16">
+        <section id="ca" className="mb-16">
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-xs font-medium bg-blue-50 text-blue-700 px-3 py-1 rounded-full">CA Suite</span>
-            <h2 className="text-xl font-semibold text-gray-900">Getting started as a CA</h2>
+            <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-3 py-1 rounded-full">CA Suite</span>
+            <h2 className="text-xl font-bold text-gray-900">Getting started as a CA</h2>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {CA_GUIDE.map(({ step, title, desc, path }) => (
-              <div key={step} className="border border-gray-100 rounded-xl p-5 flex gap-4">
-                <div className="w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
-                  {step}
-                </div>
+              <div key={step} className="border border-gray-100 rounded-xl p-5 flex gap-4 hover:border-gray-200 transition-colors">
+                <div className="w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">{step}</div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-sm font-medium text-gray-900">{title}</h3>
-                    <Link href={path} className="text-xs text-blue-500 hover:underline">Open →</Link>
+                    <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+                    <Link href={path} className="text-xs text-blue-500 hover:underline flex-shrink-0 ml-4">Open →</Link>
                   </div>
                   <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
                 </div>
@@ -113,21 +104,19 @@ export default function GuidePage() {
         </section>
 
         {/* Lawyer Suite Guide */}
-        <section className="mb-16">
+        <section id="lawyer" className="mb-16">
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-xs font-medium bg-gray-900 text-white px-3 py-1 rounded-full">Lawyer Suite</span>
-            <h2 className="text-xl font-semibold text-gray-900">Getting started as a Lawyer</h2>
+            <span className="text-xs font-semibold bg-gray-900 text-white px-3 py-1 rounded-full">Lawyer Suite</span>
+            <h2 className="text-xl font-bold text-gray-900">Getting started as a Lawyer</h2>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {LAWYER_GUIDE.map(({ step, title, desc, path }) => (
-              <div key={step} className="border border-gray-100 rounded-xl p-5 flex gap-4">
-                <div className="w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
-                  {step}
-                </div>
+              <div key={step} className="border border-gray-100 rounded-xl p-5 flex gap-4 hover:border-gray-200 transition-colors">
+                <div className="w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">{step}</div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-sm font-medium text-gray-900">{title}</h3>
-                    <Link href={path} className="text-xs text-blue-500 hover:underline">Open →</Link>
+                    <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+                    <Link href={path} className="text-xs text-blue-500 hover:underline flex-shrink-0 ml-4">Open →</Link>
                   </div>
                   <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
                 </div>
@@ -136,39 +125,27 @@ export default function GuidePage() {
           </div>
         </section>
 
-        {/* Status meanings */}
+        {/* Status reference */}
         <section className="mb-16">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Status reference</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Status reference</h2>
           <div className="grid grid-cols-2 gap-8">
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">GST / TDS filing statuses</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">GST / TDS filing statuses</h3>
               <div className="space-y-2">
-                {[
-                  { label: "Pending",     color: "bg-amber-50 text-amber-700",  desc: "Not yet started" },
-                  { label: "In progress", color: "bg-blue-50 text-blue-700",    desc: "Work has begun" },
-                  { label: "Filed",       color: "bg-green-50 text-green-700",  desc: "Successfully filed on portal" },
-                  { label: "Late filed",  color: "bg-red-50 text-red-600",      desc: "Filed after due date — late fee may apply" },
-                  { label: "N/A",         color: "bg-gray-50 text-gray-400",    desc: "Not applicable for this client" },
-                ].map(({ label, color, desc }) => (
+                {STATUS_GST.map(({ label, color, desc }) => (
                   <div key={label} className="flex items-center gap-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${color} border-current/20 w-24 text-center`}>{label}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${color} w-24 text-center flex-shrink-0`}>{label}</span>
                     <span className="text-sm text-gray-500">{desc}</span>
                   </div>
                 ))}
               </div>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">ITR filing statuses</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">ITR filing statuses</h3>
               <div className="space-y-2">
-                {[
-                  { label: "Pending",         color: "bg-amber-50 text-amber-700",   desc: "Not started" },
-                  { label: "Docs pending",    color: "bg-orange-50 text-orange-700", desc: "Waiting for client documents" },
-                  { label: "In progress",     color: "bg-blue-50 text-blue-700",     desc: "Being prepared" },
-                  { label: "Review pending",  color: "bg-purple-50 text-purple-700", desc: "Ready for partner review" },
-                  { label: "Filed",           color: "bg-green-50 text-green-700",   desc: "Filed and acknowledged" },
-                ].map(({ label, color, desc }) => (
+                {STATUS_ITR.map(({ label, color, desc }) => (
                   <div key={label} className="flex items-center gap-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${color} w-28 text-center`}>{label}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${color} w-28 text-center flex-shrink-0`}>{label}</span>
                     <span className="text-sm text-gray-500">{desc}</span>
                   </div>
                 ))}
@@ -179,17 +156,17 @@ export default function GuidePage() {
 
         {/* Deadline colours */}
         <section className="mb-16">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Deadline colours</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Deadline colour codes</h2>
           <div className="border border-gray-100 rounded-xl overflow-hidden">
             {[
-              { color: "bg-red-100",    label: "Red",    meaning: "Overdue — penalty may already be accruing" },
-              { color: "bg-amber-100",  label: "Amber",  meaning: "Due within 7 days — take action today" },
+              { color: "bg-red-100", label: "Red", meaning: "Overdue — penalty may already be accruing" },
+              { color: "bg-amber-100", label: "Amber", meaning: "Due within 7 days — take action today" },
               { color: "bg-yellow-100", label: "Yellow", meaning: "Due within 30 days — plan ahead" },
-              { color: "bg-gray-100",   label: "Gray",   meaning: "More than 30 days away" },
-              { color: "bg-green-100",  label: "Green",  meaning: "Filed / completed" },
+              { color: "bg-gray-100", label: "Gray", meaning: "More than 30 days away" },
+              { color: "bg-green-100", label: "Green", meaning: "Filed / completed" },
             ].map(({ color, label, meaning }) => (
               <div key={label} className="flex items-center gap-4 px-5 py-3 border-b border-gray-50 last:border-0">
-                <div className={`w-4 h-4 rounded-full ${color}`} />
+                <div className={`w-4 h-4 rounded-full ${color} flex-shrink-0`} />
                 <span className="text-sm font-medium text-gray-700 w-16">{label}</span>
                 <span className="text-sm text-gray-500">{meaning}</span>
               </div>
@@ -199,28 +176,29 @@ export default function GuidePage() {
 
         {/* FAQ */}
         <section className="mb-16">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Frequently asked questions</h2>
-          <div className="space-y-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Frequently asked questions</h2>
+          <div className="space-y-5">
             {FAQS.map(({ q, a }) => (
-              <div key={q} className="border-b border-gray-100 pb-6 last:border-0">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">{q}</h3>
+              <div key={q} className="border-b border-gray-100 pb-5">
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">{q}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{a}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Beta note */}
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Beta version — your feedback shapes the product</h3>
-          <p className="text-sm text-blue-700 leading-relaxed mb-3">
-            Klaro is in active development. Features may change, bugs may exist. Your feedback directly influences what gets built next.
+        {/* Support */}
+        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Need more help?</h3>
+          <p className="text-sm text-gray-500 leading-relaxed mb-3">
+            Our team responds within 24 hours. For urgent issues, use the in-app feedback button.
           </p>
-          <p className="text-sm text-blue-600">
-            Report bugs or suggest features: <span className="font-medium">vikramch@hotmail.com</span>
-          </p>
+          <div className="flex gap-4 flex-wrap text-sm">
+            <span className="text-gray-700">Email: <span className="font-medium">support@klaro.services</span></span>
+            <Link href="/contact" className="text-blue-600 hover:underline">Contact form →</Link>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

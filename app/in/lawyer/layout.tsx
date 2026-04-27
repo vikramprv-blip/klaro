@@ -8,6 +8,7 @@ const NAV = [
   { label: "Hearings",   href: "/in/lawyer/hearings",     icon: "◷" },
   { label: "Tasks",      href: "/in/lawyer/tasks",        icon: "◈" },
   { label: "Drafts",     href: "/in/lawyer/drafts",       icon: "▣" },
+  { label: "Evidence",   href: "/in/lawyer/evidence",     icon: "🔐" },
   { label: "Documents",  href: "/in/lawyer/documents",    icon: "◎" },
   { label: "Billing",    href: "/in/lawyer/billing",      icon: "◆" },
   { label: "HR",         href: "/in/lawyer/hr",           icon: "👥" },
