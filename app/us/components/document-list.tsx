@@ -18,12 +18,24 @@ export default function DocumentList() {
   const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState("")
+  const [usage, setUsage] = useState<any>(null)
 
   const loadDocuments = async () => {
     const res = await fetch(`/api/us/documents/list?firm_id=${firmId}`)
     const data = await res.json()
     setDocuments(data.documents || [])
     setLoading(false)
+  }
+
+  const loadUsage = async () => {
+    const res = await fetch("/api/us/billing/usage")
+    const data = await res.json()
+    setUsage(data)
+  }
+
+  const refreshVault = async () => {
+    await loadDocuments()
+    await loadUsage()
   }
 
   const searchDocuments = async (value: string) => {
@@ -51,7 +63,7 @@ export default function DocumentList() {
 
   useEffect(() => {
     if (firmId) {
-      loadDocuments()
+      refreshVault()
     }
   }, [firmId])
 
@@ -84,7 +96,7 @@ export default function DocumentList() {
       body: JSON.stringify({ id, title, firm_id: firmId }),
     })
 
-    await loadDocuments()
+    await refreshVault()
   }
 
   const deleteFile = async (id: string, file_path: string) => {
@@ -96,13 +108,37 @@ export default function DocumentList() {
       body: JSON.stringify({ id, file_path, firm_id: firmId }),
     })
 
-    await loadDocuments()
+    await refreshVault()
   }
 
   return (
     <div className="rounded-2xl border p-5">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-xl font-semibold">Document Vault</h2>
+        <div>
+  <h2 className="text-xl font-semibold">Document Vault</h2>
+  {usage && (
+    <>
+      <div className="mt-2 text-sm">
+        <div className="h-2 bg-gray-200 rounded">
+          <div
+            className="h-2 bg-black rounded"
+            style={{ width: `${usage.percent}%` }}
+          />
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {(usage.used / (1024*1024)).toFixed(1)} MB of {(usage.limit / (1024*1024)).toFixed(0)} MB used
+        </p>
+      </div>
+
+      {usage.percent > 80 && (
+        <div className="mt-3 p-3 border rounded text-sm">
+          Storage almost full. 
+          <a href="/pricing" className="underline ml-1">Upgrade plan</a>
+        </div>
+      )}
+    </>
+  )}
+</div>
         <input
           value={query}
           onChange={(e) => searchDocuments(e.target.value)}
