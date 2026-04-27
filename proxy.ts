@@ -28,13 +28,11 @@ export async function proxy(request: NextRequest) {
   // ── /admin — HARD BLOCK, admin email only ──────────────
   if (pathname.startsWith("/admin")) {
     if (!user) return NextResponse.redirect(new URL("/signin", request.url));
-    if (user.email !== ADMIN_EMAIL) {
-      return NextResponse.redirect(new URL("/in/lawyer", request.url));
-    }
+    if (user.email !== ADMIN_EMAIL) return NextResponse.redirect(new URL("/in/lawyer", request.url));
     return response;
   }
 
-  // ── Auth required for all protected paths ──────────────
+  // ── Auth required for protected paths ──────────────────
   const protectedPrefixes = ["/in", "/settings", "/dashboard", "/work-items", "/documents", "/clients", "/invoices"];
   const isProtected = protectedPrefixes.some(p => pathname === p || pathname.startsWith(`${p}/`));
 
@@ -53,23 +51,20 @@ export async function proxy(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    const role = member?.role || "lawyer";
+    const role = member?.role || "both";
 
-    // CA trying to access lawyer portal → kick to CA
-    if (pathname.startsWith("/in/lawyer") && role === "ca") {
-      return NextResponse.redirect(new URL("/in/ca", request.url));
+    // admin and both can access everything — no redirect
+    if (role !== "both" && role !== "admin") {
+      if (pathname.startsWith("/in/lawyer") && role === "ca" && role !== "both") {
+        return NextResponse.redirect(new URL("/in/ca", request.url));
+      }
+      if (pathname.startsWith("/in/ca") && role === "lawyer") {
+        return NextResponse.redirect(new URL("/in/lawyer", request.url));
+      }
     }
-
-    // Lawyer trying to access CA portal → kick to lawyer
-    if (pathname.startsWith("/in/ca") && role !== "ca" && role !== "admin") {
-      return NextResponse.redirect(new URL("/in/lawyer", request.url));
-    }
-
-    // CA trying to access lawyer portal → kick to CA
-    // Admin can access both
   }
 
-  // ── Already signed in hitting signin/signup → redirect ─
+  // ── Already signed in hitting signin/signup ─────────────
   if (user && (pathname === "/signin" || pathname === "/signup")) {
     return NextResponse.redirect(new URL("/post-login", request.url));
   }

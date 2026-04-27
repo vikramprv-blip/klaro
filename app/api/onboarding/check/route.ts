@@ -20,7 +20,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ hasOrg: false, vertical: "lawyer" });
   }
 
-  // Check if user exists in our users table
   const { data: user } = await supabase
     .from("users")
     .select("id, role, firm_id")
@@ -31,9 +30,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ hasOrg: false, vertical: "lawyer" });
   }
 
+  // Determine vertical based on role
+  let vertical = "lawyer";
+  if (user.role === "ca") vertical = "ca";
+  else if (user.role === "admin") vertical = "admin";
+  else if (user.role === "both") vertical = "both";
+
   return NextResponse.json({
     hasOrg: true,
-    vertical: user.role === "admin" ? "admin" : user.role === "ca" ? "ca" : "lawyer",
+    vertical,
     firmId: user.firm_id,
   });
 }

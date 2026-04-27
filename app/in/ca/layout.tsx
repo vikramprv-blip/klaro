@@ -52,6 +52,12 @@ export default function CALayout({ children }: { children: React.ReactNode }) {
           )
         })}
       </aside>
+      <div className="mt-auto pt-4 border-t border-gray-100 px-3 pb-2">
+        <Link href="/in/lawyer"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-50">
+          <span>⚖️</span> Switch to Lawyer Suite
+        </Link>
+      </div>
       <main className="flex-1 overflow-auto">
         {children}
       </main>
