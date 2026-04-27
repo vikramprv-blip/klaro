@@ -1,21 +1,34 @@
 "use client"
 
-import { useState } from "react"
+import { getUser } from "@/app/lib/auth/get-user"
+import { getFirmIdFromUser } from "@/app/lib/auth/get-firm"
+import { useState, useEffect } from "react"
 
 export default function UploadForm() {
+
+  useEffect(() => {
+    const init = async () => {
+      const user = await getUser()
+      const id = getFirmIdFromUser(user)
+      setFirmId(id)
+    }
+    init()
+  }, [])
+
+  const [firmId, setFirmId] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [title, setTitle] = useState("")
   const [loading, setLoading] = useState(false)
 
   const handleUpload = async () => {
-    if (!file) return
+    if (!file || !firmId) return
 
     setLoading(true)
 
     const formData = new FormData()
     formData.append("file", file)
     formData.append("title", title)
-    formData.append("firm_id", "demo-firm-id")
+    formData.append("firm_id", firmId)
     formData.append("profession", "lawyer")
 
     const res = await fetch("/api/us/documents/upload", {

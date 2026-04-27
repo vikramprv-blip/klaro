@@ -1,5 +1,7 @@
 "use client"
 
+import { getUser } from "@/app/lib/auth/get-user"
+import { getFirmIdFromUser } from "@/app/lib/auth/get-firm"
 import { useEffect, useState } from "react"
 
 type DocumentItem = {
@@ -12,12 +14,13 @@ type DocumentItem = {
 }
 
 export default function DocumentList() {
+  const [firmId, setFirmId] = useState<string | null>(null)
   const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState("")
 
   const loadDocuments = async () => {
-    const res = await fetch("/api/us/documents/list")
+    const res = await fetch(`/api/us/documents/list?firm_id=${firmId}`)
     const data = await res.json()
     setDocuments(data.documents || [])
     setLoading(false)
@@ -27,7 +30,7 @@ export default function DocumentList() {
     setQuery(value)
     setLoading(true)
 
-    const res = await fetch("/api/us/documents/search", {
+    const res = await fetch(`/api/us/documents/search?firm_id=${firmId}`, {
       method: "POST",
       body: JSON.stringify({ query: value }),
     })
@@ -38,13 +41,24 @@ export default function DocumentList() {
   }
 
   useEffect(() => {
-    loadDocuments()
+    const init = async () => {
+      const user = await getUser()
+      const id = getFirmIdFromUser(user)
+      setFirmId(id)
+    }
+    init()
   }, [])
+
+  useEffect(() => {
+    if (firmId) {
+      loadDocuments()
+    }
+  }, [firmId])
 
   const openFile = async (id: string, file_path: string) => {
     const res = await fetch("/api/us/documents/view", {
       method: "POST",
-      body: JSON.stringify({ id, file_path, firm_id: "demo-firm-id" }),
+      body: JSON.stringify({ id, file_path, firm_id: firmId }),
     })
 
     const data = await res.json()
@@ -54,7 +68,7 @@ export default function DocumentList() {
   const downloadFile = async (id: string, file_path: string) => {
     const res = await fetch("/api/us/documents/download", {
       method: "POST",
-      body: JSON.stringify({ id, file_path, firm_id: "demo-firm-id" }),
+      body: JSON.stringify({ id, file_path, firm_id: firmId }),
     })
 
     const data = await res.json()
@@ -67,7 +81,7 @@ export default function DocumentList() {
 
     await fetch("/api/us/documents/rename", {
       method: "POST",
-      body: JSON.stringify({ id, title, firm_id: "demo-firm-id" }),
+      body: JSON.stringify({ id, title, firm_id: firmId }),
     })
 
     await loadDocuments()
@@ -79,7 +93,7 @@ export default function DocumentList() {
 
     await fetch("/api/us/documents/delete", {
       method: "POST",
-      body: JSON.stringify({ id, file_path, firm_id: "demo-firm-id" }),
+      body: JSON.stringify({ id, file_path, firm_id: firmId }),
     })
 
     await loadDocuments()

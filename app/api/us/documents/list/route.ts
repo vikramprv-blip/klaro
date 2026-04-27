@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-export async function GET() {
+export async function GET(req: Request) {
+
+  const url = new URL(req.url)
+  const firm_id = url.searchParams.get("firm_id")
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -10,6 +14,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("us_documents_view")
     .select("*")
+    .eq("firm_id", firm_id)
     .is("deleted_at", null)
     .limit(50)
 
