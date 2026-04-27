@@ -1,3 +1,4 @@
+import { UsBillingCard } from "@/app/us/components/us-billing-card"
 import UploadForm from "@/app/us/components/upload-form"
 import DocumentList from "@/app/us/components/document-list"
 import DocumentActivity from "@/app/us/components/document-activity"
@@ -9,7 +10,9 @@ export default function USLawyerDocumentsPage() {
       <section className="mx-auto max-w-6xl space-y-6">
         <h1 className="text-3xl font-bold">US Lawyer Document Vault</h1>
         <UploadForm />
-        <DocumentList />
+        <UsBillingCard />
+
+      <DocumentList />
         <ClientPortalLinks />
         <DocumentActivity />
       </section>
