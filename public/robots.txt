@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /in/
+Disallow: /api/
+Disallow: /post-login
+
+Sitemap: https://klaro.services/sitemap.xml
