@@ -9,14 +9,20 @@ const supabase = createClient(
 export async function POST(req) {
   const { id, status } = await req.json();
 
-  const { error } = await supabase
-    .from("lawyer_action_suggestions")
-    .update({ status })
-    .eq("id", id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!id || !status) {
+    return NextResponse.json({ error: "id and status required" }, { status: 400 });
   }
 
-  return NextResponse.json({ success: true });
+  const { data, error } = await supabase
+    .from("action_suggestions")
+    .update({
+      status,
+      resolved_at: ["resolved", "dismissed"].includes(status) ? new Date().toISOString() : null
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data);
 }

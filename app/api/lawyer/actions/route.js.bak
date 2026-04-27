@@ -8,7 +8,7 @@ const supabase = createClient(
 
 export async function GET() {
   const { data, error } = await supabase
-    .from("action_suggestions")
+    .from("lawyer_action_suggestions")
     .select("*")
     .neq("status", "done")
     .neq("status", "dismissed")
