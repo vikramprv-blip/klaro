@@ -4,10 +4,15 @@ import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 
-const PLANS: Record<string, { name: string; price: number; label: string }> = {
-  solo:     { name: "Solo",     price: 176882, label: "₹1,768.82/mo" },
-  practice: { name: "Practice", price: 589882, label: "₹5,898.82/mo" },
-  firm:     { name: "Firm",     price: 1769882, label: "₹17,698.82/mo" },
+const PLANS: Record<string, { name: string; price: number; label: string; vertical: string }> = {
+  // CA Suite
+  "ca-solo":     { name: "CA Solo",     price: 174900, label: "₹1,749/mo incl. GST", vertical: "ca" },
+  "ca-partner":  { name: "CA Partner",  price: 424900, label: "₹4,249/mo incl. GST", vertical: "ca" },
+  "ca-firm":     { name: "CA Firm",     price: 2499900, label: "₹24,999/mo incl. GST", vertical: "ca" },
+  // Lawyer Suite
+  "lawyer-solo":    { name: "Lawyer Solo",    price: 236000, label: "₹2,360/mo incl. GST", vertical: "lawyer" },
+  "lawyer-partner": { name: "Lawyer Partner", price: 708000, label: "₹7,080/mo incl. GST", vertical: "lawyer" },
+  "lawyer-firm":    { name: "Lawyer Firm",    price: 3499900, label: "₹34,999/mo incl. GST", vertical: "lawyer" },
 }
 
 function PaymentForm() {
