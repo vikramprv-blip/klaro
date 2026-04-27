@@ -99,6 +99,22 @@ export default function DocumentList() {
     await refreshVault()
   }
 
+  const shareFile = async (id: string) => {
+    const res = await fetch("/api/us/client-portal/share", {
+      method: "POST",
+      body: JSON.stringify({ document_id: id }),
+    })
+
+    const data = await res.json()
+
+    if (data.url) {
+      await navigator.clipboard.writeText(`${window.location.origin}${data.url}`)
+      alert("Client portal link copied")
+    } else {
+      alert(data.error || "Could not create share link")
+    }
+  }
+
   const deleteFile = async (id: string, file_path: string) => {
     const ok = window.confirm("Delete this document?")
     if (!ok) return
@@ -170,6 +186,9 @@ export default function DocumentList() {
                 </button>
                 <button onClick={() => downloadFile(doc.id, doc.file_path)} className="underline">
                   Download
+                </button>
+                <button onClick={() => shareFile(doc.id)} className="underline">
+                  Share
                 </button>
                 <button onClick={() => renameFile(doc.id, doc.title)} className="underline">
                   Rename

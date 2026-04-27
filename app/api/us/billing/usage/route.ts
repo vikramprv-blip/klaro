@@ -28,6 +28,16 @@ export async function GET() {
 
   const firm_id = userData?.firm_id
 
+  if (!firm_id) {
+    return NextResponse.json({ error: "No firm found" }, { status: 400 })
+  }
+
+  const { data: firm } = await supabase
+    .from("us_firms")
+    .select("plan, billing_status, storage_limit_mb")
+    .eq("id", firm_id)
+    .single()
+
   const { data } = await supabase
     .from("document_vault")
     .select("file_size")
@@ -37,11 +47,14 @@ export async function GET() {
   const used = (data || []).reduce((sum, d) => sum + (d.file_size || 0), 0)
 
   // simple plan logic (we'll evolve later)
-  const limit = 1 * 1024 * 1024 * 1024 // 1GB
+  const limit = (firm?.storage_limit_mb ?? 1024) * 1024 * 1024
 
   return NextResponse.json({
     used,
     limit,
+    limitMb: firm?.storage_limit_mb ?? 1024,
+    plan: firm?.plan ?? "FREE",
+    billingStatus: firm?.billing_status ?? "active",
     percent: Math.round((used / limit) * 100),
   })
 }

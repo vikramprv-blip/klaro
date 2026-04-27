@@ -37,6 +37,12 @@ export async function POST(req: NextRequest) {
 
   const firm_id = userData.firm_id
 
+  const { data: firm } = await supabase
+    .from("us_firms")
+    .select("storage_limit_mb")
+    .eq("id", firm_id)
+    .single()
+
   // storage limit check
   const { data: files } = await supabase
     .from("document_vault")
@@ -45,7 +51,7 @@ export async function POST(req: NextRequest) {
     .is("deleted_at", null)
 
   const used = (files || []).reduce((sum, f) => sum + (f.file_size || 0), 0)
-  const limit = 1 * 1024 * 1024 * 1024
+  const limit = (firm?.storage_limit_mb ?? 1024) * 1024 * 1024
 
   if (used > limit) {
     return new Response(JSON.stringify({ error: "Storage limit reached" }), { status: 402 })
