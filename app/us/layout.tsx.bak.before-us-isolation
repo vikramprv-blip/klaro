@@ -1,4 +1,4 @@
-export default function IndiaLayout({
+export default function USLayout({
   children,
 }: {
   children: React.ReactNode

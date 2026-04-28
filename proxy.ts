@@ -33,7 +33,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── Auth required for protected paths ──────────────────
-  const protectedPrefixes = ["/in", "/settings", "/dashboard", "/work-items", "/documents", "/clients", "/invoices"];
+  const protectedPrefixes = ["/in/ca", "/in/lawyer", "/settings", "/dashboard", "/work-items", "/documents", "/clients", "/invoices"];
   const isProtected = protectedPrefixes.some(p => pathname === p || pathname.startsWith(`${p}/`));
 
   if (isProtected && !user) {
