@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import BlockerFilter from "@/components/us/blockers/blocker-filter";
 import BlockerCount from "@/components/us/blockers/blocker-count";
 import UpgradeModal from "@/components/us/billing/upgrade-modal";
+import MarkBlockedButton from "@/components/us/blockers/mark-blocked-button";
 
 export default function DocumentsPage() {
   const [docs, setDocs] = useState<any[]>([]);
@@ -49,11 +50,15 @@ export default function DocumentsPage() {
               <p className="text-sm text-gray-500">{doc.file_name}</p>
             </div>
 
-            {doc.status === "blocked" && (
-              <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
-                🚨 Blocked
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {doc.status === "blocked" ? (
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+                  🚨 Blocked
+                </span>
+              ) : (
+                <MarkBlockedButton docId={doc.id} />
+              )}
+            </div>
           </div>
         ))}
       </div>
