@@ -46,8 +46,19 @@ export default function SignInPage() {
 
     const redirectIntent = localStorage.getItem("klaro:signup");
 
-    // Always go through post-login (handles routing correctly)
-    window.location.href = "/post-login";
+    if (redirectIntent) {
+      const { vertical } = JSON.parse(redirectIntent);
+
+      if (vertical === "ca") {
+        window.location.href = "/post-login";
+      } else if (vertical === "lawyer") {
+        window.location.href = "/post-login";
+      } else {
+        window.location.href = "/";
+      }
+    } else {
+      window.location.href = "/post-login";
+    }
   }
 
   return (

@@ -31,8 +31,8 @@ export async function GET() {
   }
 
   const { data, error } = await supabase
-    .from("documents")
-    .select("id, file_name, file_path, file_size, mime_type, created_at, status, blocked_by, due_date")
+    .from("document_vault")
+    .select("id, file_name, file_path, file_size, mime_type, created_at")
     .eq("firm_id", userData.firm_id)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
