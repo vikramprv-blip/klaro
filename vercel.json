@@ -1,8 +1,8 @@
 {
-  "crons": [
+  "rewrites": [
     {
-      "path": "/api/lawyer/case-sync",
-      "schedule": "30 3 * * *"
+      "source": "/klaro-pulse/:path*",
+      "destination": "https://klaro-pulse-YOUR-VERCEL-ID.vercel.app/:path*"
     }
   ]
 }
