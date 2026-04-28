@@ -1,155 +1,76 @@
 import Link from "next/link";
 
-const regions = [
-  {
-    name: "India",
-    code: "IN",
-    status: "Live",
-    href: "/in",
-    description: "Practice OS for CAs, lawyers, compliance teams, documents, billing, and workflows.",
-  },
-  {
-    name: "United States",
-    code: "US",
-    status: "Live",
-    href: "/us",
-    description: "Secure client document portal for tax, accounting, and advisory firms.",
-  },
-  {
-    name: "United Kingdom",
-    code: "UK",
-    status: "Coming soon",
-    href: "#",
-    description: "Localized workflows for UK professional services firms.",
-  },
-  {
-    name: "United Arab Emirates",
-    code: "UAE",
-    status: "Coming soon",
-    href: "#",
-    description: "Document and workflow tools for UAE firms.",
-  },
-  {
-    name: "Denmark",
-    code: "DK",
-    status: "Coming soon",
-    href: "#",
-    description: "Localized document workflows for Danish firms.",
-  },
-  {
-    name: "Norway",
-    code: "NO",
-    status: "Coming soon",
-    href: "#",
-    description: "Localized document workflows for Norwegian firms.",
-  },
-  {
-    name: "Sweden",
-    code: "SE",
-    status: "Coming soon",
-    href: "#",
-    description: "Localized document workflows for Swedish firms.",
-  },
-  {
-    name: "Singapore",
-    code: "SG",
-    status: "Coming soon",
-    href: "#",
-    description: "Document workflows for Singapore professional firms.",
-  },
-  {
-    name: "Thailand",
-    code: "TH",
-    status: "Coming soon",
-    href: "#",
-    description: "Localized document workflows for Thai firms.",
-  },
-  {
-    name: "Vietnam",
-    code: "VN",
-    status: "Coming soon",
-    href: "#",
-    description: "Localized document workflows for Vietnamese firms.",
-  },
-  {
-    name: "Japan",
-    code: "JP",
-    status: "Coming soon",
-    href: "#",
-    description: "Localized document workflows for Japanese firms.",
-  },
-];
-
 export default function RegionSelectorPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-12 text-white">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-10">
+      <div className="mx-auto max-w-5xl">
+        
+        <div className="mb-12">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-blue-300">
             Klaro Global
           </p>
-          <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">
+          <h1 className="text-4xl font-bold md:text-6xl">
             Choose your region
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-slate-300">
-            Klaro is localized by country so pricing, workflows, compliance language,
-            and product modules match your market.
+          <p className="mt-5 text-lg text-slate-300 max-w-2xl">
+            Klaro is localized by country so pricing, workflows, and compliance match your market.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {regions.map((region) => {
-            const isLive = region.status === "Live";
+        <div className="grid gap-6 md:grid-cols-2">
 
-            const card = (
-              <div
-                className={`h-full rounded-2xl border p-6 transition ${
-                  isLive
-                    ? "border-blue-400/50 bg-white text-slate-950 hover:-translate-y-1 hover:shadow-2xl"
-                    : "border-white/10 bg-white/5 text-white opacity-80"
-                }`}
-              >
-                <div className="mb-4 flex items-center justify-between gap-4">
-                  <div>
-                    <p className={isLive ? "text-sm text-slate-500" : "text-sm text-slate-400"}>
-                      {region.code}
-                    </p>
-                    <h2 className="text-2xl font-semibold">{region.name}</h2>
-                  </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      isLive
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-slate-800 text-slate-300"
-                    }`}
-                  >
-                    {region.status}
-                  </span>
+          {/* INDIA */}
+          <Link href="/in">
+            <div className="rounded-2xl border border-blue-400/40 bg-white text-slate-900 p-6 hover:-translate-y-1 hover:shadow-2xl transition">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-slate-500">IN</p>
+                  <h2 className="text-2xl font-semibold">India</h2>
                 </div>
-
-                <p className={isLive ? "text-sm text-slate-600" : "text-sm text-slate-300"}>
-                  {region.description}
-                </p>
-
-                <div className="mt-6 text-sm font-semibold">
-                  {isLive ? "Enter region →" : "Join waitlist soon"}
-                </div>
+                <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold">
+                  Live
+                </span>
               </div>
-            );
+              <p className="text-sm text-slate-600">
+                Practice OS for CAs, lawyers, compliance teams, documents, billing, and workflows.
+              </p>
+              <div className="mt-6 text-sm font-semibold">
+                Enter region →
+              </div>
+            </div>
+          </Link>
 
-            return isLive ? (
-              <Link key={region.code} href={region.href}>
-                {card}
-              </Link>
-            ) : (
-              <div key={region.code}>{card}</div>
-            );
-          })}
+          {/* US */}
+          <Link href="/us">
+            <div className="rounded-2xl border border-blue-400/40 bg-white text-slate-900 p-6 hover:-translate-y-1 hover:shadow-2xl transition">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-slate-500">US</p>
+                  <h2 className="text-2xl font-semibold">United States</h2>
+                </div>
+                <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold">
+                  Live
+                </span>
+              </div>
+              <p className="text-sm text-slate-600">
+                Secure client document portal for tax, accounting, and advisory firms.
+              </p>
+              <div className="mt-6 text-sm font-semibold">
+                Enter region →
+              </div>
+            </div>
+          </Link>
+
         </div>
 
-        <p className="mt-10 text-sm text-slate-400">
-          India and United States are live. Additional country editions are being localized.
-        </p>
+        {/* COMING SOON */}
+        <div className="mt-16 text-center border-t border-white/10 pt-10">
+          <h3 className="text-xl font-semibold">New countries coming soon</h3>
+          <p className="mt-3 text-sm text-slate-400">
+            We are localizing Klaro for multiple countries. Join the waitlist to get early access.
+          </p>
+        </div>
+
       </div>
     </main>
   );
