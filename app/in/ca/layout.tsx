@@ -25,6 +25,8 @@ const NAV = [
   { label: "Audit Trail",  href: "/in/ca/audit",              icon: "≡" },
   { label: "Tools",        href: "/in/ca/tools",              icon: "⊞" },
   { label: "Cred Vault",   href: "/in/ca/credentials",        icon: "🔐" },
+  { label: "DSC Tracker",  href: "/in/ca/dsc",                icon: "D" },
+  { label: "E-Sign",       href: "/in/ca/esign",              icon: "✍" },
   { label: "Settings",     href: "/in/ca/settings",           icon: "⚙" },
 ]
 
