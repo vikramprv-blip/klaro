@@ -24,6 +24,7 @@ const NAV = [
   { label: "Form 16",      href: "/in/ca/form16",             icon: "F" },
   { label: "Audit Trail",  href: "/in/ca/audit",              icon: "≡" },
   { label: "Tools",        href: "/in/ca/tools",              icon: "⊞" },
+  { label: "Cred Vault",   href: "/in/ca/credentials",        icon: "🔐" },
   { label: "Settings",     href: "/in/ca/settings",           icon: "⚙" },
 ]
 
