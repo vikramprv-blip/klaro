@@ -144,8 +144,11 @@ export default function NewClientPage() {
             </div>
             <div>
               <label className="text-xs text-gray-500 block mb-1">State</label>
-              <input className="w-full border rounded-lg px-3 py-2 text-sm"
-                value={form.state} onChange={e => set("state", e.target.value)} />
+              <select className="w-full border rounded-lg px-3 py-2 text-sm"
+                value={form.state} onChange={e => set("state", e.target.value)}>
+                <option value="">Select state</option>
+                {["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu & Kashmir","Ladakh","Puducherry","Chandigarh","Dadra & Nagar Haveli","Daman & Diu","Lakshadweep","Andaman & Nicobar"].map(s => <option key={s}>{s}</option>)}
+              </select>
             </div>
             <div>
               <label className="text-xs text-gray-500 block mb-1">Pincode</label>

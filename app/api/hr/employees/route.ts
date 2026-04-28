@@ -1,44 +1,17 @@
-import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+export const dynamic = "force-dynamic";
+const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const orgId = searchParams.get("orgId") || "demo-org"
-
-    const employees = await prisma.employee.findMany({
-      where: { orgId },
-      orderBy: { createdAt: "desc" }
-    })
-
-    return NextResponse.json(employees)
-  } catch (e) {
-    return NextResponse.json({ error: "Failed to fetch employees" }, { status: 500 })
-  }
+  const { searchParams } = new URL(req.url);
+  const orgId = searchParams.get("orgId") || "demo-org";
+  const { data, error } = await sb.from("Employee").select("*").eq("orgId", orgId).order("createdAt", { ascending: false });
+  if (error) return NextResponse.json([], { status: 200 });
+  return NextResponse.json(data || []);
 }
-
 export async function POST(req: Request) {
-  try {
-    const body = await req.json()
-
-    if (!body.name || !body.email) {
-      return NextResponse.json({ error: "Name and email are required" }, { status: 400 })
-    }
-
-    const employee = await prisma.employee.create({
-      data: {
-        orgId: body.orgId || "demo-org",
-        name: body.name,
-        email: body.email,
-        phone: body.phone || null,
-        role: body.role || "staff",
-        department: body.department || null,
-        salary: Number(body.salary || 0)
-      }
-    })
-
-    return NextResponse.json(employee)
-  } catch (e) {
-    return NextResponse.json({ error: "Failed to create employee" }, { status: 500 })
-  }
+  const body = await req.json();
+  const { data, error } = await sb.from("Employee").insert([body]).select().single();
+  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true, employee: data });
 }

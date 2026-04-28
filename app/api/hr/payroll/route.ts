@@ -1,59 +1,23 @@
-import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+export const dynamic = "force-dynamic";
+const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const orgId = searchParams.get("orgId") || "demo-org"
-    const employeeId = searchParams.get("employeeId")
-    const month = searchParams.get("month")
-
-    const payroll = await prisma.payroll.findMany({
-      where: {
-        orgId,
-        ...(employeeId ? { employeeId } : {}),
-        ...(month ? { month } : {})
-      },
-      include: { employee: true },
-      orderBy: { createdAt: "desc" }
-    })
-
-    return NextResponse.json(payroll)
-  } catch (e) {
-    return NextResponse.json({ error: "Failed to fetch payroll" }, { status: 500 })
-  }
+  const { searchParams } = new URL(req.url);
+  const orgId = searchParams.get("orgId") || "demo-org";
+  const { data, error } = await sb.from("Payroll").select("*, Employee(name, email)").eq("orgId", orgId).order("createdAt", { ascending: false });
+  if (error) return NextResponse.json([], { status: 200 });
+  return NextResponse.json(data || []);
 }
-
 export async function POST(req: Request) {
-  try {
-    const body = await req.json()
-
-    if (!body.employeeId || !body.month) {
-      return NextResponse.json({ error: "employeeId and month are required" }, { status: 400 })
-    }
-
-    const baseSalary = Number(body.baseSalary || 0)
-    const deductions = Number(body.deductions || 0)
-    const bonus = Number(body.bonus || 0)
-    const netPay = baseSalary + bonus - deductions
-
-    const payroll = await prisma.payroll.create({
-      data: {
-        orgId: body.orgId || "demo-org",
-        employeeId: body.employeeId,
-        month: body.month,
-        baseSalary,
-        deductions,
-        bonus,
-        netPay,
-        status: body.status || "pending",
-        paidAt: body.paidAt ? new Date(body.paidAt) : null,
-        paymentMode: body.paymentMode || null
-      }
-    })
-
-    return NextResponse.json(payroll)
-  } catch (e) {
-    return NextResponse.json({ error: "Failed to create payroll" }, { status: 500 })
-  }
+  const body = await req.json();
+  const { data, error } = await sb.from("Payroll").insert([{ ...body, orgId: body.orgId || "demo-org" }]).select("*, Employee(name, email)").single();
+  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true, payroll: data });
+}
+export async function PATCH(req: Request) {
+  const { id, ...updates } = await req.json();
+  const { data, error } = await sb.from("Payroll").update(updates).eq("id", id).select().single();
+  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true, payroll: data });
 }

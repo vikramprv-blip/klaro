@@ -1,18 +1,13 @@
-import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+export const dynamic = "force-dynamic";
+const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 export async function GET() {
-  const [employees, attendance, payroll] = await Promise.all([
-    prisma.employee.count(),
-    prisma.attendance.count(),
-    prisma.payroll.aggregate({
-      _sum: { netPay: true }
-    })
-  ])
-
-  return NextResponse.json({
-    totalEmployees: employees,
-    totalAttendanceRecords: attendance,
-    totalPayroll: payroll._sum.netPay || 0
-  })
+  const [emp, att, pay] = await Promise.all([
+    sb.from("Employee").select("id", { count: "exact", head: true }),
+    sb.from("Attendance").select("id", { count: "exact", head: true }),
+    sb.from("Payroll").select("netPay"),
+  ]);
+  const totalPay = (pay.data || []).reduce((s: number, r: any) => s + Number(r.netPay || 0), 0);
+  return NextResponse.json({ totalEmployees: emp.count || 0, totalAttendanceRecords: att.count || 0, totalPayroll: totalPay });
 }

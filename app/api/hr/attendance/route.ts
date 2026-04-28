@@ -1,49 +1,16 @@
-import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+export const dynamic = "force-dynamic";
+const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const orgId = searchParams.get("orgId") || "demo-org"
-    const employeeId = searchParams.get("employeeId")
-
-    const attendance = await prisma.attendance.findMany({
-      where: {
-        orgId,
-        ...(employeeId ? { employeeId } : {})
-      },
-      include: { employee: true },
-      orderBy: { date: "desc" }
-    })
-
-    return NextResponse.json(attendance)
-  } catch (e) {
-    return NextResponse.json({ error: "Failed to fetch attendance" }, { status: 500 })
-  }
+  const { searchParams } = new URL(req.url);
+  const orgId = searchParams.get("orgId") || "demo-org";
+  const { data } = await sb.from("Attendance").select("*, Employee(name)").eq("orgId", orgId).order("date", { ascending: false }).limit(100);
+  return NextResponse.json(data || []);
 }
-
 export async function POST(req: Request) {
-  try {
-    const body = await req.json()
-
-    if (!body.employeeId || !body.date) {
-      return NextResponse.json({ error: "employeeId and date are required" }, { status: 400 })
-    }
-
-    const attendance = await prisma.attendance.create({
-      data: {
-        orgId: body.orgId || "demo-org",
-        employeeId: body.employeeId,
-        date: new Date(body.date),
-        checkIn: body.checkIn ? new Date(body.checkIn) : null,
-        checkOut: body.checkOut ? new Date(body.checkOut) : null,
-        status: body.status || "present",
-        notes: body.notes || null
-      }
-    })
-
-    return NextResponse.json(attendance)
-  } catch (e) {
-    return NextResponse.json({ error: "Failed to create attendance" }, { status: 500 })
-  }
+  const body = await req.json();
+  const { data, error } = await sb.from("Attendance").insert([body]).select().single();
+  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true, record: data });
 }
