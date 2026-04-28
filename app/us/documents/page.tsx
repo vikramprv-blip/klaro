@@ -1,6 +1,6 @@
-import UploadButton from "@/components/us/documents/upload-button";
 "use client";
 
+import UploadButton from "@/components/us/documents/upload-button";
 import { useEffect, useState } from "react";
 import BlockerFilter from "@/components/us/blockers/blocker-filter";
 import BlockerCount from "@/components/us/blockers/blocker-count";
@@ -37,7 +37,8 @@ export default function DocumentsPage() {
         setShowBlockedOnly={setShowBlockedOnly}
       />
 
-      <UpgradeModal locked={usage?.locked} />nn      <UploadButton locked={usage?.locked} />
+      <UpgradeModal locked={usage?.locked} />
+      <UploadButton locked={usage?.locked} />
 
       <div className="grid gap-4">
         {docs.map(doc => (
