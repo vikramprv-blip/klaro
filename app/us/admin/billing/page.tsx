@@ -20,8 +20,23 @@ export default function UsAdminBillingPage() {
 
   async function load() {
     setLoading(true)
-    const res = await fetch("/api/us/admin/billing")
+    setMessage("")
+
+    const res = await fetch("/api/us/admin/billing", {
+      headers: {
+        "x-admin-secret": secret,
+      },
+    })
+
     const json = await res.json()
+
+    if (!res.ok) {
+      setMessage(json.error || "Could not load US billing")
+      setFirms([])
+      setLoading(false)
+      return
+    }
+
     setFirms(json.firms || [])
     setLoading(false)
   }
@@ -54,7 +69,7 @@ export default function UsAdminBillingPage() {
   }
 
   useEffect(() => {
-    load()
+    setLoading(false)
   }, [])
 
   return (
@@ -72,6 +87,14 @@ export default function UsAdminBillingPage() {
             className="mt-2 w-full rounded-xl border px-3 py-2 text-sm"
             placeholder="Enter KLARO_ADMIN_SECRET"
           />
+
+          <button
+            onClick={load}
+            disabled={!secret}
+            className="mt-3 rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            Load pending payments
+          </button>
         </div>
 
         {message && (
