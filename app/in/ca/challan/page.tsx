@@ -1,4 +1,5 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 import { useEffect, useState } from "react"
 
 function daysLeft(date: string) {
@@ -7,6 +8,7 @@ function daysLeft(date: string) {
 
 export default function ChallanPage() {
   const [challans, setChallans] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [payingId, setPayingId] = useState<string | null>(null)
@@ -14,6 +16,7 @@ export default function ChallanPage() {
   const [payForm, setPayForm] = useState({ paid_amount: "", challan_number: "", bsr_code: "", paid_date: new Date().toISOString().split("T")[0] })
 
   async function load() {
+    fetch("/api/ca/clients").then(r=>r.json()).then(d=>setClients(Array.isArray(d)?d:[])).catch(()=>{})
     const r = await fetch("/api/ca/challan").then(r => r.json())
     setChallans(r.challans || [])
     setLoading(false)

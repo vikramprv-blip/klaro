@@ -1,148 +1,118 @@
 "use client"
-
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([])
-  const [error, setError] = useState<string>("")
-  const [editing, setEditing] = useState<any>(null)
-  const [query, setQuery] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState("")
+  const [editId, setEditId] = useState<string | null>(null)
+  const [form, setForm] = useState({ name: "", email: "", phone: "", role: "Staff", department: "General", salary: "" })
+  const orgId = "demo-org"
 
   async function load() {
-    const res = await fetch("/api/hr/employees?orgId=demo-org")
-    const data = await res.json()
-    setEmployees(Array.isArray(data) ? data : [])
+    const r = await fetch(`/api/hr/employees?orgId=${orgId}`).then(r => r.json())
+    setEmployees(Array.isArray(r) ? r : [])
+    setLoading(false)
   }
 
-  useEffect(() => {
-    load()
-  }, [])
+  useEffect(() => { load() }, [])
 
-  const filteredEmployees = useMemo(() => {
-    const q = query.toLowerCase().trim()
-    if (!q) return employees
-
-    return employees.filter((e) =>
-      [e.name, e.email, e.phone, e.role, e.department, e.status]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(q)
-    )
-  }, [employees, query])
-
-  async function handleSubmit(e: any) {
+  async function handleAdd(e: any) {
     e.preventDefault()
-    setError("")
-    const form = new FormData(e.target)
-
-    const payload = {
-      orgId: "demo-org",
-      name: form.get("name"),
-      email: form.get("email"),
-      phone: form.get("phone"),
-      role: form.get("role"),
-      department: form.get("department"),
-      salary: Number(form.get("salary"))
-    }
-
-    const res = await fetch(editing ? `/api/hr/employees/${editing.id}` : "/api/hr/employees", {
-      method: editing ? "PUT" : "POST",
-      body: JSON.stringify(payload)
+    setSaving(true)
+    const res = await fetch("/api/hr/employees", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...form, orgId, salary: Number(form.salary || 0) })
     })
-
     const data = await res.json()
-
-    if (!res.ok) {
-      setError(data.error || "Something went wrong")
-      return
-    }
-
-    setEditing(null)
-    e.target.reset()
-    load()
+    setSaving(false)
+    if (data.ok) {
+      setForm({ name: "", email: "", phone: "", role: "Staff", department: "General", salary: "" })
+      load()
+    } else alert(data.error)
   }
 
   async function handleDelete(id: string) {
-    await fetch(`/api/hr/employees/${id}`, {
-      method: "DELETE"
-    })
+    if (!confirm(`Delete employee ${id}?`)) return
+    await fetch("/api/hr/employees", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
     load()
   }
 
-  function startEdit(e: any) {
-    setEditing(e)
-  }
+  const filtered = employees.filter(e => e.name?.toLowerCase().includes(search.toLowerCase()) || e.id?.toLowerCase().includes(search.toLowerCase()))
+
+  if (loading) return <div className="p-6 text-gray-400">Loading...</div>
 
   return (
-    <main className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Employees</h1>
-<a href="/api/hr/reports/employees?orgId=demo-org" className="text-blue-600 text-sm">Export CSV</a>
-        <p className="text-sm text-gray-600">Manage employee master records.</p>
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-gray-900">Employees</h2>
+        <a href={`/api/hr/employees?orgId=${orgId}&export=csv`} className="text-xs text-blue-500 hover:underline">Export CSV</a>
       </div>
 
-      {error && <div className="text-red-600 text-sm">{error}</div>}
-
-      <form onSubmit={handleSubmit} className="grid gap-3 border p-4 rounded-xl md:grid-cols-2">
-        <input name="name" defaultValue={editing?.name} placeholder="Name" className="border p-2 rounded" />
-        <input name="email" defaultValue={editing?.email} placeholder="Email" className="border p-2 rounded" />
-        <input name="phone" defaultValue={editing?.phone} placeholder="Phone" className="border p-2 rounded" />
-        <input name="role" defaultValue={editing?.role} placeholder="Role" className="border p-2 rounded" />
-        <input name="department" defaultValue={editing?.department} placeholder="Department" className="border p-2 rounded" />
-        <input name="salary" defaultValue={editing?.salary} placeholder="Salary" className="border p-2 rounded" />
-
-        <button className="bg-black text-white p-2 rounded md:col-span-2">
-          {editing ? "Update Employee" : "Add Employee"}
+      {/* Add form */}
+      <form onSubmit={handleAdd} className="bg-white border rounded-xl p-5 space-y-4">
+        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Add Employee</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { key: "name", label: "Full Name *", required: true, placeholder: "Ramesh Kumar" },
+            { key: "email", label: "Email", placeholder: "ramesh@firm.com" },
+            { key: "phone", label: "Phone", placeholder: "9876543210" },
+            { key: "role", label: "Designation", placeholder: "Manager" },
+            { key: "department", label: "Department", placeholder: "Finance" },
+            { key: "salary", label: "Monthly Salary (₹)", placeholder: "50000" },
+          ].map(f => (
+            <div key={f.key}>
+              <label className="text-xs text-gray-500 block mb-1">{f.label}</label>
+              <input required={f.required} placeholder={f.placeholder} className="w-full border rounded-lg px-3 py-2 text-sm"
+                value={(form as any)[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })} />
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400">Employee ID will be auto-generated (e.g. EMP-RAM-1234)</p>
+        <button disabled={saving} className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium">
+          {saving ? "Adding..." : "Add Employee"}
         </button>
-
-        {editing && (
-          <button
-            type="button"
-            onClick={() => setEditing(null)}
-            className="border p-2 rounded md:col-span-2"
-          >
-            Cancel Edit
-          </button>
-        )}
       </form>
 
-      <div className="border rounded-xl p-4 space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-semibold">Employee List</h2>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search employees..."
-            className="border p-2 rounded text-sm"
-          />
-        </div>
+      {/* Search */}
+      <input className="w-full border rounded-lg px-4 py-2 text-sm"
+        placeholder="Search employees by name or ID..."
+        value={search} onChange={e => setSearch(e.target.value)} />
 
-        {filteredEmployees.length === 0 && (
-          <p className="text-sm text-gray-500">No employees found</p>
-        )}
-
-        {filteredEmployees.map((e) => (
-          <div key={e.id} className="flex justify-between items-center border-b py-2 text-sm">
-            <div>
-              <div className="font-medium">{e.name}</div>
-              <div className="text-gray-600">
-                {e.role || "staff"} — {e.department || "No department"} — ₹{e.salary}
-              </div>
-              <div className="text-xs text-gray-500">{e.email}</div>
-            </div>
-
-            <div className="flex gap-3">
-              <button onClick={() => startEdit(e)} className="text-blue-600 text-xs">
-                Edit
-              </button>
-              <button onClick={() => handleDelete(e.id)} className="text-red-600 text-xs">
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
+      {/* Employee list */}
+      <div className="bg-white border rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
+            <tr>{["Employee ID", "Name", "Designation", "Department", "Salary", "Status", ""].map(h => (
+              <th key={h} className="px-4 py-3 text-left">{h}</th>
+            ))}</tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400">No employees yet</td></tr>}
+            {filtered.map(emp => (
+              <tr key={emp.id} className="border-t hover:bg-gray-50">
+                <td className="px-4 py-3 font-mono text-xs font-semibold text-blue-700">{emp.id}</td>
+                <td className="px-4 py-3">
+                  <p className="font-medium text-gray-900">{emp.name}</p>
+                  <p className="text-xs text-gray-400">{emp.email}</p>
+                </td>
+                <td className="px-4 py-3 text-gray-600">{emp.role}</td>
+                <td className="px-4 py-3 text-gray-600">{emp.department}</td>
+                <td className="px-4 py-3 font-medium">₹{Number(emp.salary || 0).toLocaleString("en-IN")}</td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${emp.status === "active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                    {emp.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <button onClick={() => handleDelete(emp.id)} className="text-xs text-red-400 hover:text-red-600">Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </main>
+    </div>
   )
 }

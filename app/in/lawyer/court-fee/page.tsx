@@ -1,4 +1,5 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 import { useEffect, useState } from "react"
 
 const STATES = ["Delhi","Maharashtra","Karnataka","Tamil Nadu","Uttar Pradesh","Gujarat","Rajasthan","West Bengal","Andhra Pradesh","Telangana","Kerala","Madhya Pradesh","Punjab","Haryana","Bihar","Odisha","Assam","Jharkhand","Uttarakhand","Himachal Pradesh","Chhattisgarh","Goa","Other"]
@@ -55,11 +56,13 @@ export default function CourtFeePage() {
           <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Calculate Fee</h2>
           <div>
             <label className="text-xs text-gray-500 block mb-1">Matter (optional)</label>
-            <select className="w-full border rounded-lg px-3 py-2 text-sm"
-              value={form.matter_id} onChange={e => setForm({ ...form, matter_id: e.target.value })}>
-              <option value="">No matter</option>
-              {matters.map(m => <option key={m.id} value={m.id}>{m.client_name} — {m.matter_title || m.title}</option>)}
-            </select>
+            {/* matter_id select replaced by SearchableSelect */}
+              <SearchableSelect
+                options={[{value:"",label:"No matter"}, ...(matters||[]).map((m:any)=>({value:m.id,label:`${m.client_name} — ${m.matter_title||m.title||"Matter"}`,sub:m.cnr_number||m.court||""}))]}
+                value={form.matter_id||""}
+                onChange={val=>setForm({...form,matter_id:val})}
+                placeholder="Search matter or client..."
+              />
           </div>
           <div>
             <label className="text-xs text-gray-500 block mb-1">State *</label>

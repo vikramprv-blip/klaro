@@ -1,7 +1,10 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 import { useEffect, useState } from "react"
 
 export default function CredentialVaultPage() {
+  const [clients, setClients] = useState<any[]>([])
+
   const [creds, setCreds] = useState<any[]>([])
   const [portals, setPortals] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
@@ -12,6 +15,7 @@ export default function CredentialVaultPage() {
   const [showPass, setShowPass] = useState(false)
 
   async function load() {
+    fetch("/api/ca/clients").then(r=>r.json()).then(d=>setClients(Array.isArray(d)?d:[]))
     const r = await fetch("/api/ca/credentials").then(r => r.json())
     setCreds(r.credentials || [])
     setPortals(r.portals || [])

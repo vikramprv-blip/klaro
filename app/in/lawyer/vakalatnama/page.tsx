@@ -1,4 +1,5 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 import { useEffect, useState, useRef } from "react"
 
 export default function VakalatnanaPage() {
@@ -90,12 +91,13 @@ export default function VakalatnanaPage() {
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Generate Vakalatnama</h2>
             <div>
               <label className="text-xs text-gray-500 block mb-1">Link to Matter (auto-fills fields)</label>
-              <select className="w-full border rounded-lg px-3 py-2 text-sm"
-                value={form.matter_id}
-                onChange={e => { setForm({ ...form, matter_id: e.target.value }); prefillFromMatter(e.target.value) }}>
-                <option value="">No matter linked</option>
-                {matters.map(m => <option key={m.id} value={m.id}>{m.client_name} — {m.matter_title || m.title}</option>)}
-              </select>
+              {/* matter_id select replaced by SearchableSelect */}
+              <SearchableSelect
+                options={[{value:"",label:"No matter"}, ...(matters||[]).map((m:any)=>({value:m.id,label:`${m.client_name} — ${m.matter_title||m.title||"Matter"}`,sub:m.cnr_number||m.court||""}))]}
+                value={form.matter_id||""}
+                onChange={val=>setForm({...form,matter_id:val})}
+                placeholder="Search matter or client..."
+              />
             </div>
             {[
               { key: "client_name", label: "Client Name *", required: true },

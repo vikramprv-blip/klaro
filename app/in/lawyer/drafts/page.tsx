@@ -1,4 +1,5 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 export default function DraftsPage() {
   return (
     <div className="p-8">

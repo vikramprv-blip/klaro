@@ -1,405 +1,238 @@
-"use client";
+"use client"
+import { useEffect, useState } from "react"
+import SearchableSelect from "@/components/SearchableSelect"
 
-import { useEffect, useState } from "react";
+function fmt(n: number) {
+  return `₹${Number(n || 0).toLocaleString("en-IN")}`
+}
 
 export default function InvoicesPage() {
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
-  const [summary, setSummary] = useState<any>(null);
-  const [audit, setAudit] = useState<any[]>([]);
-  const [reminders, setReminders] = useState<any[]>([]);
-  const [reminderCount, setReminderCount] = useState(0);
-  const [analytics, setAnalytics] = useState<any[]>([]);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [search, setSearch] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [invoices, setInvoices] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
+  const [summary, setSummary] = useState<any>({})
+  const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [search, setSearch] = useState("")
   const [form, setForm] = useState({
-    client_id: "",
-    amount: "",
-    service_type: "Professional Services",
-    gst_rate: "18",
-    due_date: "",
-    payment_method: "",
-  });
+    client_id: "", amount: "", service_type: "Professional Services",
+    gst_rate: "18", due_date: "", payment_method: "", notes: ""
+  })
 
   async function load() {
-    const [invRes, clientRes, summaryRes, auditRes, reminderRes, analyticsRes] = await Promise.all([
-      fetch("/api/invoices"),
-      fetch("/api/ca/clients"),
-      fetch("/api/invoices/summary"),
-      fetch("/api/invoices/audit"),
-      fetch("/api/invoices/reminders/preview"),
-      fetch("/api/invoices/analytics"),
-    ]);
-
-    setInvoices(await invRes.json());
-    setClients(await clientRes.json());
-    setSummary(await summaryRes.json());
-    const auditData = await auditRes.json();
-    setAudit(auditData.audit || []);
-
-    const reminderData = await reminderRes.json();
-    setReminders(reminderData.invoices || []);
-    setReminderCount(reminderData.count || 0);
-
-    const analyticsData = await analyticsRes.json();
-    setAnalytics(analyticsData || []);
+    const [ir, cr, sr] = await Promise.all([
+      fetch("/api/invoices").then(r => r.json()),
+      fetch("/api/ca/clients").then(r => r.json()),
+      fetch("/api/invoices/summary").then(r => r.json()),
+    ])
+    setInvoices(Array.isArray(ir) ? ir : [])
+    setClients(Array.isArray(cr) ? cr : [])
+    setSummary(sr || {})
+    setLoading(false)
   }
 
-  async function createInvoice() {
-    await fetch("/api/invoices", {
+  useEffect(() => { load() }, [])
+
+  async function createInvoice(e: any) {
+    e.preventDefault()
+    if (!form.amount || Number(form.amount) <= 0) return alert("Enter a valid amount")
+    setCreating(true)
+    const res = await fetch("/api/invoices", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        client_id: form.client_id,
+        client_id: form.client_id || null,
         amount: Number(form.amount),
         service_type: form.service_type,
         gst_rate: Number(form.gst_rate || 18),
         due_date: form.due_date || null,
         payment_method: form.payment_method || null,
+        notes: form.notes || null,
       }),
-    });
-
-    setForm({
-      client_id: "",
-      amount: "",
-      service_type: "Professional Services",
-      gst_rate: "18",
-      due_date: "",
-      payment_method: "",
-    });
-    load();
+    })
+    const data = await res.json()
+    setCreating(false)
+    if (data.ok) {
+      setForm({ client_id: "", amount: "", service_type: "Professional Services", gst_rate: "18", due_date: "", payment_method: "", notes: "" })
+      load()
+    } else {
+      alert(data.error || "Failed to create invoice")
+    }
   }
 
-  async function queueReminders() {
-    const res = await fetch("/api/invoices/reminders", {
-      method: "POST",
-    });
-    const data = await res.json();
-    alert(`Overdue found: ${data.overdueFound}\nReminders queued: ${data.remindersQueued}`);
-    load();
-  }
-
-  async function editInvoice(inv: any) {
-    const amount = prompt("Amount", String(inv.amount || ""));
-    if (amount === null) return;
-
-    const service_type = prompt("Service Type", String(inv.service_type || "Professional Services"));
-    if (service_type === null) return;
-
-    const gst_rate = prompt("GST %", String(inv.gst_rate || "18"));
-    if (gst_rate === null) return;
-
-    setEditingId(inv.id);
-
-    await fetch(`/api/invoices/${inv.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        amount: Number(amount),
-        service_type,
-        gst_rate: Number(gst_rate),
-      }),
-    });
-
-    setEditingId(null);
-    load();
+  async function updateStatus(id: string, status: string) {
+    await fetch(`/api/invoices/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status, ...(status === "paid" ? { paid_date: new Date().toISOString().split("T")[0] } : {}) })
+    })
+    load()
   }
 
   async function deleteInvoice(id: string) {
-    if (!confirm("Delete this invoice?")) return;
-
-    await fetch(`/api/invoices/${id}`, {
-      method: "DELETE",
-    });
-
-    load();
+    if (!confirm("Delete this invoice?")) return
+    await fetch(`/api/invoices/${id}`, { method: "DELETE" })
+    load()
   }
 
-  async function markPaid(id: string) {
-    await fetch(`/api/invoices/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        status: "paid",
-        paid_date: new Date().toISOString(),
-      }),
-    });
+  const clientOptions = clients.map(c => ({ value: c.id, label: c.name, sub: c.gstin || c.email || "" }))
+  const serviceTypes = ["Professional Services", "GST Filing", "TDS Filing", "ITR Filing", "Audit", "Bookkeeping", "ROC Compliance", "Advisory", "Payroll", "Other"]
+  const paymentModes = ["UPI", "Bank Transfer", "Cheque", "Cash", "Online"]
 
-    load();
-  }
+  const filtered = invoices
+    .filter(i => statusFilter === "all" || i.status === statusFilter)
+    .filter(i => !search || (i.invoice_number || "").toLowerCase().includes(search.toLowerCase()) || (i.ca_clients?.name || "").toLowerCase().includes(search.toLowerCase()))
 
-  useEffect(() => {
-    load();
-  }, []);
+  const gstAmount = form.amount ? Math.round(Number(form.amount) * Number(form.gst_rate || 18) / 100) : 0
+  const totalAmount = form.amount ? Number(form.amount) + gstAmount : 0
+
+  if (loading) return <div className="p-8 text-gray-400">Loading...</div>
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Invoices</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
         <div className="flex gap-2">
-          <a
-            href="/api/invoices/export"
-            className="bg-black text-white px-4 py-2 rounded"
-          >
-            Export CSV
-          </a>
-          <button
-            onClick={queueReminders}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Queue Overdue WhatsApp Reminders
-          </button>
+          <a href="/api/invoices/export" className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Export CSV</a>
+          <button onClick={async () => {
+            const res = await fetch("/api/invoices/reminders", { method: "POST" })
+            const d = await res.json()
+            alert(`Overdue found: ${d.overdueFound} | Updated: ${d.remindersQueued}`)
+            load()
+          }} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">Queue Overdue Reminders</button>
         </div>
       </div>
 
-      {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="border rounded p-4">
-            <div className="text-sm text-gray-500">Total</div>
-            <div className="text-xl font-bold">₹{summary.totalAmount}</div>
-            <div className="text-xs">{summary.totalInvoices} invoices</div>
+      {/* Summary */}
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          { label: "Total", amount: summary.totalAmount, count: summary.totalInvoices, color: "bg-blue-50 text-blue-700" },
+          { label: "Paid", amount: summary.paidAmount, count: summary.paidInvoices, color: "bg-green-50 text-green-700" },
+          { label: "Unpaid", amount: summary.unpaidAmount, count: summary.unpaidInvoices, color: "bg-amber-50 text-amber-700" },
+          { label: "Overdue", amount: summary.overdueAmount, count: summary.overdueInvoices, color: "bg-red-50 text-red-700" },
+        ].map(s => (
+          <div key={s.label} className={`${s.color} rounded-xl p-4 border`}>
+            <p className="text-xs font-medium mb-1">{s.label}</p>
+            <p className="text-xl font-bold">{fmt(s.amount || 0)}</p>
+            <p className="text-xs opacity-70">{s.count || 0} invoices</p>
           </div>
-          <div className="border rounded p-4">
-            <div className="text-sm text-gray-500">Paid</div>
-            <div className="text-xl font-bold">₹{summary.paidAmount}</div>
-            <div className="text-xs">{summary.paidInvoices} invoices</div>
+        ))}
+      </div>
+
+      {/* Create invoice */}
+      <form onSubmit={createInvoice} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Create Invoice</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Client (search or select)</label>
+            <SearchableSelect
+              options={[{ value: "", label: "No client" }, ...clientOptions]}
+              value={form.client_id}
+              onChange={val => setForm({ ...form, client_id: val })}
+              placeholder="Select client..."
+            />
           </div>
-          <div className="border rounded p-4">
-            <div className="text-sm text-gray-500">Unpaid</div>
-            <div className="text-xl font-bold">₹{summary.unpaidAmount}</div>
-            <div className="text-xs">{summary.unpaidInvoices} invoices</div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Service Type</label>
+            <SearchableSelect
+              options={serviceTypes.map(s => ({ value: s, label: s }))}
+              value={form.service_type}
+              onChange={val => setForm({ ...form, service_type: val })}
+            />
           </div>
-          <div className="border rounded p-4 bg-red-50">
-            <div className="text-sm text-gray-500">Overdue</div>
-            <div className="text-xl font-bold">₹{summary.overdueAmount}</div>
-            <div className="text-xs">{summary.overdueInvoices} invoices</div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Amount (₹) *</label>
+            <input required type="number" className="w-full border rounded-lg px-3 py-2 text-sm"
+              placeholder="e.g. 5000"
+              value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
           </div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">GST Rate (%)</label>
+            <SearchableSelect
+              options={["0","5","12","18","28"].map(r => ({ value: r, label: `${r}%` }))}
+              value={form.gst_rate}
+              onChange={val => setForm({ ...form, gst_rate: val })}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Due Date</label>
+            <input type="date" className="w-full border rounded-lg px-3 py-2 text-sm"
+              value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Payment Mode</label>
+            <SearchableSelect
+              options={paymentModes.map(p => ({ value: p, label: p }))}
+              value={form.payment_method}
+              onChange={val => setForm({ ...form, payment_method: val })}
+              placeholder="Select mode..."
+            />
+          </div>
+          {form.amount && Number(form.amount) > 0 && (
+            <div className="col-span-3 bg-blue-50 rounded-lg px-4 py-3 flex items-center gap-6 text-sm">
+              <span className="text-gray-600">Base: <strong>{fmt(Number(form.amount))}</strong></span>
+              <span className="text-gray-600">GST ({form.gst_rate}%): <strong>{fmt(gstAmount)}</strong></span>
+              <span className="text-gray-900 font-bold text-lg">Total: {fmt(totalAmount)}</span>
+            </div>
+          )}
         </div>
-      )}
-
-      {analytics.length > 0 && (
-        <div className="border rounded p-4">
-          <h2 className="font-semibold mb-3">Revenue vs Collection</h2>
-          <div className="space-y-1 text-sm">
-            {analytics.slice(-6).map((a) => (
-              <div key={a.month}>
-                {a.month} → Invoiced: ₹{a.invoiced} | Collected: ₹{a.collected}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {reminderCount > 0 && (
-        <div className="border rounded p-4 bg-blue-50">
-          <h2 className="font-semibold mb-3">
-            Upcoming WhatsApp Reminders ({reminderCount})
-          </h2>
-          <div className="space-y-2">
-            {reminders.slice(0,5).map((r) => (
-              <div key={r.id} className="text-sm border p-2 rounded">
-                {r.invoiceNumber} · {r.clientName} · ₹{r.amount}
-                {!r.canSendWhatsApp && (
-                  <span className="text-red-500 ml-2">(No phone)</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {audit.length > 0 && (
-        <div className="border rounded p-4">
-          <h2 className="font-semibold mb-3">AI Invoice Risk Audit</h2>
-          <div className="space-y-2">
-            {audit
-              .filter((a) => a.riskLevel !== "LOW")
-              .slice(0, 5)
-              .map((a) => (
-                <div key={a.invoiceId} className="border rounded p-3 bg-yellow-50">
-                  <div className="font-medium">
-                    {a.invoiceNumber} · {a.client} · ₹{a.amount}
-                  </div>
-                  <div className="text-sm">
-                    Risk: {a.riskLevel} · {a.risks.join(", ")}
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* CREATE */}
-      <div className="border p-4 rounded">
-        <h2 className="font-semibold mb-2">Create Invoice</h2>
-
-        <select
-          value={form.client_id}
-          onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-          className="border p-2 mr-2"
-        >
-          <option value="">Select Client</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-
-        <input
-          placeholder="Amount"
-          value={form.amount}
-          onChange={(e) => setForm({ ...form, amount: e.target.value })}
-          className="border p-2 mr-2"
-        />
-
-        <input
-          placeholder="Service Type"
-          value={form.service_type}
-          onChange={(e) => setForm({ ...form, service_type: e.target.value })}
-          className="border p-2 mr-2"
-        />
-
-        <input
-          placeholder="GST %"
-          value={form.gst_rate}
-          onChange={(e) => setForm({ ...form, gst_rate: e.target.value })}
-          className="border p-2 mr-2 w-24"
-        />
-
-        <input
-          type="date"
-          value={form.due_date}
-          onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-          className="border p-2 mr-2"
-        />
-
-        <select
-          value={form.payment_method}
-          onChange={(e) => setForm({ ...form, payment_method: e.target.value })}
-          className="border p-2 mr-2"
-        >
-          <option value="">Payment Mode</option>
-          <option value="upi">UPI</option>
-          <option value="bank_transfer">Bank Transfer</option>
-          <option value="cash">Cash</option>
-          <option value="cheque">Cheque</option>
-        </select>
-
-        <button
-          onClick={createInvoice}
-          className="bg-black text-white px-4 py-2"
-        >
-          Create
+        <button disabled={creating} className="px-5 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+          {creating ? "Creating..." : "Create Invoice"}
         </button>
+      </form>
+
+      {/* Invoice list */}
+      <div className="bg-white border rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b flex items-center gap-3">
+          <input className="flex-1 border rounded-lg px-3 py-1.5 text-sm"
+            placeholder="Search invoice number or client..."
+            value={search} onChange={e => setSearch(e.target.value)} />
+          <select className="border rounded-lg px-3 py-1.5 text-sm"
+            value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            {["all","pending","paid","overdue"].map(s => <option key={s} value={s}>{s === "all" ? "All status" : s}</option>)}
+          </select>
+        </div>
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
+            <tr>{["Invoice No.", "Client", "Service", "Base", "GST", "Total", "Due", "Status", "Action"].map(h => (
+              <th key={h} className="px-4 py-2 text-left">{h}</th>
+            ))}</tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400">No invoices found</td></tr>}
+            {filtered.map(inv => (
+              <tr key={inv.id} className="border-t hover:bg-gray-50">
+                <td className="px-4 py-3 font-mono text-xs font-semibold text-blue-700">{inv.invoice_number}</td>
+                <td className="px-4 py-3">
+                  <p className="font-medium text-gray-900">{inv.ca_clients?.name || "—"}</p>
+                  {inv.ca_clients?.gstin && <p className="text-xs text-gray-400 font-mono">{inv.ca_clients.gstin}</p>}
+                </td>
+                <td className="px-4 py-3 text-gray-600 text-xs">{inv.service_type}</td>
+                <td className="px-4 py-3">{fmt(inv.amount)}</td>
+                <td className="px-4 py-3 text-gray-500">{fmt(inv.gst_amount)}</td>
+                <td className="px-4 py-3 font-semibold">{fmt(inv.total_amount)}</td>
+                <td className="px-4 py-3 text-gray-500 text-xs">{inv.due_date || "—"}</td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                    inv.status === "paid" ? "bg-green-50 text-green-700" :
+                    inv.status === "overdue" ? "bg-red-50 text-red-700" :
+                    "bg-amber-50 text-amber-700"
+                  }`}>{inv.status}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-2">
+                    {inv.status === "pending" && (
+                      <button onClick={() => updateStatus(inv.id, "paid")}
+                        className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded hover:bg-green-100">Paid</button>
+                    )}
+                    <button onClick={() => deleteInvoice(inv.id)}
+                      className="text-xs text-red-400 hover:text-red-600">Del</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      <div className="flex items-center gap-2">
-        <input
-          placeholder="Search invoice, client, service..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border p-2 rounded w-72"
-        />
-
-        <span className="text-sm font-medium">Filter:</span>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border p-2 rounded"
-        >
-          <option value="all">All</option>
-          <option value="draft">Draft</option>
-          <option value="paid">Paid</option>
-          <option value="overdue">Overdue</option>
-        </select>
-      </div>
-
-      {/* LIST */}
-      <table className="w-full border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2">Number</th>
-            <th className="p-2">Client</th>
-            <th className="p-2">Service</th>
-            <th className="p-2">Base</th>
-            <th className="p-2">GST</th>
-            <th className="p-2">Total</th>
-            <th className="p-2">Status</th>
-            <th className="p-2">Due</th>
-            <th className="p-2">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoices
-            .filter((inv) => {
-              const q = search.toLowerCase().trim();
-              const matchesSearch =
-                !q ||
-                String(inv.invoice_number || "").toLowerCase().includes(q) ||
-                String(inv.ca_clients?.name || "").toLowerCase().includes(q) ||
-                String(inv.service_type || "").toLowerCase().includes(q);
-
-              if (!matchesSearch) return false;
-              if (statusFilter === "all") return true;
-              if (statusFilter === "overdue") return inv.isOverdue;
-              return inv.status === statusFilter;
-            })
-            .map((inv) => (
-            <tr
-              key={inv.id}
-              className={`border-t ${
-                inv.isOverdue ? "bg-red-50" : ""
-              }`}
-            >
-              <td className="p-2">{inv.invoice_number}</td>
-              <td className="p-2">{inv.ca_clients?.name || "-"}</td>
-              <td className="p-2">{inv.service_type || "-"}</td>
-              <td className="p-2">₹{inv.amount}</td>
-              <td className="p-2">₹{inv.gst_amount}</td>
-              <td className="p-2">₹{inv.total_amount_amount}</td>
-              <td className="p-2">{inv.status}</td>
-              <td className="p-2">
-                {inv.due_date
-                  ? new Date(inv.due_date).toLocaleDateString()
-                  : "-"}
-              </td>
-              <td className="p-2">
-                <div className="flex gap-2">
-                  <a
-                    href={`/in/ca/invoices/${inv.id}`}
-                    className="bg-black text-white px-3 py-1"
-                  >
-                    View
-                  </a>
-
-                  {inv.status !== "paid" && (
-                    <button
-                      onClick={() => markPaid(inv.id)}
-                      className="bg-green-600 text-white px-3 py-1"
-                    >
-                      Mark Paid
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => editInvoice(inv)}
-                    disabled={editingId === inv.id}
-                    className="bg-gray-700 text-white px-3 py-1"
-                  >
-                    {editingId === inv.id ? "Saving..." : "Edit"}
-                  </button>
-
-                  <button
-                    onClick={() => deleteInvoice(inv.id)}
-                    className="bg-red-600 text-white px-3 py-1"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
-  );
+  )
 }

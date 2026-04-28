@@ -1,4 +1,5 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 import { useState, useEffect, useTransition } from "react"
 
 type GSTFiling = {
@@ -34,6 +35,8 @@ function daysUntil(dateStr: string) {
 }
 
 export default function GSTFilingsPage() {
+  const [clients, setClients] = useState<any[]>([])
+
   const [filings, setFilings]         = useState<GSTFiling[]>([])
   const [loading, setLoading]         = useState(true)
   const [filterStatus, setStatus]     = useState("all")
@@ -46,6 +49,7 @@ export default function GSTFilingsPage() {
   const [isPending, startTransition]  = useTransition()
 
   useEffect(() => {
+    fetch("/api/ca/clients").then(r=>r.json()).then(d=>setClients(Array.isArray(d)?d:[])).catch(()=>{})
     fetch("/api/ca/gst")
       .then(r => r.json())
       .then(d => { setFilings(Array.isArray(d) ? d : []); setLoading(false) })

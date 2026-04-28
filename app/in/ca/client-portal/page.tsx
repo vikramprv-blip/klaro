@@ -1,14 +1,17 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 import { useEffect, useState } from "react"
 
 export default function ClientPortalMgmtPage() {
   const [invites, setInvites] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ client_name: "", client_email: "" })
   const [saving, setSaving] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
 
   async function load() {
+    fetch("/api/ca/clients").then(r=>r.json()).then(d=>setClients(Array.isArray(d)?d:[])).catch(()=>{})
     const r = await fetch("/api/ca/client-portal").then(r => r.json())
     setInvites(r.invites || [])
     setLoading(false)

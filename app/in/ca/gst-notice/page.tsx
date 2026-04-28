@@ -1,9 +1,11 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 import { useEffect, useState } from "react"
 
 export default function GSTNoticePage() {
   const [notices, setNotices] = useState<any[]>([])
   const [selected, setSelected] = useState<any>(null)
+  const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [analysing, setAnalysing] = useState(false)
   const [form, setForm] = useState({ client_name: "", gstin: "", notice_text: "", tax_period: "" })

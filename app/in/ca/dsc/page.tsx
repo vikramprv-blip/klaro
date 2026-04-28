@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useState } from "react"
+import SearchableSelect from "@/components/SearchableSelect"
 
 function urgencyStyle(u: string) {
   if (u === "expired") return "bg-red-100 text-red-800 border-red-200"
@@ -16,6 +17,7 @@ function urgencyLabel(r: any) {
 
 export default function DSCPage() {
   const [records, setRecords] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
   const [stats, setStats] = useState<any>({})
   const [cas, setCas] = useState<string[]>([])
   const [purposes, setPurposes] = useState<string[]>([])
@@ -24,7 +26,6 @@ export default function DSCPage() {
   const [saving, setSaving] = useState(false)
   const [filter, setFilter] = useState("all")
   const [selectedPurposes, setSelectedPurposes] = useState<string[]>([])
-  const [clients, setClients] = useState<any[]>([])
   const [form, setForm] = useState({
     client_name: "", holder_name: "", pan: "",
     dsc_class: "Class 3", certifying_authority: "eMudhra",
@@ -33,19 +34,22 @@ export default function DSCPage() {
   })
 
   async function load() {
-    const r = await fetch("/api/ca/dsc").then(r => r.json())
-    setRecords(r.records || [])
-    setStats(r.stats || {})
-    setCas(r.cas || [])
-    setPurposes(r.purposes || [])
-    setClasses(r.classes || [])
+    const [dr, cr] = await Promise.all([
+      fetch("/api/ca/dsc").then(r => r.json()),
+      fetch("/api/ca/clients").then(r => r.json()),
+    ])
+    setRecords(dr.records || [])
+    setStats(dr.stats || {})
+    setCas(dr.cas || [])
+    setPurposes(dr.purposes || [])
+    setClasses(dr.classes || [])
+    setClients(Array.isArray(cr) ? cr : [])
     setLoading(false)
   }
 
-  useEffect(() => {
-    load()
-    fetch("/api/ca/clients").then(r=>r.json()).then(d=>setClients(Array.isArray(d)?d:[]))
-  }, [])
+  useEffect(() => { load() }, [])
+
+  const clientOptions = clients.map(c => ({ value: c.name, label: c.name, sub: c.pan || c.gstin || c.email || "" }))
 
   function togglePurpose(p: string) {
     setSelectedPurposes(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])
@@ -53,6 +57,7 @@ export default function DSCPage() {
 
   async function handleAdd(e: any) {
     e.preventDefault()
+    if (!form.client_name) return alert("Please select a client")
     setSaving(true)
     await fetch("/api/ca/dsc", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -70,7 +75,9 @@ export default function DSCPage() {
     load()
   }
 
-  async function markRenewed(id: string, expiry_date: string) {
+  async function markRenewed(id: string) {
+    const expiry_date = prompt("Enter new expiry date (YYYY-MM-DD):", "")
+    if (!expiry_date) return
     await fetch("/api/ca/dsc", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, expiry_date, status: "active", alerted_30: false, alerted_7: false }) })
     load()
   }
@@ -108,9 +115,17 @@ export default function DSCPage() {
         <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Add DSC Record</h2>
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Client Name *</label>
-            <input required className="w-full border rounded-lg px-3 py-2 text-sm"
-              value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} />
+            <label className="text-xs text-gray-500 block mb-1">Client * (search or select)</label>
+            <SearchableSelect
+              options={clientOptions}
+              value={form.client_name}
+              onChange={(val, opt) => {
+                const c = clients.find(cl => cl.name === val)
+                setForm({ ...form, client_name: val, pan: c?.pan || form.pan, email_on_dsc: c?.email || form.email_on_dsc })
+              }}
+              placeholder="Search client..."
+              required
+            />
           </div>
           <div>
             <label className="text-xs text-gray-500 block mb-1">DSC Holder Name *</label>
@@ -124,17 +139,19 @@ export default function DSCPage() {
           </div>
           <div>
             <label className="text-xs text-gray-500 block mb-1">DSC Class</label>
-            <select className="w-full border rounded-lg px-3 py-2 text-sm"
-              value={form.dsc_class} onChange={e => setForm({ ...form, dsc_class: e.target.value })}>
-              {classes.map(c => <option key={c}>{c}</option>)}
-            </select>
+            <SearchableSelect
+              options={classes.map(c => ({ value: c, label: c }))}
+              value={form.dsc_class}
+              onChange={val => setForm({ ...form, dsc_class: val })}
+            />
           </div>
           <div>
             <label className="text-xs text-gray-500 block mb-1">Certifying Authority</label>
-            <select className="w-full border rounded-lg px-3 py-2 text-sm"
-              value={form.certifying_authority} onChange={e => setForm({ ...form, certifying_authority: e.target.value })}>
-              {cas.map(c => <option key={c}>{c}</option>)}
-            </select>
+            <SearchableSelect
+              options={cas.map(c => ({ value: c, label: c }))}
+              value={form.certifying_authority}
+              onChange={val => setForm({ ...form, certifying_authority: val })}
+            />
           </div>
           <div>
             <label className="text-xs text-gray-500 block mb-1">Serial Number</label>
@@ -157,8 +174,8 @@ export default function DSCPage() {
               value={form.email_on_dsc} onChange={e => setForm({ ...form, email_on_dsc: e.target.value })} />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Token Provider (e.g. ePass 2003)</label>
-            <input className="w-full border rounded-lg px-3 py-2 text-sm"
+            <label className="text-xs text-gray-500 block mb-1">Token Provider</label>
+            <input className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. ePass 2003"
               value={form.token_provider} onChange={e => setForm({ ...form, token_provider: e.target.value })} />
           </div>
           <div className="col-span-2">
@@ -188,54 +205,29 @@ export default function DSCPage() {
         <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-700">DSC Records ({filtered.length})</h2>
           <div className="flex gap-2">
-            <a href="https://www.emudhra.com/dsc-renewal" target="_blank"
-              className="text-xs px-3 py-1.5 border rounded-lg hover:bg-gray-50 text-blue-600">eMudhra Renewal ↗</a>
-            <a href="https://www.egov-nsdl.co.in" target="_blank"
-              className="text-xs px-3 py-1.5 border rounded-lg hover:bg-gray-50 text-blue-600">NSDL DSC ↗</a>
+            <a href="https://www.emudhra.com/dsc-renewal" target="_blank" className="text-xs px-3 py-1.5 border rounded-lg hover:bg-gray-50 text-blue-600">eMudhra Renewal ↗</a>
+            <a href="https://www.egov-nsdl.co.in" target="_blank" className="text-xs px-3 py-1.5 border rounded-lg hover:bg-gray-50 text-blue-600">NSDL DSC ↗</a>
           </div>
         </div>
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-            <tr>{["Client", "Holder", "Class", "CA", "Issue Date", "Expiry Date", "Status", "Purposes", ""].map(h => (
-              <th key={h} className="px-4 py-2 text-left">{h}</th>
-            ))}</tr>
+            <tr>{["Client", "Holder", "Class", "CA", "Issue", "Expiry", "Status", "Purposes", ""].map(h => <th key={h} className="px-4 py-2 text-left">{h}</th>)}</tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400">No DSC records yet</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400">No DSC records</td></tr>}
             {filtered.map(r => (
               <tr key={r.id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900">{r.client_name}</p>
-                  {r.pan && <p className="text-xs text-gray-400 font-mono">{r.pan}</p>}
-                </td>
+                <td className="px-4 py-3"><p className="font-medium">{r.client_name}</p>{r.pan && <p className="text-xs text-gray-400 font-mono">{r.pan}</p>}</td>
                 <td className="px-4 py-3 text-gray-700">{r.holder_name}</td>
                 <td className="px-4 py-3 text-xs font-medium text-blue-700">{r.dsc_class}</td>
                 <td className="px-4 py-3 text-xs text-gray-600">{r.certifying_authority}</td>
-                <td className="px-4 py-3 text-gray-500 text-xs">{r.issue_date || "—"}</td>
-                <td className="px-4 py-3 text-gray-700 text-xs font-medium">{r.expiry_date}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${urgencyStyle(r.urgency)}`}>
-                    {urgencyLabel(r)}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {(r.purposes || []).slice(0, 2).map((p: string) => (
-                      <span key={p} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{p}</span>
-                    ))}
-                    {(r.purposes || []).length > 2 && <span className="text-xs text-gray-400">+{r.purposes.length - 2}</span>}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    {(r.urgency === "expired" || r.urgency === "critical" || r.urgency === "warning") && (
-                      <button onClick={() => {
-                        const newExpiry = prompt("Enter new expiry date (YYYY-MM-DD):", "")
-                        if (newExpiry) markRenewed(r.id, newExpiry)
-                      }} className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100">Renew</button>
-                    )}
-                    <button onClick={() => handleDelete(r.id)} className="text-xs text-red-400 hover:text-red-600">Delete</button>
-                  </div>
+                <td className="px-4 py-3 text-xs text-gray-500">{r.issue_date || "—"}</td>
+                <td className="px-4 py-3 text-xs font-medium">{r.expiry_date}</td>
+                <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs font-medium border ${urgencyStyle(r.urgency)}`}>{urgencyLabel(r)}</span></td>
+                <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{(r.purposes || []).slice(0, 2).map((p: string) => <span key={p} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{p}</span>)}{(r.purposes || []).length > 2 && <span className="text-xs text-gray-400">+{r.purposes.length - 2}</span>}</div></td>
+                <td className="px-4 py-3 flex gap-2">
+                  {r.urgency !== "ok" && <button onClick={() => markRenewed(r.id)} className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100">Renew</button>}
+                  <button onClick={() => handleDelete(r.id)} className="text-xs text-red-400 hover:text-red-600">Del</button>
                 </td>
               </tr>
             ))}

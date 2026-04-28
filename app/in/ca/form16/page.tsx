@@ -1,8 +1,10 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 import { useEffect, useState } from "react"
 
 export default function Form16Page() {
   const [records, setRecords] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({

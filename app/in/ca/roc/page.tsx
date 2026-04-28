@@ -1,4 +1,5 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 import { useEffect, useState } from "react"
 
 function daysLeft(date: string) {
@@ -16,6 +17,7 @@ export default function ROCPage() {
   const [filings, setFilings] = useState<any[]>([])
   const [types, setTypes] = useState<any[]>([])
   const [stats, setStats] = useState<any>({})
+  const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [filter, setFilter] = useState("all")

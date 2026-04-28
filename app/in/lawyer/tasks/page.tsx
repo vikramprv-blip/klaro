@@ -1,4 +1,5 @@
 "use client"
+import SearchableSelect from "@/components/SearchableSelect"
 // ── app/lawyer/tasks/page.tsx ────────────────────────────────────────────────
 import { useState, useEffect } from "react"
 
@@ -102,11 +103,13 @@ export default function TasksPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className="text-xs text-gray-500 mb-1 block">Matter *</label>
-              <select value={form.matter_id} onChange={e => setForm(p => ({...p, matter_id: e.target.value}))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400">
-                <option value="">Select matter...</option>
-                {matters.map(m => <option key={m.id} value={m.id}>{m.client_name} — {m.matter_title}</option>)}
-              </select>
+              {/* matter_id select replaced by SearchableSelect */}
+              <SearchableSelect
+                options={[{value:"",label:"No matter"}, ...(matters||[]).map((m:any)=>({value:m.id,label:`${m.client_name} — ${m.matter_title||m.title||"Matter"}`,sub:m.cnr_number||m.court||""}))]}
+                value={form.matter_id||""}
+                onChange={val=>setForm({...form,matter_id:val})}
+                placeholder="Search matter or client..."
+              />
             </div>
             <div className="col-span-2">
               <label className="text-xs text-gray-500 mb-1 block">Task title *</label>
