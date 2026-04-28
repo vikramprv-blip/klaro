@@ -384,6 +384,61 @@ export default function USHomePage() {
         </div>
       </section>
 
+
+      {/* KLARO PULSE */}
+      <section className="py-20 bg-gray-950 text-white">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 text-xs font-bold tracking-widest text-indigo-400 uppercase bg-indigo-500/10 rounded-full border border-indigo-500/20 mb-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                From the Klaro ecosystem
+              </div>
+              <h2 className="text-3xl font-bold text-white mb-4">
+                KLARO <span className="text-indigo-500">PULSE</span>
+              </h2>
+              <p className="text-gray-300 text-lg mb-3 leading-relaxed">
+                Operational certainty for your firm's technology. The world's first Large Action Model (LAM) built to audit business logic and compliance.
+              </p>
+              <p className="text-gray-400 text-sm mb-6">
+                Klaro Pulse runs agentic audits of your firm's software — catching broken workflows, compliance gaps, and errors before they become client problems. Hourly Sentinel heartbeats. Full LAM interaction traces. SOC2 readiness checks.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-6">
+                {["Hourly Sentinel Heartbeat","Full LAM Interaction Traces","US Compliance Baseline","JavaScript Error Tracking","SOC2 / ISO Readiness","404 & Broken Link Discovery"].map(f => (
+                  <span key={f} className="text-xs bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 px-3 py-1 rounded-full">✓ {f}</span>
+                ))}
+              </div>
+              <div className="flex gap-3">
+                <a href="/klaro-pulse" className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-sm transition-colors">
+                  Explore Klaro Pulse →
+                </a>
+                <a href="/klaro-pulse#pricing" className="px-6 py-3 border border-gray-700 hover:border-gray-500 text-gray-300 rounded-xl text-sm transition-colors">
+                  View pricing
+                </a>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {[
+                { name: "Sentinel Core", price: "$499/mo", desc: "Daily agentic audit · US compliance baseline · 404 discovery", border: "border-gray-700 bg-gray-900/40" },
+                { name: "Omni-Audit Pro", price: "$1,499/mo", desc: "Hourly heartbeat · Full LAM traces · Priority security patching", border: "border-indigo-500 bg-indigo-600/20", recommended: true },
+                { name: "Custom Guard", price: "Custom", desc: "Unlimited audits · SOC2 readiness · Multi-region GDS validation", border: "border-gray-700 bg-gray-900/40" },
+              ].map(p => (
+                <div key={p.name} className={`border rounded-2xl px-5 py-4 flex items-center justify-between ${p.border}`}>
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="text-sm font-bold text-white">{p.name}</p>
+                      {p.recommended && <span className="text-xs bg-indigo-500 text-white px-2 py-0.5 rounded-full font-semibold">Recommended</span>}
+                    </div>
+                    <p className="text-xs text-gray-400">{p.desc}</p>
+                  </div>
+                  <p className="text-lg font-bold text-white ml-4 flex-shrink-0">{p.price}</p>
+                </div>
+              ))}
+              <a href="/klaro-pulse#pricing" className="block text-center text-xs text-indigo-400 hover:text-indigo-300 mt-2">14-day pilot available on Omni-Audit Pro →</a>
+            </div>
+          </div>
+        </div>
+      </section>
       {/* FAQ */}
       <section className="py-20 bg-gray-50">
         <div className="mx-auto max-w-3xl px-6">
