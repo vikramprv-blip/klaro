@@ -4,13 +4,6 @@ import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 
-const NAV_ITEMS = [
-  { href: "/in/ca",     label: "CA Suite" },
-  { href: "/in/lawyer", label: "Lawyer Suite" },
-  { href: "/pricing",   label: "Pricing" },
-  { href: "/guide",     label: "Guide" },
-]
-
 export default function AppHeader() {
   const pathname = usePathname() || ""
   const [menuOpen, setMenuOpen] = useState(false)
@@ -29,86 +22,82 @@ export default function AppHeader() {
 
   if (pathname === "/" || pathname === "/in") return null
 
+  const inCA     = pathname.startsWith("/in/ca")
+  const inLawyer = pathname.startsWith("/in/lawyer")
+  const inAdmin  = pathname.startsWith("/admin")
+  const isPublic = !inCA && !inLawyer && !inAdmin && !pathname.startsWith("/in/")
+
+  // Context-aware nav items
+  const navItems = isPublic ? [
+    { href: "/in/ca",     label: "CA Suite" },
+    { href: "/in/lawyer", label: "Lawyer Suite" },
+    { href: "/pricing",   label: "Pricing" },
+    { href: "/guide",     label: "Guide" },
+  ] : inCA ? [
+    { href: "/in/ca", label: "CA Suite" },
+    { href: "/guide#ca", label: "Guide" },
+  ] : inLawyer ? [
+    { href: "/in/lawyer", label: "Lawyer Suite" },
+    { href: "/guide#lawyer", label: "Guide" },
+  ] : inAdmin ? [
+    { href: "/admin", label: "Admin" },
+  ] : [
+    { href: "/in/ca",     label: "CA Suite" },
+    { href: "/in/lawyer", label: "Lawyer Suite" },
+    { href: "/guide",     label: "Guide" },
+  ]
+
+  const initials = user?.email?.slice(0, 1).toUpperCase() || "U"
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User"
+
   return (
     <header className="border-b bg-white sticky top-0 z-40">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-
-        <Link href="/" className="text-base font-semibold text-gray-900">Klaro</Link>
-
+        <Link href={user ? (inCA ? "/in/ca" : inLawyer ? "/in/lawyer" : "/") : "/"} className="text-base font-semibold text-gray-900">Klaro</Link>
         <nav className="flex items-center gap-1">
-          {NAV_ITEMS.map(({ href, label }) => {
-            const active = pathname.startsWith(href)
+          {navItems.map(({ href, label }) => {
+            const active = pathname.startsWith(href.split("#")[0]) && href !== "/"
             return (
               <Link key={href} href={href}
                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                  active
-                    ? "bg-gray-100 text-gray-900 font-medium"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                  active ? "bg-gray-100 text-gray-900 font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
                 }`}>
                 {label}
               </Link>
             )
           })}
         </nav>
-
         <div className="flex items-center gap-2">
           {user ? (
             <div className="relative">
-              <button
-                onClick={() => setMenuOpen(o => !o)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+              <button onClick={() => setMenuOpen(o => !o)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50">
                 <div className="w-7 h-7 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-medium">
-                  {user.email?.[0]?.toUpperCase() || "U"}
+                  {initials}
                 </div>
-                <span className="text-sm text-gray-700 hidden md:block">
-                  {user.email?.split("@")[0]}
-                </span>
+                <span className="text-sm text-gray-700 hidden md:block">{displayName}</span>
                 <span className="text-gray-400 text-xs">▾</span>
               </button>
-
               {menuOpen && (
-                <>
-                  <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 mt-1 w-52 bg-white border rounded-xl shadow-lg z-40 py-1 overflow-hidden">
-                    <div className="px-4 py-2 border-b">
-                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                    </div>
-                    <Link href="/settings" onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      ⚙️ Settings
-                    </Link>
-                    <Link href="/settings/company" onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      🏢 Company
-                    </Link>
-                    <Link href="/settings/team" onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      👥 Team
-                    </Link>
-                    <Link href="/settings/offices" onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      📍 Offices
-                    </Link>
-                    <Link href="/settings/billing" onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      �� Billing
-                    </Link>
-                    <div className="border-t mt-1">
-                      <button onClick={signOut}
-                        className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50">
-                        🚪 Sign out
-                      </button>
-                    </div>
-                  </div>
-                </>
+                <div className="absolute right-0 mt-1 w-48 bg-white border rounded-xl shadow-lg py-1 z-50">
+                  <p className="px-4 py-2 text-xs text-gray-400 border-b">{user.email}</p>
+                  {inCA && <Link href="/in/ca/settings" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm hover:bg-gray-50">Settings</Link>}
+                  {inLawyer && <Link href="/in/lawyer/settings" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm hover:bg-gray-50">Settings</Link>}
+                  <Link href="/in/ca" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm hover:bg-gray-50">CA Suite</Link>
+                  <Link href="/in/lawyer" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm hover:bg-gray-50">Lawyer Suite</Link>
+                  <button onClick={signOut} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-50">Sign out</button>
+                </div>
               )}
             </div>
           ) : (
-            <Link href="/signup"
-              className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
-              Get started free
-            </Link>
+            <>
+              <Link href="/signin" className="rounded-lg border border-gray-200 px-4 py-2 text-sm hover:bg-gray-50">Sign in</Link>
+              <Link href="/signup" className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700">Get started</Link>
+            </>
           )}
+          <Link href="/notifications" className="p-2 rounded-lg hover:bg-gray-50">
+            <span className="text-lg">🔔</span>
+          </Link>
         </div>
       </div>
     </header>

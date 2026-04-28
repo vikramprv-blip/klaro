@@ -1,71 +1,38 @@
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createClient } from "@supabase/supabase-js";
+export const dynamic = "force-dynamic";
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+const MERCHANT = "00000000-0000-0000-0000-000000000001";
 
 function invoiceNumber() {
-  return `INV-${Date.now()}`;
+  const n = new Date();
+  return `INV-${n.getFullYear()}${String(n.getMonth()+1).padStart(2,"0")}-${String(Math.floor(Math.random()*9000)+1000)}`;
 }
 
 export async function GET() {
-  const invoices = await prisma.ca_invoices.findMany({
-    orderBy: { created_at: "desc" },
-    include: {
-      ca_clients: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          gstin: true,
-        },
-      },
-    },
-  });
-
-  const normalized = invoices.map((inv) => ({
-    ...inv,
-    isOverdue:
-      inv.status !== "paid" &&
-      inv.due_date !== null &&
-      new Date(inv.due_date) < new Date(),
-  }));
-
-  return NextResponse.json(normalized);
+  const { data, error } = await supabase
+    .from("ca_invoices")
+    .select("*, ca_clients(id, name, email, phone, gstin)")
+    .eq("merchant_id", MERCHANT)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) { console.error(error); return NextResponse.json([], { status: 200 }); }
+  return NextResponse.json(data || []);
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
-    const amount = Number(body.amount || 0);
-    const gstRate = Number(body.gst_rate ?? 18);
-    const gstAmount = Number(((amount * gstRate) / 100).toFixed(2));
-    const totalAmount = Number((amount + gstAmount).toFixed(2));
-
-    const invoice = await prisma.ca_invoices.create({
-      data: {
-        invoice_number: body.invoice_number || invoiceNumber(),
-        client_id: body.client_id || null,
-        merchant_id: body.merchant_id || null,
-        service_type: body.service_type || "Professional Services",
-        amount,
-        gst_rate: gstRate,
-        gst_amount: gstAmount,
-        total_amount: totalAmount,
-        currency: body.currency || "INR",
-        status: body.status || "draft",
-        due_date: body.due_date ? new Date(body.due_date) : null,
-        payment_method: body.payment_method || null,
-        upi_link: body.upi_link || null,
-        notes: body.notes || null,
-        region_code: body.region_code || "IN",
-      },
-    });
-
-    return NextResponse.json({ ok: true, invoice });
-  } catch (e) {
-    console.error("POST /api/invoices failed:", e);
-    return NextResponse.json({ ok: false, error: "Failed to create invoice" }, { status: 500 });
+    const { client_id, amount, service_type, gst_rate, due_date, payment_method, notes } = body;
+    if (!amount || isNaN(Number(amount))) return NextResponse.json({ ok: false, error: "Amount required" }, { status: 400 });
+    const gst_amount = Math.round(Number(amount) * Number(gst_rate || 18) / 100);
+    const total_amount = Number(amount) + gst_amount;
+    const { data, error } = await supabase.from("ca_invoices")
+      .insert([{ merchant_id: MERCHANT, invoice_number: invoiceNumber(), client_id: client_id || null, amount: Number(amount), gst_rate: Number(gst_rate || 18), gst_amount, total_amount, service_type: service_type || "Professional Services", due_date: due_date || null, payment_method: payment_method || null, notes: notes || null, status: "pending", currency: "INR" }])
+      .select("*, ca_clients(id, name, email)").single();
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true, invoice: data });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
   }
 }

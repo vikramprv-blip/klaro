@@ -5,7 +5,7 @@ import { ToastProvider } from "@/components/toast"
 import Footer from "@/components/footer/index"
 import CookieBanner from "@/components/footer/cookie-banner"
 
-const HIDE_HEADER = ["/signin", "/signup", "/onboarding", "/post-login"]
+const HIDE_HEADER = ["/signin", "/signup", "/onboarding", "/post-login", "/client-portal", "/esign"]
 
 export default function LayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || ""

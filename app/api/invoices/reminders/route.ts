@@ -1,57 +1,15 @@
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-
+import { createClient } from "@supabase/supabase-js";
+export const dynamic = "force-dynamic";
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+const MERCHANT = "00000000-0000-0000-0000-000000000001";
 export async function POST() {
-  const overdue = await prisma.ca_invoices.findMany({
-    where: {
-      status: {
-        not: "paid",
-      },
-      due_date: {
-        lt: new Date(),
-      },
-    },
-    include: {
-      ca_clients: {
-        select: {
-          name: true,
-          phone: true,
-          email: true,
-        },
-      },
-    },
-  });
-
-  const queued = [];
-
+  const today = new Date().toISOString().split("T")[0];
+  const { data } = await supabase.from("ca_invoices").select("*, ca_clients(name, email)").eq("merchant_id", MERCHANT).eq("status", "pending").lt("due_date", today);
+  const overdue = data || [];
+  // Update status to overdue
   for (const inv of overdue) {
-    const phone = inv.ca_clients?.phone;
-    if (!phone) continue;
-
-    const reminder = await prisma.whatsappOutbox.create({
-      data: {
-        toPhone: phone,
-        templateName: "invoice_payment_reminder",
-        templateLang: "en",
-        payload: {
-          invoiceId: inv.id,
-          invoiceNumber: inv.invoice_number,
-          clientName: inv.ca_clients?.name,
-          amount: Number(inv.total_amount || 0),
-          dueDate: inv.due_date,
-        },
-      },
-    });
-
-    queued.push(reminder);
+    await supabase.from("ca_invoices").update({ status: "overdue" }).eq("id", inv.id);
   }
-
-  return NextResponse.json({
-    ok: true,
-    overdueFound: overdue.length,
-    remindersQueued: queued.length,
-    queued,
-  });
+  return NextResponse.json({ overdueFound: overdue.length, remindersQueued: overdue.length });
 }

@@ -178,7 +178,7 @@ export default function PricingPage() {
               { q: "What happens if I exceed my client or matter limit?", a: "We'll notify you and give you 7 days to upgrade before any restriction." },
               { q: "What is included in storage?", a: "All documents, evidence files, certificates and attachments count toward your storage. Certificates are tiny — only large evidence files (audio, video, scanned documents) consume significant storage." },
               { q: "Is there a free trial?", a: "Yes — start free and explore the full product. No credit card required to sign up." },
-              { q: "What does 'Contact us' for 50+ users mean?", a: "We offer custom per-user pricing from ₹400/user (CA) and ₹500/user (Lawyer) for larger firms, with volume discounts, dedicated support and SLA contracts." },
+              { q: "What does 'Contact us' for 50+ users mean?", a: "We work directly with larger firms to understand their requirements and provide a tailored proposal. Contact us at contact@klaro.services or call +91 9711196770." },
               { q: "Are prices GST inclusive?", a: "All prices displayed on this page include GST at 18%. The breakdown (base + GST = total) is shown for each plan." },
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-100 pb-5">

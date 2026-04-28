@@ -1,53 +1,17 @@
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-
+import { createClient } from "@supabase/supabase-js";
+export const dynamic = "force-dynamic";
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+const MERCHANT = "00000000-0000-0000-0000-000000000001";
 export async function GET() {
-  const invoices = await prisma.ca_invoices.findMany({
-    select: {
-      status: true,
-      total_amount: true,
-      due_date: true,
-    },
+  const { data } = await supabase.from("ca_invoices").select("status, total_amount").eq("merchant_id", MERCHANT);
+  const inv = data || [];
+  return NextResponse.json({
+    total: inv.length,
+    paid: inv.filter(i => i.status === "paid").length,
+    pending: inv.filter(i => i.status === "pending").length,
+    overdue: inv.filter(i => i.status === "overdue").length,
+    total_amount: inv.reduce((s, i) => s + Number(i.total_amount || 0), 0),
+    paid_amount: inv.filter(i => i.status === "paid").reduce((s, i) => s + Number(i.total_amount || 0), 0),
   });
-
-  const now = new Date();
-
-  const summary = invoices.reduce(
-    (acc, inv) => {
-      const total = Number(inv.total_amount || 0);
-      const status = String(inv.status || "").toLowerCase();
-
-      acc.totalInvoices += 1;
-      acc.totalAmount += total;
-
-      if (status === "paid") {
-        acc.paidInvoices += 1;
-        acc.paidAmount += total;
-      } else {
-        acc.unpaidInvoices += 1;
-        acc.unpaidAmount += total;
-      }
-
-      if (status !== "paid" && inv.due_date && new Date(inv.due_date) < now) {
-        acc.overdueInvoices += 1;
-        acc.overdueAmount += total;
-      }
-
-      return acc;
-    },
-    {
-      totalInvoices: 0,
-      paidInvoices: 0,
-      unpaidInvoices: 0,
-      overdueInvoices: 0,
-      totalAmount: 0,
-      paidAmount: 0,
-      unpaidAmount: 0,
-      overdueAmount: 0,
-    }
-  );
-
-  return NextResponse.json(summary);
 }

@@ -35,6 +35,25 @@ const LAWYER_FEATURES = [
 
 const CA_PLANS = [
   {
+    name: "Personal",
+    base: "₹677", gst: "₹122", total: "₹799",
+    annual: "₹7,670/yr",
+    users: "1 user", clients: "—", storage: "5 GB",
+    highlight: false,
+    features: [
+      "5 GB storage",
+      "GST-compliant invoicing",
+      "Basic GST filing tracker",
+      "Tax calculator",
+      "DSC tracker",
+      "Aadhaar e-sign",
+      "No client management",
+      "No AI tools",
+      "No HR module",
+    ],
+    addons: ["For freelancers and self-employed professionals"],
+  },
+  {
     name: "Solo",
     base: "₹1,482", gst: "₹267", total: "₹1,749",
     annual: "₹16,790/yr",

@@ -24,6 +24,7 @@ export default function DSCPage() {
   const [saving, setSaving] = useState(false)
   const [filter, setFilter] = useState("all")
   const [selectedPurposes, setSelectedPurposes] = useState<string[]>([])
+  const [clients, setClients] = useState<any[]>([])
   const [form, setForm] = useState({
     client_name: "", holder_name: "", pan: "",
     dsc_class: "Class 3", certifying_authority: "eMudhra",
@@ -41,7 +42,10 @@ export default function DSCPage() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    fetch("/api/ca/clients").then(r=>r.json()).then(d=>setClients(Array.isArray(d)?d:[]))
+  }, [])
 
   function togglePurpose(p: string) {
     setSelectedPurposes(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])

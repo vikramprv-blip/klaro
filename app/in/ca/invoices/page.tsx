@@ -355,7 +355,7 @@ export default function InvoicesPage() {
               <td className="p-2">{inv.service_type || "-"}</td>
               <td className="p-2">₹{inv.amount}</td>
               <td className="p-2">₹{inv.gst_amount}</td>
-              <td className="p-2">₹{inv.total_amount}</td>
+              <td className="p-2">₹{inv.total_amount_amount}</td>
               <td className="p-2">{inv.status}</td>
               <td className="p-2">
                 {inv.due_date
