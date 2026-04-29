@@ -77,6 +77,8 @@ export default function USSignupPage() {
       password: form.password,
       options: {
         data: {
+          region: "us",
+          vertical: "us",
           first_name: form.firstName,
           last_name: form.lastName,
           firm_name: form.firmName,
@@ -88,6 +90,23 @@ export default function USSignupPage() {
     })
 
     if (signUpError) { setError(signUpError.message); setLoading(false); return }
+
+    // Create firm in the background
+    if (data.session) {
+      await fetch("/api/us/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accessToken: data.session.access_token,
+          firmName: form.firmName,
+          firmType: form.firmType,
+          plan: form.plan,
+          state: form.state,
+          size: form.firmSize,
+          practiceAreas: form.practiceAreas,
+        })
+      }).catch(() => null)
+    }
 
     // Onboard the user
     try {

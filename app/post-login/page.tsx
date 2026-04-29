@@ -9,7 +9,7 @@ export default function PostLoginPage() {
     async function redirect() {
       const supabase = createClient()
 
-      // Wait up to 2 seconds for session
+      // Wait up to 2s for session
       let session = null
       for (let i = 0; i < 6; i++) {
         const { data } = await supabase.auth.getSession()
@@ -17,12 +17,16 @@ export default function PostLoginPage() {
         await new Promise(r => setTimeout(r, 350))
       }
 
-      if (!session) {
-        window.location.href = "/signin"
-        return
-      }
+      if (!session) { window.location.href = "/signin"; return }
 
       setStatus("Loading your workspace...")
+
+      // Check user metadata for US region first (fast path, no API needed)
+      const meta = session.user.user_metadata || {}
+      if (meta.region === "us" || meta.vertical === "us") {
+        window.location.href = "/us/app"
+        return
+      }
 
       try {
         const res = await fetch("/api/onboarding/check", {
@@ -33,6 +37,7 @@ export default function PostLoginPage() {
 
         if (!data.hasOrg) { window.location.href = "/onboarding"; return }
         if (data.vertical === "admin") { window.location.href = "/admin"; return }
+        if (data.vertical === "us") { window.location.href = "/us/app"; return }
         if (data.vertical === "lawyer") { window.location.href = "/in/lawyer"; return }
         if (data.vertical === "both") { window.location.href = "/in/ca"; return }
         window.location.href = "/in/ca"
