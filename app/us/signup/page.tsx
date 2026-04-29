@@ -77,8 +77,6 @@ export default function USSignupPage() {
       password: form.password,
       options: {
         data: {
-          region: "us",
-          vertical: "us",
           first_name: form.firstName,
           last_name: form.lastName,
           firm_name: form.firmName,
