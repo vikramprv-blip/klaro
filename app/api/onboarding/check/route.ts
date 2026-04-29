@@ -10,14 +10,23 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization") || "";
   const token = authHeader.replace("Bearer ", "");
-
   if (!token) return NextResponse.json({ hasOrg: false, vertical: "ca" });
 
   const { data: authData } = await supabase.auth.getUser(token);
   const userId = authData?.user?.id;
   const email = authData?.user?.email;
-
+  const meta = authData?.user?.user_metadata || {};
   if (!userId) return NextResponse.json({ hasOrg: false, vertical: "ca" });
+
+  // Master admin override
+  if (email === "vikramprv@gmail.com" || meta.is_master_admin) {
+    return NextResponse.json({ hasOrg: true, vertical: "admin", isMasterAdmin: true, firmId: null });
+  }
+
+  // US vertical from metadata (set during US signup)
+  if (meta.vertical === "us" || meta.region === "us") {
+    return NextResponse.json({ hasOrg: true, vertical: "us", firmId: null });
+  }
 
   const { data: user } = await supabase
     .from("users")
@@ -38,20 +47,17 @@ export async function GET(req: Request) {
     });
   }
 
-  // Auto-provision from firm_members
+  // Auto-provision
   const { data: member } = await supabase
     .from("firm_members")
     .select("firm_id, role")
     .eq("user_id", userId)
     .single();
-
   const DEMO_FIRM = "00000000-0000-0000-0000-000000000001";
   const role = member?.role === "lawyer" ? "lawyer" : "ca";
   const firmId = member?.firm_id || DEMO_FIRM;
-
   await supabase.from("users").upsert([{
     id: userId, email, role, firm_id: firmId, is_firm_admin: false,
   }]);
-
   return NextResponse.json({ hasOrg: true, vertical: role, firmId });
 }

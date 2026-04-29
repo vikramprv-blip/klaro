@@ -8,22 +8,27 @@ export default function PostLoginPage() {
   useEffect(() => {
     async function redirect() {
       const supabase = createClient()
-
-      // Wait up to 2s for session
       let session = null
       for (let i = 0; i < 6; i++) {
         const { data } = await supabase.auth.getSession()
         if (data.session) { session = data.session; break }
         await new Promise(r => setTimeout(r, 350))
       }
-
       if (!session) { window.location.href = "/signin"; return }
 
       setStatus("Loading your workspace...")
 
-      // Check user metadata for US region first (fast path, no API needed)
       const meta = session.user.user_metadata || {}
-      if (meta.region === "us" || meta.vertical === "us") {
+      const email = session.user.email
+
+      // Master admin goes to admin panel
+      if (email === "vikramprv@gmail.com" || meta.is_master_admin) {
+        window.location.href = "/admin"
+        return
+      }
+
+      // US users go to US app
+      if (meta.vertical === "us" || meta.region === "us") {
         window.location.href = "/us/app"
         return
       }
@@ -34,7 +39,6 @@ export default function PostLoginPage() {
           cache: "no-store",
         })
         const data = await res.json()
-
         if (!data.hasOrg) { window.location.href = "/onboarding"; return }
         if (data.vertical === "admin") { window.location.href = "/admin"; return }
         if (data.vertical === "us") { window.location.href = "/us/app"; return }
