@@ -14,6 +14,8 @@ export default function InvoicesPage() {
   const [creating, setCreating] = useState(false)
   const [statusFilter, setStatusFilter] = useState("all")
   const [search, setSearch] = useState("")
+  const [einvoiceModal, setEinvoiceModal] = useState<any>(null)
+  const [einvoiceLoading, setEinvoiceLoading] = useState(false)
   const [form, setForm] = useState({
     client_id: "", amount: "", service_type: "Professional Services",
     gst_rate: "18", due_date: "", payment_method: "", notes: ""
@@ -74,6 +76,19 @@ export default function InvoicesPage() {
     load()
   }
 
+  async function generateEInvoice(inv: any) {
+    setEinvoiceLoading(true)
+    setEinvoiceModal({ inv, loading: true, qr: null, irn: null })
+    const res = await fetch("/api/ca/einvoice", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invoice_id: inv.id })
+    })
+    const data = await res.json()
+    setEinvoiceLoading(false)
+    setEinvoiceModal({ inv, loading: false, qr: data.qr, irn: data.irn, qrPayload: data.qrPayload, error: data.error })
+  }
+
   const clientOptions = clients.map(c => ({ value: c.id, label: c.name, sub: c.gstin || c.email || "" }))
   const serviceTypes = ["Professional Services", "GST Filing", "TDS Filing", "ITR Filing", "Audit", "Bookkeeping", "ROC Compliance", "Advisory", "Payroll", "Other"]
   const paymentModes = ["UPI", "Bank Transfer", "Cheque", "Cash", "Online"]
@@ -89,8 +104,100 @@ export default function InvoicesPage() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
+
+      {/* E-Invoice Modal */}
+      {einvoiceModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">E-Invoice</h2>
+                <p className="text-xs text-gray-500">GST E-Invoice with QR Code — as per GSTN mandate</p>
+              </div>
+              <button onClick={() => setEinvoiceModal(null)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+            </div>
+
+            {einvoiceModal.loading && (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-sm text-gray-500">Generating IRN and QR code...</p>
+              </div>
+            )}
+
+            {einvoiceModal.error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+                {einvoiceModal.error}
+              </div>
+            )}
+
+            {!einvoiceModal.loading && einvoiceModal.qr && (
+              <>
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
+                  <span className="text-green-600 text-lg">✓</span>
+                  <div>
+                    <p className="text-sm font-semibold text-green-800">IRN Generated Successfully</p>
+                    <p className="text-xs text-green-700 font-mono mt-1 break-all">{einvoiceModal.irn}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start">
+                  <div className="flex-shrink-0">
+                    <p className="text-xs text-gray-500 mb-2 text-center">QR Code</p>
+                    <img src={einvoiceModal.qr} alt="E-Invoice QR" className="w-40 h-40 border rounded-lg" />
+                    <p className="text-xs text-gray-400 text-center mt-1">Scan to verify</p>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Invoice Details</p>
+                    {[
+                      { label: "Invoice No.", value: einvoiceModal.inv.invoice_number },
+                      { label: "Seller GSTIN", value: einvoiceModal.qrPayload?.SellerGSTIN || "—" },
+                      { label: "Buyer GSTIN", value: einvoiceModal.qrPayload?.BuyerGSTIN || "—" },
+                      { label: "Doc Date", value: einvoiceModal.qrPayload?.DocDt || "—" },
+                      { label: "Total Value", value: fmt(einvoiceModal.inv.total_amount) },
+                      { label: "HSN Code", value: "998211" },
+                    ].map(f => (
+                      <div key={f.label} className="flex justify-between text-xs">
+                        <span className="text-gray-500">{f.label}</span>
+                        <span className="font-medium text-gray-900 font-mono">{f.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => {
+                      const link = document.createElement("a")
+                      link.href = einvoiceModal.qr
+                      link.download = `einvoice-qr-${einvoiceModal.inv.invoice_number}.png`
+                      link.click()
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700"
+                  >
+                    ⬇ Download QR
+                  </button>
+                  <button
+                    onClick={() => window.open(`/api/invoices/pdf?id=${einvoiceModal.inv.id}&einvoice=1`, "_blank")}
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50"
+                  >
+                    🖨 Print with QR
+                  </button>
+                </div>
+
+                <p className="text-xs text-gray-400 text-center">
+                  QR code contains digitally signed payload per GSTN e-invoice schema. HSN 998211 = Accounting services.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+          <p className="text-xs text-gray-400 mt-0.5">E-Invoice with QR code mandatory for turnover &gt; ₹5 Cr. Generate IRN + QR on each invoice.</p>
+        </div>
         <div className="flex gap-2">
           <a href="/api/invoices/export" className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Export CSV</a>
           <button onClick={async () => {
@@ -193,12 +300,12 @@ export default function InvoicesPage() {
         </div>
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-            <tr>{["Invoice No.", "Client", "Service", "Base", "GST", "Total", "Due", "Status", "Action"].map(h => (
+            <tr>{["Invoice No.", "Client", "Service", "Base", "GST", "Total", "Due", "Status", "E-Invoice", "Action"].map(h => (
               <th key={h} className="px-4 py-2 text-left">{h}</th>
             ))}</tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400">No invoices found</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={10} className="px-4 py-10 text-center text-gray-400">No invoices found</td></tr>}
             {filtered.map(inv => (
               <tr key={inv.id} className="border-t hover:bg-gray-50">
                 <td className="px-4 py-3 font-mono text-xs font-semibold text-blue-700">{inv.invoice_number}</td>
@@ -217,6 +324,19 @@ export default function InvoicesPage() {
                     inv.status === "overdue" ? "bg-red-50 text-red-700" :
                     "bg-amber-50 text-amber-700"
                   }`}>{inv.status}</span>
+                </td>
+                <td className="px-4 py-3">
+                  {inv.irn ? (
+                    <button onClick={() => generateEInvoice(inv)}
+                      className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded hover:bg-green-100 flex items-center gap-1">
+                      ✓ IRN
+                    </button>
+                  ) : (
+                    <button onClick={() => generateEInvoice(inv)}
+                      className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded hover:bg-orange-100">
+                      Gen QR
+                    </button>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
