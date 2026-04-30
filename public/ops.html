@@ -232,22 +232,19 @@ const { createClient } = supabase;
 let sb, allLogs = [], activeFilter = 'all', scanMode = 'single';
 
 // Auth
-document.addEventListener('keydown', e => { if(e.key==='Enter' && document.getElementById('gate').style.display!=='none') auth(); });
+document.addEventListener('DOMContentLoaded', auth);
 
 async function auth() {
-  const k = document.getElementById('key').value.trim();
-  if (!k) return;
-  const tempSb = createClient(SB_URL, SB_KEY_ANON);
-  const { data, error } = await tempSb.auth.signInWithPassword({
-    email: 'vikramprv@gmail.com',
-    password: k
-  });
-  if (error || !data.session) { alert('Access denied. Wrong key.'); return; }
-  sb = createClient(SB_URL, SB_KEY_ANON, { global: { headers: { Authorization: 'Bearer ' + data.session.access_token } } });
+  sb = createClient(SB_URL, SB_KEY_ANON);
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    window.location.href = '/pulse/signin';
+    return;
+  }
   document.getElementById('gate').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
-  document.getElementById('u-email').textContent = data.user.email;
-  document.getElementById('u-avatar').textContent = data.user.email.charAt(0).toUpperCase();
+  document.getElementById('u-email').textContent = session.user.email;
+  document.getElementById('u-avatar').textContent = session.user.email.charAt(0).toUpperCase();
   loadAll();
   loadTargetCount();
   setInterval(loadAll, 30000);
