@@ -28,7 +28,8 @@ const NAV = [
   { label: "Cred Vault",   href: "/in/ca/credentials",        icon: "🔐" },
   { label: "DSC Tracker",  href: "/in/ca/dsc",                icon: "D" },
   { label: "E-Sign",       href: "/in/ca/esign",              icon: "✍" },
-  { label: "Forensic Audit",href: "/in/ca/forensic",          icon: "🔍" },
+{ label: "Forensic Audit",  href: "/in/ca/forensic",    icon: "🔍" },
+{ label: "Stat & Int Audit",href: "/in/ca/stat-audit", icon: "📋" },
   { label: "Settings",     href: "/in/ca/settings",           icon: "⚙" },
 ]
 
