@@ -154,7 +154,7 @@ export default function PulsePage() {
     }
 
     function textBox(x: number, y: number, w: number, text: string, bgHex: string, borderHex: string, titleColor: string, title: string): number {
-      const lines = doc.splitTextToSize(text, w-8)
+      const lines = doc.splitTextToSize(text, w-10)
       const h = lines.length * 4.5 + (title ? 14 : 8)
       const bg = hex(bgHex); const br = hex(borderHex)
       doc.setFillColor(bg[0],bg[1],bg[2]); doc.setDrawColor(br[0],br[1],br[2]); doc.setLineWidth(0.3)
@@ -576,9 +576,8 @@ export default function PulsePage() {
       const outLines = doc.splitTextToSize(`Expected Outcome After 90 Days: ${rm.expected_outcome}`, CW-8)
       doc.roundedRect(M, y, CW, outLines.length*5+10, 3, 3, "FD")
       doc.setTextColor(74,222,128); doc.setFontSize(8.5); doc.setFont("helvetica","bold")
-      doc.text(">> ", M+4, y+8)
       doc.setFont("helvetica","normal"); doc.setFontSize(8)
-      doc.text(outLines, M+10, y+8)
+      doc.text(outLines, M+4, y+8)
       y += outLines.length*5+16
     }
 
