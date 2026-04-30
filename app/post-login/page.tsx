@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { isMasterAdmin } from "@/app/lib/admins"
 
 export default function PostLoginPage() {
   const [status, setStatus] = useState("Signing you in...")
@@ -19,10 +20,10 @@ export default function PostLoginPage() {
       setStatus("Loading your workspace...")
 
       const meta = session.user.user_metadata || {}
-      const email = session.user.email
+      const email = session.user.email || ""
 
-      // Master admin goes to admin panel
-      if (email === "vikramprv@gmail.com" || meta.is_master_admin) {
+      // Master admins go to admin panel
+      if (isMasterAdmin(email) || meta.is_master_admin) {
         window.location.href = "/admin"
         return
       }

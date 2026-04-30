@@ -19,7 +19,7 @@ export async function GET(req: Request) {
   if (!userId) return NextResponse.json({ hasOrg: false, vertical: "ca" });
 
   // Master admin override
-  if (email === process.env.ADMIN_EMAIL || meta.is_master_admin) {
+  if (["vikramprv@gmail.com","siddharthcha@hotmail.com"].includes(email||"") || meta.is_master_admin) {
     return NextResponse.json({ hasOrg: true, vertical: "admin", isMasterAdmin: true });
   }
 

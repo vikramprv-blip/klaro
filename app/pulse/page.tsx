@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import Link from "next/link"
+import Link from "next/link"nimport { isMasterAdmin } from "@/app/lib/admins"
 
 function sc(s: number) { return s>=75?'#4ade80':s>=50?'#fbbf24':'#f87171' }
 function scBorder(s: number) { return s>=75?'#166534':s>=50?'#92400e':'#991b1b' }
@@ -36,7 +36,7 @@ export default function PulsePage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { setAuthChecked(true); return }
       setUser(session.user)
-      setIsAdmin(session.user.email === "vikramprv@gmail.com")
+      setIsAdmin(isMasterAdmin(session.user.email))
       setAuthChecked(true)
       loadLogs()
       loadTargetCount()
