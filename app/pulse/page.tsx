@@ -92,8 +92,8 @@ export default function PulsePage() {
     const r = log.metadata?.full_report || {}
     const name = log.metadata?.target_name || (()=>{ try{ return new URL(log.url||"").hostname }catch{ return log.url||"Unknown" }})()
     const score = r.overall_score || r.authority_score || r.lam_score || 0
-    const trust = r.trust_score || 0
-    const conv = r.conversion_score || 0
+    const trust = r.ux_conversion_audit?.trust_score || r.trust_score || 0
+    const conv = r.ux_conversion_audit?.conversion_score || r.conversion_score || 0
     const httpsScore = (log.url||"").startsWith("https") ? 100 : 0
     const mobileScore = r.mobile_readiness==="Good" ? 90 : r.mobile_readiness==="Needs Work" ? 60 : 30
     const date = new Date().toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"})
