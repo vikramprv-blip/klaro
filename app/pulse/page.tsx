@@ -27,6 +27,7 @@ export default function PulsePage() {
   const [filter, setFilter] = useState("all")
   const [search, setSearch] = useState("")
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
+  const [activeSection, setActiveSection] = useState<Record<number,string>>({})
   const [targetCount, setTargetCount] = useState(0)
   const [mode, setMode] = useState("single")
   const [compareUrls, setCompareUrls] = useState(["","",""])
@@ -501,6 +502,10 @@ ${r.competitor_advantage?`<div class="sec">⚔ Competitive Insight</div><div cla
     setExpanded(prev => { const n = new Set(prev); n.has(idx)?n.delete(idx):n.add(idx); return n })
   }
 
+  function setSection(idx: number, section: string) {
+    setActiveSection(prev => ({ ...prev, [idx]: prev[idx]===section?"":section }))
+  }
+
   const filtered = logs
     .filter(l => filter==="all" || l.status===filter)
     .filter(l => !search || (l.metadata?.target_name||"").toLowerCase().includes(search.toLowerCase()) || (l.url||"").toLowerCase().includes(search.toLowerCase()))
@@ -647,8 +652,15 @@ ${r.competitor_advantage?`<div class="sec">⚔ Competitive Insight</div><div cla
               {filtered.map((log,idx)=>{
                 const r = log.metadata?.full_report||{}
                 const name = log.metadata?.target_name||(()=>{try{return new URL(log.url||"").hostname}catch{return log.url||"Unknown"}})()
-                const score = r.authority_score||0
+                const score = r.overall_score||r.authority_score||0
+                const isV2 = !!r.executive_brief
                 const isOpen = expanded.has(idx)
+                const curSection = activeSection[idx]||""
+                const eb = r.executive_brief||{}
+                const sec = r.security_compliance||{}
+                const ux = r.ux_conversion_audit||{}
+                const ci = r.competitive_intelligence||{}
+                const rm = r.ninety_day_roadmap||{}
                 const httpsScore = (log.url||"").startsWith("https")?100:0
                 const mobileScore = r.mobile_readiness==="Good"?90:r.mobile_readiness==="Needs Work"?60:30
                 const socScore = httpsScore===100&&mobileScore>=60?80:45
@@ -660,10 +672,13 @@ ${r.competitor_advantage?`<div class="sec">⚔ Competitive Insight</div><div cla
                         <div className="flex items-center gap-3 mb-1 flex-wrap">
                           <span className="text-white font-black text-lg">{name}</span>
                           <a href={log.url||"#"} target="_blank" className="text-slate-600 text-xs hover:text-slate-400">{log.url}</a>
+                          {isV2&&<span className="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-bold">v2</span>}
                           {isAdmin&&log.triggered_by_email&&<span className="text-xs text-amber-400/60">by {log.triggered_by_email}</span>}
                         </div>
-                        <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{r.novice_summary||log.reasoning||"—"}</p>
-                        {r.competitor_advantage&&<p className="text-amber-400/80 text-xs mt-2 italic">💡 {r.competitor_advantage}</p>}
+                        <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{eb.plain_english_summary||r.novice_summary||log.reasoning||"—"}</p>
+                        {eb.one_line_verdict&&<p className="text-amber-400/80 text-xs mt-2 italic">"{eb.one_line_verdict}"</p>}
+                        {ci.where_losing_clients&&<p className="text-red-400/70 text-xs mt-1">⚠ {ci.where_losing_clients}</p>}
+                        {false&&<p className="text-amber-400/80 text-xs mt-2 italic">💡 {r.competitor_advantage}</p>}
                         <p className="text-slate-700 text-xs mt-2">{ago(log.created_at)} · {log.status}</p>
                       </div>
                       <div className="flex-shrink-0 text-center">
@@ -691,27 +706,106 @@ ${r.competitor_advantage?`<div class="sec">⚔ Competitive Insight</div><div cla
 
                     {/* Compliance */}
                     <div className="px-5 py-3 border-b border-slate-800/40">
-                      <div className="text-xs text-slate-600 font-bold uppercase tracking-wider mb-2">Compliance & Security Surface</div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[
-                          ["HTTPS",httpsScore,"Security"],
-                          ["Mobile",mobileScore,"Accessibility"],
-                          ["ADA/WCAG",score>70?75:45,"Legal"],
-                          ["SOC2 Surface",socScore,"Compliance"],
-                        ].map(([l,v,cat])=>(
+                      <div className="text-xs text-slate-600 font-bold uppercase tracking-wider mb-2">Compliance & Security</div>
+                      <div className="grid grid-cols-5 gap-2">
+                        {[["HTTPS",httpsScore],["Mobile",mobileScore],["Cookie",sec.cookie_consent?90:20],["Privacy",sec.privacy_policy?90:20],["SOC2",sec.soc2_readiness==="Ready"?90:sec.soc2_readiness==="Partial"?60:30]].map(([l,v])=>(
                           <div key={l as string} className="bg-[#080c14] border border-slate-800 rounded-lg p-2 text-center">
-                            <div className="text-base font-black" style={{color:sc(v as number)}}>{v}</div>
+                            <div className="text-sm font-black" style={{color:sc(v as number)}}>{v}</div>
                             <div className="text-xs text-slate-600 font-semibold mt-0.5">{l}</div>
-                            <div className="text-xs text-slate-700">{cat}</div>
                           </div>
                         ))}
                       </div>
-                      {socScore<80&&<div className="mt-2 text-xs text-amber-400/70 bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2">
-                        ⚠ SOC2 surface issues detected — full audit recommended
-                      </div>}
                     </div>
 
+                    {/* V2 Section Tabs */}
+                    {isV2&&(
+                      <div className="px-5 py-2 flex gap-2 border-b border-slate-800/40 flex-wrap">
+                        {[["actions","Top Actions"],["competitive","Competitive"],["issues","UX Issues"],["security","Security"],["roadmap","90-Day Plan"]].map(([s,l])=>(
+                          <button key={s} onClick={()=>setActiveSection(prev=>({...prev,[idx]:prev[idx]===s?"":s}))}
+                            className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${curSection===s?"bg-indigo-500/10 text-indigo-400 border-indigo-500/30":"border-slate-800 text-slate-500 hover:text-white hover:bg-slate-800"}`}>
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {isV2&&curSection==="actions"&&(
+                      <div className="px-5 py-4 border-b border-slate-800/40 space-y-2">
+                        {(eb.top_3_actions||[]).map((action:string,i:number)=>(
+                          <div key={i} className={`p-3 rounded-xl border text-sm ${i===0?"bg-green-500/5 border-green-500/20 text-green-300":i===1?"bg-yellow-500/5 border-yellow-500/20 text-yellow-300":"bg-blue-500/5 border-blue-500/20 text-blue-300"}`}>
+                            <span className={`text-xs font-black mr-2 ${i===0?"text-green-400":i===1?"text-yellow-400":"text-blue-400"}`}>{["THIS WEEK","THIS MONTH","THIS QUARTER"][i]}</span>
+                            {action}
+                          </div>
+                        ))}
+                        {eb.estimated_revenue_impact&&<div className="text-xs text-amber-400/80 bg-amber-500/5 border border-amber-500/10 rounded-xl px-3 py-2">💰 {eb.estimated_revenue_impact}</div>}
+                      </div>
+                    )}
+
+                    {isV2&&curSection==="competitive"&&(
+                      <div className="px-5 py-4 border-b border-slate-800/40 space-y-3">
+                        {ci.market_position&&<div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-3"><div className="text-xs font-bold text-indigo-400 mb-1">Market Position</div><div className="text-sm text-slate-300">{ci.market_position}</div></div>}
+                        {ci.where_losing_clients&&<div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3"><div className="text-xs font-bold text-red-400 mb-1">Why clients choose competitors</div><div className="text-sm text-slate-300">{ci.where_losing_clients}</div></div>}
+                        {ci.biggest_competitor_advantage&&<div className="bg-orange-500/5 border border-orange-500/20 rounded-xl p-3"><div className="text-xs font-bold text-orange-400 mb-1">Biggest competitor advantage</div><div className="text-sm text-slate-300">{ci.biggest_competitor_advantage}</div></div>}
+                        {ci.opportunity_to_win&&<div className="bg-green-500/5 border border-green-500/20 rounded-xl p-3"><div className="text-xs font-bold text-green-400 mb-1">Your opportunity to win</div><div className="text-sm text-slate-300">{ci.opportunity_to_win}</div></div>}
+                        {(r.competitors_scanned||[]).length>0&&<div className="text-xs text-slate-600 pt-1">Scanned against: {r.competitors_scanned.join(", ")}</div>}
+                      </div>
+                    )}
+
+                    {isV2&&curSection==="issues"&&(
+                      <div className="px-5 py-4 border-b border-slate-800/40 space-y-2">
+                        {(ux.issues||[]).slice(0,5).map((issue:any,i:number)=>(
+                          <div key={i} className={`p-3 rounded-xl border ${issue.priority==="Critical"?"bg-red-500/5 border-red-500/20":issue.priority==="High"?"bg-orange-500/5 border-orange-500/20":"bg-slate-800/30 border-slate-700"}`}>
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <span className={`text-xs font-black mr-2 ${issue.priority==="Critical"?"text-red-400":issue.priority==="High"?"text-orange-400":"text-slate-400"}`}>{issue.priority}</span>
+                                <span className="text-sm text-white font-semibold">{issue.issue}</span>
+                                {issue.business_impact&&<div className="text-xs text-slate-400 mt-1">{issue.business_impact}</div>}
+                                {issue.fix&&<div className="text-xs text-green-400 mt-1">Fix: {issue.fix}</div>}
+                              </div>
+                              <div className="text-right flex-shrink-0 text-xs text-slate-600">
+                                {issue.effort&&<div>{issue.effort}</div>}
+                                {issue.cost&&<div>{issue.cost}</div>}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {(ux.quick_wins||[]).length>0&&<div className="bg-green-500/5 border border-green-500/20 rounded-xl p-3"><div className="text-xs font-bold text-green-400 mb-2">Quick Wins — Free, Under 1 Hour</div>{(ux.quick_wins||[]).map((w:string,i:number)=><div key={i} className="text-xs text-slate-300 mb-1">• {w}</div>)}</div>}
+                      </div>
+                    )}
+
+                    {isV2&&curSection==="security"&&(
+                      <div className="px-5 py-4 border-b border-slate-800/40 space-y-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          {[["HTTPS",sec.https],["Cookie Consent",sec.cookie_consent],["Privacy Policy",sec.privacy_policy],["SOC2 Ready",sec.soc2_readiness==="Ready"],["GDPR Compliant",sec.gdpr_compliance==="Compliant"]].map(([l,v])=>(
+                            <div key={l as string} className={`p-2.5 rounded-xl border text-xs font-bold ${v?"bg-green-500/5 border-green-500/20 text-green-400":"bg-red-500/5 border-red-500/20 text-red-400"}`}>
+                              {v?"✓":"✗"} {l as string}
+                            </div>
+                          ))}
+                        </div>
+                        {(sec.legal_risks||[]).length>0&&<div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3"><div className="text-xs font-bold text-red-400 mb-2">Legal Risks</div>{(sec.legal_risks||[]).map((r:string,i:number)=><div key={i} className="text-xs text-slate-300 mb-1">⚠ {r}</div>)}</div>}
+                        {(sec.security_issues||[]).length>0&&<div className="bg-orange-500/5 border border-orange-500/20 rounded-xl p-3"><div className="text-xs font-bold text-orange-400 mb-2">Security Issues</div>{(sec.security_issues||[]).map((r:string,i:number)=><div key={i} className="text-xs text-slate-300 mb-1">• {r}</div>)}</div>}
+                        {(sec.recommendations||[]).length>0&&<div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-3"><div className="text-xs font-bold text-indigo-400 mb-2">Recommendations</div>{(sec.recommendations||[]).map((r:string,i:number)=><div key={i} className="text-xs text-slate-300 mb-1">→ {r}</div>)}</div>}
+                      </div>
+                    )}
+
+                    {isV2&&curSection==="roadmap"&&(
+                      <div className="px-5 py-4 border-b border-slate-800/40">
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          {[{label:"Week 1",data:rm.week_1,color:"text-green-400",border:"border-green-500/20",bg:"bg-green-500/5"},{label:"Month 1",data:rm.month_1,color:"text-yellow-400",border:"border-yellow-500/20",bg:"bg-yellow-500/5"},{label:"Month 2-3",data:rm.month_2_3,color:"text-blue-400",border:"border-blue-500/20",bg:"bg-blue-500/5"}].map(ph=>(
+                            <div key={ph.label} className={`${ph.bg} border ${ph.border} rounded-xl p-3`}>
+                              <div className={`text-xs font-black ${ph.color} mb-1`}>{ph.label}</div>
+                              {ph.data?.expected_score&&<div className="text-xs text-slate-500 mb-2">Target: {ph.data.expected_score}/100</div>}
+                              {(ph.data?.actions||[]).map((a:string,i:number)=><div key={i} className="text-xs text-slate-300 mb-1.5">• {a}</div>)}
+                              {ph.data?.cost&&<div className="text-xs text-slate-500 mt-2 pt-2 border-t border-slate-700/50">{ph.data.cost}</div>}
+                            </div>
+                          ))}
+                        </div>
+                        {rm.expected_outcome&&<div className="bg-green-500/5 border border-green-500/20 rounded-xl p-3 text-sm text-green-300">🎯 {rm.expected_outcome}</div>}
+                      </div>
+                    )}
+
                     {/* Pills */}
+
                     <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-slate-800/40">
                       {r.mobile_readiness&&<span className={`text-xs font-bold px-2 py-1 rounded-full border ${r.mobile_readiness==="Good"?"bg-green-500/10 text-green-400 border-green-500/20":r.mobile_readiness==="Poor"?"bg-red-500/10 text-red-400 border-red-500/20":"bg-yellow-500/10 text-yellow-400 border-yellow-500/20"}`}>📱 {r.mobile_readiness}</span>}
                       {r.pricing_clarity&&<span className={`text-xs font-bold px-2 py-1 rounded-full border ${r.pricing_clarity==="Clear"?"bg-green-500/10 text-green-400 border-green-500/20":r.pricing_clarity==="Hidden"?"bg-red-500/10 text-red-400 border-red-500/20":"bg-yellow-500/10 text-yellow-400 border-yellow-500/20"}`}>💰 {r.pricing_clarity}</span>}
