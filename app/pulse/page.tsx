@@ -91,7 +91,7 @@ export default function PulsePage() {
   async function downloadPDF(log: any) {
     const r = log.metadata?.full_report || {}
     const name = log.metadata?.target_name || (()=>{ try{ return new URL(log.url||"").hostname }catch{ return log.url||"Unknown" }})()
-    const score = r.authority_score || 0
+    const score = r.overall_score || r.authority_score || r.lam_score || 0
     const trust = r.trust_score || 0
     const conv = r.conversion_score || 0
     const httpsScore = (log.url||"").startsWith("https") ? 100 : 0
@@ -450,7 +450,7 @@ export default function PulsePage() {
   async function saveReport(log: any) {
     const r = log.metadata?.full_report || {}
     const name = log.metadata?.target_name || (()=>{ try{ return new URL(log.url||"").hostname }catch{ return log.url||"Unknown" }})()
-    const score = r.authority_score || 0
+    const score = r.overall_score || r.authority_score || r.lam_score || 0
     const { data, error } = await supabase.from("pulse_reports").insert({
       log_id: log.id, target_url: log.url, target_name: name, score,
       report_html: generateReportHtml(log, r, name),
@@ -461,7 +461,7 @@ export default function PulsePage() {
   }
 
   function generateReportHtml(log: any, r: any, name: string) {
-    const score = r.authority_score || 0
+    const score = r.overall_score || r.authority_score || r.lam_score || 0
     const color = score>=75?"#10b981":score>=50?"#f59e0b":"#ef4444"
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Klaro Pulse — ${name}</title>
 <style>body{font-family:-apple-system,sans-serif;background:#f8fafc;color:#1e293b;margin:0;padding:0}
@@ -510,7 +510,7 @@ ${r.competitor_advantage?`<div class="sec">⚔ Competitive Insight</div><div cla
     .filter(l => filter==="all" || l.status===filter)
     .filter(l => !search || (l.metadata?.target_name||"").toLowerCase().includes(search.toLowerCase()) || (l.url||"").toLowerCase().includes(search.toLowerCase()))
 
-  const scores = logs.map(l=>l.metadata?.full_report?.authority_score||0).filter(s=>s>0)
+  const scores = logs.map(l=>l.metadata?.full_report?.overall_score||l.metadata?.full_report?.authority_score||0).filter(s=>s>0)
   const avg = scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0
 
   const statusStyle: Record<string,string> = {
