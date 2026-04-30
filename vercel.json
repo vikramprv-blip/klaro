@@ -1,12 +1,18 @@
 {
   "rewrites": [
+    { "source": "/pulse", "destination": "/public/pulse.html" },
+    { "source": "/signin", "destination": "/public/signin.html" },
+    { "source": "/signup", "destination": "/public/signup.html" },
+    { "source": "/dashboard", "destination": "/public/ops.html" },
+    { "source": "/ops", "destination": "/public/ops.html" }
+  ],
+  "headers": [
     {
-      "source": "/pulse",
-      "destination": "https://klaro-pulse.vercel.app/index.html"
-    },
-    {
-      "source": "/pulse/:path*",
-      "destination": "https://klaro-pulse.vercel.app/:path*"
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
     }
   ]
 }

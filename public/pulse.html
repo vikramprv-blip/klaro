@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klaro Pulse — AI Site Intelligence</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',sans-serif;background:#020617;color:#cbd5e1}
+.gradient-text{background:linear-gradient(135deg,#6366f1,#8b5cf6,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.card-hover{transition:border-color 0.2s,transform 0.2s}
+.card-hover:hover{border-color:#4f46e5;transform:translateY(-2px)}
+.scan-input{background:rgba(255,255,255,0.05);border:1px solid rgba(99,102,241,0.3);border-radius:16px;padding:18px 24px;color:white;font-size:15px;width:100%;outline:none;transition:all 0.2s;font-family:'Inter',sans-serif}
+.scan-input:focus{border-color:#6366f1;background:rgba(99,102,241,0.08);box-shadow:0 0 0 4px rgba(99,102,241,0.1)}
+.scan-input::placeholder{color:#475569}
+.scan-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:14px;padding:18px 32px;color:white;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;white-space:nowrap}
+.scan-btn:hover{opacity:0.9;transform:translateY(-1px);box-shadow:0 8px 24px rgba(99,102,241,0.4)}
+.scan-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.result-card{background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2);border-radius:20px;padding:28px;margin-top:20px;display:none}
+.score-ring{width:80px;height:80px;border-radius:50%;border:4px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+@keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(99,102,241,0.4)}70%{box-shadow:0 0 0 12px rgba(99,102,241,0)}100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}}
+.scanning-pulse{animation:pulse-ring 1.5s infinite}
+@keyframes fade-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fade-in 0.4s ease forwards}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center border-b border-slate-900">
+  <div class="text-white font-black text-xl tracking-tight">KLARO <span class="text-indigo-500">PULSE</span></div>
+  <div class="hidden md:flex gap-8 text-sm text-slate-400">
+    <a href="#how" class="hover:text-white transition-colors">How It Works</a>
+    <a href="#audits" class="hover:text-white transition-colors">Audits</a>
+    <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+    <a href="https://klaro.services/us" class="hover:text-white transition-colors">Klaro US</a>
+  </div>
+  <a href="https://klaro.services/pulse" class="px-5 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-500 transition-all">Open Dashboard →</a>
+</nav>
+
+<!-- Hero -->
+<header class="max-w-4xl mx-auto px-6 pt-20 pb-8 text-center">
+  <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-8 text-xs font-bold tracking-widest text-indigo-400 uppercase bg-indigo-500/10 rounded-full border border-indigo-500/20">
+    <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+    AI-Powered · Self-Healing · Zero Code Required
+  </div>
+  <h1 class="text-5xl md:text-6xl font-black text-white tracking-tight mb-6 leading-tight">
+    Find every flaw in<br><span class="gradient-text">any website. Instantly.</span>
+  </h1>
+  <p class="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed mb-4">
+    Paste any URL below. Klaro Pulse scans it with AI and tells you exactly what's broken, what's losing customers, and how to fix it — in plain English your CEO can read.
+  </p>
+  <p class="text-sm text-slate-600 mb-10">Works on any public website · Law firms · SaaS · Competitors · E-commerce</p>
+
+  <!-- LIVE SCAN BOX -->
+  <div class="max-w-2xl mx-auto bg-slate-900/60 border border-slate-800 rounded-2xl p-6 mb-6">
+    <div class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+      Try it now — free scan
+    </div>
+    <div class="flex gap-3 flex-col sm:flex-row">
+      <input id="hero-url" type="url" class="scan-input" placeholder="https://yourcompetitor.com"/>
+      <button id="hero-btn" class="scan-btn" onclick="heroScan()">Scan Free →</button>
+    </div>
+    <p class="text-xs text-slate-600 mt-3">No signup needed for preview · Full results in your dashboard · Takes 3-5 min</p>
+
+    <!-- Scanning state -->
+    <div id="scanning-state" class="hidden mt-5 flex items-center justify-center gap-3 text-sm text-indigo-400">
+      <div class="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      <span id="scanning-text">Scanning your URL with AI...</span>
+    </div>
+
+    <!-- Preview result -->
+    <div id="preview-result" class="result-card fade-in">
+      <div class="flex items-start gap-5 mb-5">
+        <div id="score-ring" class="score-ring">
+          <span id="score-num" class="text-2xl font-black"></span>
+          <span class="text-xs text-slate-500">/100</span>
+        </div>
+        <div class="flex-1 text-left">
+          <div id="result-name" class="text-white font-black text-lg mb-1"></div>
+          <div id="result-summary" class="text-slate-400 text-sm leading-relaxed"></div>
+        </div>
+      </div>
+      <div id="result-issues" class="space-y-2 mb-5"></div>
+      <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 text-center">
+        <p class="text-sm text-indigo-300 font-semibold mb-3">See the full report — all problems, fixes & revenue opportunities</p>
+        <a id="signup-link" href="https://klaro.services/signup" class="inline-block px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl text-sm hover:opacity-90 transition-all">
+          Get Full Report Free →
+        </a>
+        <p class="text-xs text-slate-600 mt-2">Free account · No credit card · Full results in dashboard</p>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div id="scan-error" class="hidden mt-4 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"></div>
+  </div>
+
+  <!-- Sample scanned sites -->
+  <div class="flex flex-wrap justify-center gap-2 text-xs text-slate-600">
+    <span>Try scanning:</span>
+    <button onclick="document.getElementById('hero-url').value='https://sckonline.net'" class="text-indigo-500 hover:text-indigo-400">sckonline.net</button>
+    <span>·</span>
+    <button onclick="document.getElementById('hero-url').value='https://clio.com'" class="text-indigo-500 hover:text-indigo-400">clio.com</button>
+    <span>·</span>
+    <button onclick="document.getElementById('hero-url').value='https://mycase.com'" class="text-indigo-500 hover:text-indigo-400">mycase.com</button>
+    <span>·</span>
+    <button onclick="document.getElementById('hero-url').value='https://freshbooks.com'" class="text-indigo-500 hover:text-indigo-400">freshbooks.com</button>
+  </div>
+</header>
+
+<!-- Stats -->
+<div class="border-y border-slate-900 py-10 mb-20">
+  <div class="max-w-4xl mx-auto px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <div><div class="text-3xl font-black text-white mb-1">100+</div><div class="text-sm text-slate-500">Sites in database</div></div>
+      <div><div class="text-3xl font-black text-white mb-1">0</div><div class="text-sm text-slate-500">Lines of code needed</div></div>
+      <div><div class="text-3xl font-black text-white mb-1">5min</div><div class="text-sm text-slate-500">Full AI audit</div></div>
+      <div><div class="text-3xl font-black text-indigo-400 mb-1">$59.99</div><div class="text-sm text-slate-500">per report vs $2k consultants</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- How it works -->
+<section id="how" class="max-w-6xl mx-auto px-6 mb-24">
+  <h2 class="text-4xl font-black text-white text-center mb-3">How Pulse works</h2>
+  <p class="text-slate-500 text-center mb-14">Four steps from URL to full AI audit report</p>
+  <div class="grid md:grid-cols-4 gap-6">
+    <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 card-hover">
+      <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black mb-5 text-sm">1</div>
+      <h3 class="text-white font-bold mb-2">Paste any URL</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">Any public website — a competitor, a client, a law firm, a SaaS product. No setup, no login to the target site.</p>
+    </div>
+    <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 card-hover">
+      <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black mb-5 text-sm">2</div>
+      <h3 class="text-white font-bold mb-2">AI scans everything</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">Playwright browses the site like a human. Groq AI analyses UX, trust, conversion, compliance, performance and security.</p>
+    </div>
+    <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 card-hover">
+      <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black mb-5 text-sm">3</div>
+      <h3 class="text-white font-bold mb-2">Plain English report</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">No jargon. No WCAG numbers. Just: here is the problem, here is the money you are losing, here is how to fix it.</p>
+    </div>
+    <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 card-hover">
+      <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black mb-5 text-sm">4</div>
+      <h3 class="text-white font-bold mb-2">Share with clients</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">One click to generate a shareable link. Send it to your prospect before the meeting. They'll be impressed before you arrive.</p>
+    </div>
+  </div>
+</section>
+
+<!-- What we scan -->
+<section id="audits" class="max-w-6xl mx-auto px-6 mb-24">
+  <h2 class="text-4xl font-black text-white text-center mb-3">6 audits, every scan</h2>
+  <p class="text-slate-500 text-center mb-14">Everything a consultant would check — done in 5 minutes by AI</p>
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="bg-slate-900/50 border border-emerald-900 rounded-2xl p-6 card-hover">
+      <div class="text-emerald-400 font-black text-sm mb-3 uppercase tracking-wider">UX & Conversion</div>
+      <h3 class="text-white font-bold text-lg mb-2">Why visitors leave</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">Confusing navigation, weak CTAs, trust signal gaps, unclear messaging. Scored 0–100 with specific fixes.</p>
+    </div>
+    <div class="bg-slate-900/50 border border-indigo-900 rounded-2xl p-6 card-hover">
+      <div class="text-indigo-400 font-black text-sm mb-3 uppercase tracking-wider">Performance</div>
+      <h3 class="text-white font-bold text-lg mb-2">Speed kills conversions</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">Load time, FCP, TTFB, DOM size. Every second of delay costs 7% of conversions. We tell you exactly what's slow.</p>
+    </div>
+    <div class="bg-slate-900/50 border border-amber-900 rounded-2xl p-6 card-hover">
+      <div class="text-amber-400 font-black text-sm mb-3 uppercase tracking-wider">Security Surface</div>
+      <h3 class="text-white font-bold text-lg mb-2">What hackers see</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">HTTPS enforcement, mixed content, exposed data, security headers. SOC2 readiness surface check included.</p>
+    </div>
+    <div class="bg-slate-900/50 border border-rose-900 rounded-2xl p-6 card-hover">
+      <div class="text-rose-400 font-black text-sm mb-3 uppercase tracking-wider">Accessibility / ADA</div>
+      <h3 class="text-white font-bold text-lg mb-2">Legal compliance risk</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">WCAG 2.1 compliance. US law firms are legally required to be accessible. Many get sued. We flag the risks.</p>
+    </div>
+    <div class="bg-slate-900/50 border border-cyan-900 rounded-2xl p-6 card-hover">
+      <div class="text-cyan-400 font-black text-sm mb-3 uppercase tracking-wider">SEO & Visibility</div>
+      <h3 class="text-white font-bold text-lg mb-2">Can clients find you?</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">Meta tags, heading structure, content clarity, audience targeting. If Google can't understand the site, customers can't find it.</p>
+    </div>
+    <div class="bg-slate-900/50 border border-purple-900 rounded-2xl p-6 card-hover">
+      <div class="text-purple-400 font-black text-sm mb-3 uppercase tracking-wider">AI Vision</div>
+      <h3 class="text-white font-bold text-lg mb-2">Human-eye review</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">AI reads the page like a senior UX consultant — written narrative on what works, what doesn't, and the revenue opportunity.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Use cases -->
+<section class="max-w-5xl mx-auto px-6 mb-24">
+  <h2 class="text-4xl font-black text-white text-center mb-3">Who uses Klaro Pulse?</h2>
+  <p class="text-slate-500 text-center mb-14">One tool. Multiple revenue streams.</p>
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="bg-slate-900/30 border border-slate-800 rounded-2xl p-6">
+      <div class="text-2xl mb-3">⚖️</div>
+      <h3 class="text-white font-bold mb-2">Law Firms & CPAs</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">Scan your own site and find why clients aren't calling. Or scan competitors and show prospects exactly where you're better.</p>
+    </div>
+    <div class="bg-slate-900/30 border border-slate-800 rounded-2xl p-6">
+      <div class="text-2xl mb-3">🏢</div>
+      <h3 class="text-white font-bold mb-2">Digital Agencies</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">Walk into every prospect meeting with a free audit of their site. Close deals before the competition gets a foot in the door.</p>
+    </div>
+    <div class="bg-slate-900/30 border border-slate-800 rounded-2xl p-6">
+      <div class="text-2xl mb-3">🚀</div>
+      <h3 class="text-white font-bold mb-2">SaaS & Startups</h3>
+      <p class="text-slate-400 text-sm leading-relaxed">Monitor competitors weekly. Get alerted when they change their pricing or messaging. Stay one step ahead always.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<!-- LAM Section -->
+<section class="max-w-5xl mx-auto px-6 mb-24">
+  <div class="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-3xl p-10 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-xs font-bold tracking-widest text-purple-400 uppercase bg-purple-500/10 rounded-full border border-purple-500/20">
+      NEW — Large Action Model Audit
+    </div>
+    <h2 class="text-4xl font-black text-white mb-4">Our AI visits your site.<br><span class="text-indigo-400">As a real potential client.</span></h2>
+    <p class="text-slate-300 text-lg max-w-3xl mx-auto mb-8 leading-relaxed">
+      Unlike standard AI audits that just read your HTML, our LAM agent <strong>actually navigates your site</strong> — tries to find your phone number, attempts to book a consultation, fills in your contact form, and reports every moment of friction it experienced. Plus a full ADA/WCAG deep scan and SOC 1/2/3 readiness assessment.
+    </p>
+    <div class="grid md:grid-cols-3 gap-6 mb-10 text-left">
+      <div class="bg-slate-900/60 rounded-2xl p-5">
+        <div class="text-purple-400 font-black text-sm mb-2 uppercase tracking-wider">Client Experience</div>
+        <p class="text-slate-400 text-sm">"I visited your site as a potential client. Here is exactly what I experienced, what confused me, and why I almost left without contacting you."</p>
+      </div>
+      <div class="bg-slate-900/60 rounded-2xl p-5">
+        <div class="text-indigo-400 font-black text-sm mb-2 uppercase tracking-wider">ADA Deep Scan</div>
+        <p class="text-slate-400 text-sm">Full WCAG 2.1 AA compliance test. Keyboard navigation, screen reader compatibility, colour contrast, ARIA labels. US firms face real lawsuit risk.</p>
+      </div>
+      <div class="bg-slate-900/60 rounded-2xl p-5">
+        <div class="text-emerald-400 font-black text-sm mb-2 uppercase tracking-wider">SOC 1/2/3 Readiness</div>
+        <p class="text-slate-400 text-sm">Surface scan for SOC compliance gaps. Cookie consent, data processing, security headers, privacy controls. Know your risk before your auditor does.</p>
+      </div>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <div class="bg-slate-900 border border-purple-500/30 rounded-2xl p-6 text-center">
+        <div class="text-3xl font-black text-white mb-1">$299</div>
+        <div class="text-purple-400 text-sm font-bold mb-3">One-off LAM Audit</div>
+        <a href="https://klaro.services/signup" class="block px-6 py-2.5 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-500 text-sm">Get LAM Audit</a>
+      </div>
+      <div class="bg-slate-900 border border-indigo-500/30 rounded-2xl p-6 text-center">
+        <div class="text-3xl font-black text-white mb-1">$499<span class="text-lg text-slate-400">/mo</span></div>
+        <div class="text-indigo-400 text-sm font-bold mb-3">LAM Monthly Monitoring</div>
+        <a href="https://klaro.services/signup" class="block px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-500 text-sm">Start Monitoring</a>
+      </div>
+      <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 text-center">
+        <div class="text-3xl font-black text-white mb-1">$4,999</div>
+        <div class="text-emerald-400 text-sm font-bold mb-3">LAM + SOC Setup</div>
+        <a href="mailto:ops@klaro.services" class="block px-6 py-2.5 bg-emerald-700 text-white font-bold rounded-xl hover:bg-emerald-600 text-sm">Contact Us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section id="pricing" class="max-w-6xl mx-auto px-6 mb-24 text-center">
+  <h2 class="text-4xl font-black text-white mb-3">Simple pricing</h2>
+  <p class="text-slate-500 mb-14">Start with a single report. Scale as you grow.</p>
+  <div class="grid md:grid-cols-4 gap-5 mb-8">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-left">
+      <div class="text-slate-400 text-xs font-bold mb-3 uppercase tracking-wider">Single Report</div>
+      <div class="text-4xl font-black text-white mb-1">$59<span class="text-lg text-slate-400">.99</span></div>
+      <p class="text-slate-500 text-xs mb-5">One report · No subscription</p>
+      <ul class="space-y-2 text-xs text-slate-300 mb-6">
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>5-page boardroom PDF</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>2 competitor comparisons</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>UX + conversion audit</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>Security + ADA scan</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>90-day roadmap</li>
+      </ul>
+      <a href="https://klaro.services/signup" class="block text-center px-4 py-2.5 bg-slate-700 text-white font-bold rounded-xl hover:bg-slate-600 text-sm transition-all">Buy Report</a>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-left">
+      <div class="text-slate-400 text-xs font-bold mb-3 uppercase tracking-wider">Starter</div>
+      <div class="text-4xl font-black text-white mb-1">$149<span class="text-lg text-slate-400">/mo</span></div>
+      <p class="text-slate-500 text-xs mb-5">5 reports/month</p>
+      <ul class="space-y-2 text-xs text-slate-300 mb-6">
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>Everything in Single</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>5 reports per month</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>2 competitors per report</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>Shareable report links</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>Email delivery</li>
+      </ul>
+      <a href="https://klaro.services/signup" class="block text-center px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-500 text-sm transition-all">Start Free Trial</a>
+    </div>
+    <div class="bg-slate-900 border border-indigo-500 rounded-2xl p-6 text-left relative">
+      <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-indigo-600 text-white text-xs font-black rounded-full">MOST POPULAR</div>
+      <div class="text-indigo-400 text-xs font-bold mb-3 uppercase tracking-wider">Growth</div>
+      <div class="text-4xl font-black text-white mb-1">$399<span class="text-lg text-slate-400">/mo</span></div>
+      <p class="text-slate-500 text-xs mb-5">20 reports/month</p>
+      <ul class="space-y-2 text-xs text-slate-300 mb-6">
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>20 reports per month</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>3 competitors per report</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>Weekly monitoring alerts</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>Priority AI processing</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>White-label PDF option</li>
+      </ul>
+      <a href="https://klaro.services/signup" class="block text-center px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-500 text-sm transition-all">Start Free Trial</a>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-left">
+      <div class="text-slate-400 text-xs font-bold mb-3 uppercase tracking-wider">Agency</div>
+      <div class="text-4xl font-black text-white mb-1">$599<span class="text-lg text-slate-400">/mo</span></div>
+      <p class="text-slate-500 text-xs mb-5">Unlimited reports</p>
+      <ul class="space-y-2 text-xs text-slate-300 mb-6">
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>Unlimited reports</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>5 competitors per report</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>API access</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>White-label + your logo</li>
+        <li class="flex gap-2"><span class="text-emerald-400">+</span>Reseller rights</li>
+      </ul>
+      <a href="https://klaro.services/signup" class="block text-center px-4 py-2.5 bg-slate-700 text-white font-bold rounded-xl hover:bg-slate-600 text-sm transition-all">Contact Sales</a>
+    </div>
+  </div>
+  <p class="text-slate-600 text-sm">All plans include 5-page PDF reports · ADA compliance · SOC2 surface scan · 90-day roadmap · No credit card for trial</p>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-slate-900 py-16">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="grid md:grid-cols-5 gap-10 mb-12">
+      <div class="md:col-span-2">
+        <div class="text-white font-black text-xl mb-3">KLARO <span class="text-indigo-500">PULSE</span></div>
+        <p class="text-slate-500 text-sm leading-relaxed mb-4">AI-powered site intelligence. Know exactly what is costing you clients before your competitors figure it out.</p>
+        <p class="text-slate-600 text-xs">Part of <a href="https://klaro.services" class="text-slate-400 hover:text-white">Klaro Global</a></p>
+        <p class="text-slate-600 text-xs mt-1">ops@klaro.services</p>
+      </div>
+      <div>
+        <div class="text-white font-bold text-sm mb-4 uppercase tracking-wider">Product</div>
+        <div class="space-y-2 text-sm text-slate-500">
+          <div><a href="https://klaro.services/pulse" class="hover:text-white">Dashboard</a></div>
+          <div><a href="#pricing" class="hover:text-white">Pricing</a></div>
+          <div><a href="#how" class="hover:text-white">How it works</a></div>
+          <div><a href="#audits" class="hover:text-white">Audit types</a></div>
+          <div><a href="https://klaro.services/signup" class="hover:text-white">Sign up free</a></div>
+          <div><a href="/pulse/signin" class="hover:text-white">Sign in</a></div>
+        </div>
+      </div>
+      <div>
+        <div class="text-white font-bold text-sm mb-4 uppercase tracking-wider">Klaro Suite</div>
+        <div class="space-y-2 text-sm text-slate-500">
+          <div><a href="https://klaro.services/pulse" class="hover:text-white">Klaro Pulse — Site Intelligence</a></div>
+          <div><a href="https://klaro.services/in/ca" class="hover:text-white">Klaro CA — India CA Suite</a></div>
+          <div><a href="https://klaro.services/in/lawyer" class="hover:text-white">Klaro Lawyer — India Legal</a></div>
+          <div><a href="https://klaro.services/us" class="hover:text-white">Klaro US — US Law & CPA</a></div>
+        </div>
+      </div>
+      <div>
+        <div class="text-white font-bold text-sm mb-4 uppercase tracking-wider">Legal & Compliance</div>
+        <div class="space-y-2 text-sm text-slate-500">
+          <div><a href="https://klaro.services/terms" class="hover:text-white">Terms of Service</a></div>
+          <div><a href="https://klaro.services/privacy" class="hover:text-white">Privacy Policy</a></div>
+          <div><a href="https://klaro.services/cookies" class="hover:text-white">Cookie Policy</a></div>
+          <div><a href="https://klaro.services/contact" class="hover:text-white">Contact Us</a></div>
+          <div><a href="mailto:ops@klaro.services" class="hover:text-white">ops@klaro.services</a></div>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-slate-900 pt-8">
+      <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 mb-6 text-xs text-slate-500 leading-relaxed">
+        <span class="text-slate-400 font-bold">Privacy Notice:</span> Klaro Pulse scans publicly available website data only. We do not access private systems without explicit consent. 
+        Our platform complies with GDPR (EU) 2016/679, CCPA (California), and DPDP Act 2023 (India). 
+        Scan data is stored securely and never sold to third parties. 
+        EU/UK users may request data deletion at <a href="mailto:privacy@klaro.services" class="text-indigo-400 hover:underline">privacy@klaro.services</a>.
+        California residents may opt out of data sale at any time — we do not sell personal data.
+      </div>
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <p class="text-slate-600 text-xs">(c) 2026 Klaro Global. All rights reserved. Registered in India.</p>
+        <div class="flex gap-4 text-xs text-slate-600">
+          <a href="https://klaro.services/privacy" class="hover:text-white">Privacy</a>
+          <a href="https://klaro.services/terms" class="hover:text-white">Terms</a>
+          <a href="https://klaro.services/cookies" class="hover:text-white">Cookies</a>
+          <a href="https://klaro.services/contact" class="hover:text-white">Contact</a>
+          <span>GDPR Compliant</span>
+          <span>CCPA Compliant</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const GROQ_KEY = 'gsk_placeholder'; // preview only — real scan via dashboard
+
+async function heroScan() {
+  const url = document.getElementById('hero-url').value.trim();
+  if (!url || !url.startsWith('http')) {
+    showError('Please enter a valid URL starting with https://');
+    return;
+  }
+
+  const btn = document.getElementById('hero-btn');
+  const scanState = document.getElementById('scanning-state');
+  const result = document.getElementById('preview-result');
+  const error = document.getElementById('scan-error');
+
+  btn.disabled = true;
+  btn.textContent = 'Scanning...';
+  scanState.classList.remove('hidden');
+  result.style.display = 'none';
+  error.classList.add('hidden');
+
+  const steps = [
+    'Connecting to ' + new URL(url).hostname + '...',
+    'AI is reading the page...',
+    'Analysing UX and conversion...',
+    'Checking compliance and security...',
+    'Generating your report...'
+  ];
+
+  let step = 0;
+  const stepInterval = setInterval(() => {
+    if (step < steps.length) {
+      document.getElementById('scanning-text').textContent = steps[step++];
+    }
+  }, 1800);
+
+  try {
+    // Call our trigger API to queue a real scan
+    const res = await fetch('https://klaro.services/api/pulse/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target_url: url })
+    });
+    const data = await res.json();
+
+    clearInterval(stepInterval);
+    scanState.classList.add('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Scan Free →';
+
+    if (data.ok) {
+      // Show a teaser result and prompt signup
+      showTeaserResult(url);
+    } else {
+      showError('Scan queued but needs authentication. Sign up to see results.');
+      showTeaserResult(url);
+    }
+  } catch(e) {
+    clearInterval(stepInterval);
+    scanState.classList.add('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Scan Free →';
+    showTeaserResult(url);
+  }
+}
+
+function showTeaserResult(url) {
+  const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+  const result = document.getElementById('preview-result');
+  
+  // Show teaser scores (blurred/partial — real data in dashboard)
+  document.getElementById('score-num').textContent = '?';
+  document.getElementById('score-ring').style.borderColor = '#6366f1';
+  document.getElementById('score-ring').style.color = '#818cf8';
+  document.getElementById('result-name').textContent = hostname;
+  document.getElementById('result-summary').textContent = 
+    'Your scan has been queued. Sign up for a free account to see the full AI analysis — UX issues, security gaps, revenue opportunities and compliance scores.';
+  
+  document.getElementById('result-issues').innerHTML = `
+    <div class="space-y-2">
+      ${['UX & Conversion Score','Trust & Security Score','Performance Score','Compliance Score'].map(l => `
+        <div class="flex items-center justify-between bg-slate-900/60 rounded-xl px-4 py-2.5">
+          <span class="text-sm text-slate-400">${l}</span>
+          <span class="text-sm font-bold text-slate-600 blur-sm select-none">██/100</span>
+        </div>
+      `).join('')}
+    </div>
+    <p class="text-xs text-slate-600 text-center mt-3">Sign up to unlock full results →</p>
+  `;
+
+  document.getElementById('signup-link').href = 
+    `https://klaro.services/signup?scan=${encodeURIComponent(url)}`;
+  
+  result.style.display = 'block';
+  result.classList.add('fade-in');
+}
+
+function showError(msg) {
+  const el = document.getElementById('scan-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+// Allow Enter key
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('hero-url').addEventListener('keydown', e => {
+    if (e.key === 'Enter') heroScan();
+  });
+});
+</script>
+
+<div id="cookie-banner" style="display:none" class="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-700 px-6 py-4">
+  <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="text-sm text-slate-300">
+      We use cookies to improve your experience and analyse site usage. 
+      <a href="https://klaro.services/cookies" class="text-indigo-400 hover:underline">Cookie Policy</a> · 
+      <a href="https://klaro.services/privacy" class="text-indigo-400 hover:underline">Privacy Policy</a>
+    </div>
+    <div class="flex gap-3 flex-shrink-0">
+      <button onclick="rejectCookies()" class="px-4 py-2 text-sm border border-slate-600 text-slate-400 rounded-lg hover:bg-slate-800">Reject non-essential</button>
+      <button onclick="acceptCookies()" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 font-bold">Accept all</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Cookie consent
+function acceptCookies() {
+  localStorage.setItem("klaro_cookie_consent", "accepted");
+  document.getElementById("cookie-banner").style.display = "none";
+}
+function rejectCookies() {
+  localStorage.setItem("klaro_cookie_consent", "rejected");
+  document.getElementById("cookie-banner").style.display = "none";
+}
+// Show banner if no consent recorded
+  setTimeout(() => {
+    document.getElementById("cookie-banner").style.display = "block";
+  }, 1500);
+}
+</script>
+
+</body>
+</html>
