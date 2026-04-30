@@ -5,21 +5,27 @@ import { cookies } from "next/headers";
 export const runtime = "edge";
 
 export async function POST(req: Request) {
-  // Auth check — must be signed in
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-  );
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const GITHUB_TOKEN = process.env.GITHUB_PAT;
   if (!GITHUB_TOKEN) {
     return NextResponse.json({ error: "GITHUB_PAT not configured in Vercel" }, { status: 500 });
+  }
+
+  // Allow admin key bypass for testing
+  const adminKey = req.headers.get("x-admin-key");
+  const isAdminBypass = adminKey && adminKey === process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!isAdminBypass) {
+    // Normal auth check — must be signed in
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+    );
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized — sign in to klaro.services first" }, { status: 401 });
+    }
   }
 
   const body = await req.json().catch(() => ({}));
