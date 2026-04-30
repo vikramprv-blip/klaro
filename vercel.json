@@ -1,18 +1,9 @@
 {
   "rewrites": [
     { "source": "/pulse", "destination": "/public/pulse.html" },
-    { "source": "/signin", "destination": "/public/signin.html" },
-    { "source": "/signup", "destination": "/public/signup.html" },
-    { "source": "/dashboard", "destination": "/public/ops.html" },
-    { "source": "/ops", "destination": "/public/ops.html" }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" }
-      ]
-    }
+    { "source": "/pulse/signin", "destination": "/public/signin.html" },
+    { "source": "/pulse/signup", "destination": "/public/signup.html" },
+    { "source": "/pulse/dashboard", "destination": "/public/ops.html" },
+    { "source": "/pulse/ops", "destination": "/public/ops.html" }
   ]
 }
