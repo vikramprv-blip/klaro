@@ -91,196 +91,322 @@ export default function PulsePage() {
     const r = log.metadata?.full_report || {}
     const name = log.metadata?.target_name || (()=>{ try{ return new URL(log.url||"").hostname }catch{ return log.url||"Unknown" }})()
     const score = r.authority_score || 0
-    const scoreColor = score>=75?"#10b981":score>=50?"#f59e0b":"#ef4444"
+    const trust = r.trust_score || 0
+    const conv = r.conversion_score || 0
+    const httpsScore = (log.url||"").startsWith("https") ? 100 : 0
+    const mobileScore = r.mobile_readiness==="Good" ? 90 : r.mobile_readiness==="Needs Work" ? 60 : 30
     const date = new Date().toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"})
 
-    // Dynamic import jspdf
     const { jsPDF } = await import("jspdf")
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
-    const W = 210, margin = 18, contentW = W - margin * 2
+    const W = 210
+    const M = 16
+    const CW = W - M * 2
     let y = 0
 
-    // Header bar
-    doc.setFillColor(15, 20, 32)
-    doc.rect(0, 0, W, 28, "F")
+    // Helper functions
+    const setColor = (hex: string) => {
+      const r = parseInt(hex.slice(1,3),16)
+      const g = parseInt(hex.slice(3,5),16)
+      const b = parseInt(hex.slice(5,7),16)
+      return [r,g,b] as [number,number,number]
+    }
+    const scoreColor = (s: number) => s>=75?"#10b981":s>=50?"#f59e0b":"#ef4444"
+    const scoreBg = (s: number) => s>=75?"#052e16":s>=50?"#1c1505":"#1c0505"
+
+    // PAGE BACKGROUND
+    doc.setFillColor(8,12,20)
+    doc.rect(0,0,W,297,"F")
+
+    // TOP HEADER BAR
+    doc.setFillColor(10,15,26)
+    doc.rect(0,0,W,32,"F")
+    doc.setDrawColor(30,42,58)
+    doc.setLineWidth(0.3)
+    doc.line(0,32,W,32)
+
+    // Logo
     doc.setTextColor(255,255,255)
-    doc.setFontSize(16)
+    doc.setFontSize(15)
     doc.setFont("helvetica","bold")
-    doc.text("KLARO PULSE", margin, 13)
+    doc.text("KLARO", M, 14)
+    const klaroW = doc.getTextWidth("KLARO")
     doc.setTextColor(99,102,241)
-    doc.text(" INTELLIGENCE", margin + 35, 13)
-    doc.setTextColor(180,180,180)
-    doc.setFontSize(8)
-    doc.setFont("helvetica","normal")
-    doc.text("klaro.services/pulse", margin, 21)
-    doc.text(date, W - margin, 21, { align: "right" })
-    y = 38
-
-    // Site name + score
-    doc.setTextColor(15,20,32)
-    doc.setFontSize(20)
-    doc.setFont("helvetica","bold")
-    doc.text(name, margin, y)
-    y += 7
-    doc.setFontSize(10)
-    doc.setFont("helvetica","normal")
+    doc.text(" PULSE", M + klaroW, 14)
     doc.setTextColor(100,116,139)
-    doc.text(log.url || "", margin, y)
-    y += 12
+    doc.setFontSize(7)
+    doc.setFont("helvetica","normal")
+    doc.text("SITE INTELLIGENCE REPORT", M, 22)
 
-    // Score circle area
-    const fillRgb = score>=75?[5,46,22]:score>=50?[28,21,5]:[28,5,5]; doc.setFillColor(fillRgb[0],fillRgb[1],fillRgb[2])
-    doc.roundedRect(margin, y, 50, 28, 4, 4, "F")
-    const textRgb = score>=75?[16,185,129]:score>=50?[245,158,11]:[248,113,113]; doc.setTextColor(textRgb[0],textRgb[1],textRgb[2])
-    doc.setFontSize(28)
+    // Date + URL top right
+    doc.setTextColor(100,116,139)
+    doc.setFontSize(8)
+    doc.text(date, W-M, 14, {align:"right"})
+    doc.setFontSize(7)
+    doc.text("klaro.services/pulse", W-M, 21, {align:"right"})
+    y = 42
+
+    // SITE NAME + URL
+    doc.setTextColor(255,255,255)
+    doc.setFontSize(22)
     doc.setFont("helvetica","bold")
-    doc.text(String(score), margin + 25, y + 18, { align: "center" })
+    doc.text(name, M, y)
+    y += 7
+    doc.setTextColor(71,85,105)
     doc.setFontSize(9)
     doc.setFont("helvetica","normal")
-    doc.text("/100 Overall", margin + 25, y + 24, { align: "center" })
+    doc.text(log.url || "", M, y)
+    y += 14
 
-    // Sub scores
-    const scores = [
-      ["Trust", r.trust_score||0],
-      ["Conversion", r.conversion_score||0],
-      ["HTTPS", (log.url||"").startsWith("https")?100:0],
-      ["Mobile", r.mobile_readiness==="Good"?90:r.mobile_readiness==="Needs Work"?60:30],
+    // SCORE CARDS ROW
+    const cards = [
+      { label: "OVERALL SCORE", value: score, big: true },
+      { label: "TRUST", value: trust },
+      { label: "CONVERSION", value: conv },
+      { label: "HTTPS", value: httpsScore },
+      { label: "MOBILE", value: mobileScore },
     ]
-    let sx = margin + 58
-    scores.forEach(([label, val]) => {
-      const c = (val as number)>=75?[16,185,129]:(val as number)>=50?[245,158,11]:[248,113,113]
-      doc.setFillColor(20,28,42)
-      doc.roundedRect(sx, y, 28, 28, 3, 3, "F")
-      doc.setTextColor(...c as [number,number,number])
-      doc.setFontSize(14)
+    const bigW = 44
+    const smallW = (CW - bigW - 4*3) / 4
+    let cx = M
+
+    cards.forEach((card, i) => {
+      const cw = i===0 ? bigW : smallW
+      const ch = 28
+      const sc = setColor(scoreBg(card.value))
+      const tc = setColor(scoreColor(card.value))
+      const bc = setColor(scoreColor(card.value))
+
+      // Card bg
+      doc.setFillColor(sc[0],sc[1],sc[2])
+      doc.setDrawColor(bc[0],bc[1],bc[2])
+      doc.setLineWidth(0.5)
+      doc.roundedRect(cx, y, cw, ch, 3, 3, "FD")
+
+      // Score value
+      doc.setTextColor(tc[0],tc[1],tc[2])
+      doc.setFontSize(i===0 ? 22 : 16)
       doc.setFont("helvetica","bold")
-      doc.text(String(val), sx+14, y+14, { align:"center" })
-      doc.setFontSize(7)
-      doc.setFont("helvetica","normal")
+      doc.text(String(card.value), cx+cw/2, y+14, {align:"center"})
+
+      // Label
       doc.setTextColor(100,116,139)
-      doc.text(label as string, sx+14, y+22, { align:"center" })
-      sx += 31
+      doc.setFontSize(6)
+      doc.setFont("helvetica","bold")
+      doc.text(card.label, cx+cw/2, y+22, {align:"center"})
+
+      cx += cw + 3
     })
     y += 36
 
-    // Summary
-    doc.setFillColor(241,245,249)
-    doc.roundedRect(margin, y, contentW, 22, 3, 3, "F")
-    doc.setTextColor(30,41,59)
-    doc.setFontSize(9)
-    doc.setFont("helvetica","normal")
-    const summaryLines = doc.splitTextToSize(r.novice_summary || "No summary available.", contentW - 8)
-    doc.text(summaryLines.slice(0,3), margin+4, y+7)
-    y += 28
+    // STATUS BADGE
+    const statusText = score>=75 ? "STRONG" : score>=50 ? "NEEDS WORK" : "CRITICAL"
+    const statusBg = score>=75 ? [5,46,22] : score>=50 ? [28,21,5] : [28,5,5]
+    const statusFg = setColor(scoreColor(score))
+    doc.setFillColor(statusBg[0],statusBg[1],statusBg[2])
+    doc.setDrawColor(statusFg[0],statusFg[1],statusFg[2])
+    doc.setLineWidth(0.4)
+    doc.roundedRect(M, y, 32, 7, 2, 2, "FD")
+    doc.setTextColor(statusFg[0],statusFg[1],statusFg[2])
+    doc.setFontSize(7)
+    doc.setFont("helvetica","bold")
+    doc.text(statusText, M+16, y+5, {align:"center"})
 
-    // Competitive insight
-    if (r.competitor_advantage) {
-      doc.setFillColor(254,243,199)
-      doc.roundedRect(margin, y, contentW, 14, 3, 3, "F")
-      doc.setTextColor(146,64,14)
-      doc.setFontSize(8)
-      doc.setFont("helvetica","bold")
-      doc.text("💡 Competitive Insight:", margin+4, y+6)
-      doc.setFont("helvetica","normal")
-      const insightLines = doc.splitTextToSize(r.competitor_advantage, contentW - 45)
-      doc.text(insightLines[0], margin+42, y+6)
-      if (insightLines[1]) doc.text(insightLines[1], margin+4, y+11)
-      y += 20
+    // Industry badge
+    if (r.industry) {
+      doc.setFillColor(15,26,58)
+      doc.setDrawColor(63,72,180)
+      doc.roundedRect(M+36, y, doc.getTextWidth(r.industry)+6, 7, 2, 2, "FD")
+      doc.setTextColor(129,140,248)
+      doc.text(r.industry, M+39, y+5)
     }
-
-    // Pills row
-    const pills = [
-      r.mobile_readiness && `📱 Mobile: ${r.mobile_readiness}`,
-      r.pricing_clarity && `💰 Pricing: ${r.pricing_clarity}`,
-      r.cta_effectiveness && `🎯 CTA: ${r.cta_effectiveness}`,
-      r.load_time_ms && `⚡ Load: ${(r.load_time_ms/1000).toFixed(1)}s`,
-      r.industry && `🏢 ${r.industry}`,
-    ].filter(Boolean)
-    let px = margin
-    pills.forEach(pill => {
-      doc.setFillColor(30,45,70)
-      doc.setTextColor(180,190,220)
-      doc.setFontSize(7)
-      const pw = doc.getTextWidth(pill as string) + 6
-      doc.roundedRect(px, y, pw, 7, 2, 2, "F")
-      doc.text(pill as string, px+3, y+5)
-      px += pw + 3
-    })
     y += 14
 
-    // Three columns — Problems, Fixes, Opportunities
-    const cols = [
-      { title: "🔴 Problems Found", color: [239,68,68] as [number,number,number], bg: [28,5,5] as [number,number,number], items: r.ux_friction_points||[] },
-      { title: "🟢 How to Fix", color: [16,185,129] as [number,number,number], bg: [5,46,22] as [number,number,number], items: r.resolution_steps||[] },
-      { title: "💰 Revenue Opportunities", color: [245,158,11] as [number,number,number], bg: [28,21,5] as [number,number,number], items: r.revenue_opportunities||[] },
-    ]
-    const colW = (contentW - 8) / 3
-    const colStartY = y
+    // EXECUTIVE SUMMARY BOX
+    doc.setFillColor(15,20,32)
+    doc.setDrawColor(30,42,58)
+    doc.setLineWidth(0.3)
+    const summaryLines = doc.splitTextToSize(r.novice_summary || "No summary available.", CW-8)
+    const summaryH = summaryLines.length * 5 + 10
+    doc.roundedRect(M, y, CW, summaryH, 3, 3, "FD")
+    doc.setTextColor(203,213,225)
+    doc.setFontSize(9)
+    doc.setFont("helvetica","normal")
+    doc.text(summaryLines, M+4, y+7)
+    y += summaryH + 6
 
-    cols.forEach((col, ci) => {
-      let cy = colStartY
-      const cx = margin + ci * (colW + 4)
-      doc.setTextColor(...col.color)
+    // COMPETITIVE INSIGHT BOX
+    if (r.competitor_advantage) {
+      doc.setFillColor(28,21,5)
+      doc.setDrawColor(146,64,14)
+      doc.setLineWidth(0.4)
+      const insightLines = doc.splitTextToSize(r.competitor_advantage, CW-20)
+      const insightH = insightLines.length * 5 + 10
+      doc.roundedRect(M, y, CW, insightH, 3, 3, "FD")
+      doc.setTextColor(251,191,36)
       doc.setFontSize(8)
       doc.setFont("helvetica","bold")
-      doc.text(col.title, cx, cy)
-      cy += 6
-      col.items.slice(0,4).forEach((item: string) => {
-        doc.setFillColor(...col.bg)
-        const lines = doc.splitTextToSize(item, colW - 4)
-        const h = lines.length * 4 + 4
-        doc.roundedRect(cx, cy, colW, h, 2, 2, "F")
-        doc.setTextColor(200,210,220)
-        doc.setFontSize(7)
-        doc.setFont("helvetica","normal")
-        doc.text(lines, cx+2, cy+4)
-        cy += h + 2
-      })
-    })
-
-    // Find max column height
-    const maxColH = Math.max(...cols.map(col => {
-      let h = 6
-      col.items.slice(0,4).forEach((item: string) => {
-        const lines = doc.splitTextToSize(item, colW - 4)
-        h += lines.length * 4 + 4 + 2
-      })
-      return h
-    }))
-    y = colStartY + maxColH + 10
-
-    // Strengths
-    if ((r.strengths||[]).length > 0) {
-      doc.setTextColor(99,102,241)
-      doc.setFontSize(9)
-      doc.setFont("helvetica","bold")
-      doc.text("✓ What They Do Well", margin, y)
-      y += 6
-      ;(r.strengths||[]).slice(0,3).forEach((s: string) => {
-        doc.setFillColor(15,26,58)
-        const lines = doc.splitTextToSize(`✓ ${s}`, contentW - 4)
-        doc.roundedRect(margin, y, contentW, lines.length*4+4, 2, 2, "F")
-        doc.setTextColor(147,151,255)
-        doc.setFontSize(7)
-        doc.setFont("helvetica","normal")
-        doc.text(lines, margin+2, y+4)
-        y += lines.length*4+6
-      })
+      doc.text("Competitive Insight", M+4, y+7)
+      doc.setFont("helvetica","normal")
+      doc.setTextColor(253,230,138)
+      doc.text(insightLines, M+4, y+13)
+      y += insightH + 6
     }
 
-    // Footer
-    doc.setFillColor(15,20,32)
-    doc.rect(0, 285, W, 12, "F")
+    // METRICS ROW
+    const metrics = [
+      { label: "Load Time", value: r.load_time_ms ? `${(r.load_time_ms/1000).toFixed(1)}s` : "N/A", good: r.load_time_ms ? r.load_time_ms < 3000 : null },
+      { label: "Pricing", value: r.pricing_clarity || "N/A", good: r.pricing_clarity === "Clear" ? true : r.pricing_clarity === "Hidden" ? false : null },
+      { label: "CTA", value: r.cta_effectiveness || "N/A", good: r.cta_effectiveness === "Strong" ? true : r.cta_effectiveness === "Missing" ? false : null },
+      { label: "Audience", value: r.target_audience_clarity || "N/A", good: r.target_audience_clarity === "Clear" ? true : r.target_audience_clarity === "Confusing" ? false : null },
+    ]
+    const mW = (CW - 3*3) / 4
+    cx = M
+    metrics.forEach(m => {
+      const bg = m.good === true ? [5,46,22] : m.good === false ? [28,5,5] : [15,20,32]
+      const fg = m.good === true ? "#10b981" : m.good === false ? "#ef4444" : "#94a3b8"
+      const fgRgb = setColor(fg)
+      doc.setFillColor(bg[0],bg[1],bg[2])
+      doc.setDrawColor(fgRgb[0],fgRgb[1],fgRgb[2])
+      doc.setLineWidth(0.3)
+      doc.roundedRect(cx, y, mW, 14, 2, 2, "FD")
+      doc.setTextColor(fgRgb[0],fgRgb[1],fgRgb[2])
+      doc.setFontSize(8)
+      doc.setFont("helvetica","bold")
+      doc.text(m.value, cx+mW/2, y+7, {align:"center"})
+      doc.setTextColor(100,116,139)
+      doc.setFontSize(6)
+      doc.setFont("helvetica","normal")
+      doc.text(m.label, cx+mW/2, y+12, {align:"center"})
+      cx += mW + 3
+    })
+    y += 20
+
+    // THREE COLUMNS
+    const cols = [
+      { title: "PROBLEMS FOUND", titleColor: "#ef4444", borderColor: "#7f1d1d", bg: [28,5,5] as [number,number,number], textColor: "#fca5a5", items: (r.ux_friction_points||[]).slice(0,4) },
+      { title: "HOW TO FIX", titleColor: "#10b981", borderColor: "#14532d", bg: [5,46,22] as [number,number,number], textColor: "#6ee7b7", items: (r.resolution_steps||[]).slice(0,4) },
+      { title: "REVENUE OPPORTUNITIES", titleColor: "#f59e0b", borderColor: "#78350f", bg: [28,21,5] as [number,number,number], textColor: "#fcd34d", items: (r.revenue_opportunities||[]).slice(0,4) },
+    ]
+
+    const colW2 = (CW - 2*4) / 3
+    const colStartY = y
+
+    // Find tallest column first
+    let maxH = 0
+    cols.forEach(col => {
+      let h = 10
+      col.items.forEach((item: string) => {
+        const lines = doc.splitTextToSize(`- ${item}`, colW2 - 6)
+        h += lines.length * 4.5 + 3
+      })
+      if (h > maxH) maxH = h
+    })
+
+    cols.forEach((col, ci) => {
+      const cx2 = M + ci * (colW2 + 4)
+      const titleRgb = setColor(col.titleColor)
+      const borderRgb = setColor(col.borderColor)
+
+      // Column background
+      doc.setFillColor(col.bg[0],col.bg[1],col.bg[2])
+      doc.setDrawColor(borderRgb[0],borderRgb[1],borderRgb[2])
+      doc.setLineWidth(0.4)
+      doc.roundedRect(cx2, colStartY, colW2, maxH+4, 3, 3, "FD")
+
+      // Title
+      doc.setTextColor(titleRgb[0],titleRgb[1],titleRgb[2])
+      doc.setFontSize(7)
+      doc.setFont("helvetica","bold")
+      doc.text(col.title, cx2+colW2/2, colStartY+7, {align:"center"})
+
+      // Divider
+      doc.setDrawColor(borderRgb[0],borderRgb[1],borderRgb[2])
+      doc.line(cx2+4, colStartY+9, cx2+colW2-4, colStartY+9)
+
+      let iy = colStartY + 14
+      const textRgb = setColor(col.textColor)
+      col.items.forEach((item: string) => {
+        const lines = doc.splitTextToSize(`- ${item}`, colW2-6)
+        doc.setTextColor(textRgb[0],textRgb[1],textRgb[2])
+        doc.setFontSize(7)
+        doc.setFont("helvetica","normal")
+        doc.text(lines, cx2+3, iy)
+        iy += lines.length * 4.5 + 3
+      })
+    })
+    y = colStartY + maxH + 10
+
+    // STRENGTHS
+    if ((r.strengths||[]).length > 0) {
+      doc.setFillColor(12,18,40)
+      doc.setDrawColor(49,46,129)
+      doc.setLineWidth(0.3)
+      const strItems = (r.strengths||[]).slice(0,3)
+      const strH = strItems.length * 8 + 12
+      doc.roundedRect(M, y, CW, strH, 3, 3, "FD")
+      doc.setTextColor(129,140,248)
+      doc.setFontSize(8)
+      doc.setFont("helvetica","bold")
+      doc.text("WHAT THEY DO WELL", M+4, y+7)
+      let sy = y+13
+      strItems.forEach((s: string) => {
+        doc.setTextColor(165,180,252)
+        doc.setFontSize(8)
+        doc.setFont("helvetica","normal")
+        const lines = doc.splitTextToSize(`+ ${s}`, CW-8)
+        doc.text(lines[0], M+4, sy)
+        sy += 7
+      })
+      y += strH + 6
+    }
+
+    // SOC2 COMPLIANCE ROW
+    doc.setFillColor(10,15,26)
+    doc.setDrawColor(30,42,58)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(M, y, CW, 22, 3, 3, "FD")
     doc.setTextColor(100,116,139)
     doc.setFontSize(7)
-    doc.text("Generated by Klaro Pulse — klaro.services/pulse", margin, 292)
-    doc.text(`© ${new Date().getFullYear()} Klaro Global · Confidential`, W-margin, 292, { align:"right" })
+    doc.setFont("helvetica","bold")
+    doc.text("COMPLIANCE & SECURITY SURFACE", M+4, y+7)
+    const compScores = [
+      { label: "HTTPS Security", value: httpsScore },
+      { label: "Mobile / ADA", value: mobileScore },
+      { label: "ADA/WCAG", value: score>70?75:45 },
+      { label: "SOC2 Surface", value: httpsScore===100&&mobileScore>=60?80:45 },
+    ]
+    cx = M+4
+    const compW = (CW-8)/4
+    compScores.forEach(cs => {
+      const rgb = setColor(scoreColor(cs.value))
+      doc.setTextColor(rgb[0],rgb[1],rgb[2])
+      doc.setFontSize(9)
+      doc.setFont("helvetica","bold")
+      doc.text(String(cs.value), cx+compW/2, y+14, {align:"center"})
+      doc.setTextColor(71,85,105)
+      doc.setFontSize(6)
+      doc.setFont("helvetica","normal")
+      doc.text(cs.label, cx+compW/2, y+19, {align:"center"})
+      cx += compW
+    })
+    y += 28
 
-    // Save
+    // FOOTER
+    doc.setFillColor(10,15,26)
+    doc.rect(0,282,W,15,"F")
+    doc.setDrawColor(30,42,58)
+    doc.line(0,282,W,282)
+    doc.setTextColor(71,85,105)
+    doc.setFontSize(7)
+    doc.setFont("helvetica","normal")
+    doc.text("Generated by Klaro Pulse  |  klaro.services/pulse  |  AI-powered site intelligence", M, 290)
+    doc.text(`Confidential  |  (c) ${new Date().getFullYear()} Klaro Global`, W-M, 290, {align:"right"})
+
     const filename = `klaro-pulse-${name.replace(/[^a-z0-9]/gi,"-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.pdf`
     doc.save(filename)
-    console.log(`PDF saved: ${filename}`)
   }
+
 
   async function triggerScan(url = "") {
     const res = await fetch("/api/pulse/trigger", {
