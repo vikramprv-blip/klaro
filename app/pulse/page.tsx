@@ -127,9 +127,9 @@ export default function PulsePage() {
     }
 
     function addFooter() {
-      doc.setFillColor(10,15,26); doc.rect(0,284,W,13,"F")
-      doc.setDrawColor(30,42,58); doc.line(0,284,W,284)
-      doc.setTextColor(71,85,105); doc.setFontSize(6.5); doc.setFont("helvetica","normal")
+      doc.setFillColor(15,22,38); doc.rect(0,284,W,13,"F")
+      doc.setDrawColor(99,102,241); doc.line(0,284,W,284)
+      doc.setTextColor(148,163,184); doc.setFontSize(6.5); doc.setFont("helvetica","normal")
       doc.text(`${name}  |  ${log.url||""}  |  Klaro Pulse Site Intelligence`, M, 291)
       doc.text(`klaro.services/pulse  |  © ${new Date().getFullYear()} Klaro Global`, W-M, 291, {align:"right"})
     }
@@ -576,7 +576,7 @@ export default function PulsePage() {
       const outLines = doc.splitTextToSize(`Expected Outcome After 90 Days: ${rm.expected_outcome}`, CW-8)
       doc.roundedRect(M, y, CW, outLines.length*5+10, 3, 3, "FD")
       doc.setTextColor(74,222,128); doc.setFontSize(8.5); doc.setFont("helvetica","bold")
-      doc.text("🎯 ", M+4, y+8)
+      doc.text(">> ", M+4, y+8)
       doc.setFont("helvetica","normal"); doc.setFontSize(8)
       doc.text(outLines, M+10, y+8)
       y += outLines.length*5+16
@@ -881,7 +881,7 @@ ${r.competitor_advantage?`<div class="sec">⚔ Competitive Insight</div><div cla
 
                     {/* Score bars */}
                     <div className="px-5 py-3 grid grid-cols-3 gap-4 border-b border-slate-800/40">
-                      {[["Overall",score],["Trust",r.trust_score||0],["Conversion",r.conversion_score||0]].map(([l,v])=>(
+                      {[["Overall",score],["Trust",r.ux_conversion_audit?.trust_score||r.trust_score||0],["Conversion",r.ux_conversion_audit?.conversion_score||r.conversion_score||0]].map(([l,v])=>(
                         <div key={l as string}>
                           <div className="flex justify-between text-xs mb-1">
                             <span className="text-slate-500 font-semibold">{l}</span>
