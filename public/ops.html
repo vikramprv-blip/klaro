@@ -160,6 +160,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <button class="scan-tab active" onclick="setMode('single',this)">Single Site</button>
           <button class="scan-tab" onclick="setMode('compare',this)">Compare (2-5 sites)</button>
           <button class="scan-tab" onclick="setMode('batch',this)">Batch (all targets)</button>
+          <button class="scan-tab" onclick="setMode('lam',this)" style="color:#a78bfa;border-color:#4c1d95">⚡ LAM Audit</button>
         </div>
       </div>
 
@@ -247,6 +248,7 @@ async function auth() {
   document.getElementById('u-avatar').textContent = session.user.email.charAt(0).toUpperCase();
   loadAll();
   loadTargetCount();
+  loadLAMRuns();
   setInterval(loadAll, 30000);
 }
 
@@ -542,6 +544,82 @@ function shareReport(url, name, score) {
     navigator.clipboard.writeText(text);
     alert('Report summary copied to clipboard!');
   }
+}
+
+// LAM Functions
+function setMode(mode, btn) {
+  ['single','compare','batch','lam'].forEach(m => {
+    const el = document.getElementById('mode-'+m);
+    if (el) el.style.display = m === mode ? 'block' : 'none';
+  });
+  document.querySelectorAll('.scan-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+async function runLAM() {
+  const url = document.getElementById('url-lam').value.trim();
+  if (!url) return alert('Enter a URL first');
+  const btn = document.getElementById('btn-lam');
+  const status = document.getElementById('lam-status');
+  btn.disabled = true;
+  btn.textContent = 'Starting...';
+  status.style.display = 'block';
+  status.textContent = '⚡ Triggering LAM audit... GitHub Action starting in ~10 seconds';
+
+  try {
+    const session = await sb.auth.getSession();
+    const user_id = session.data.session?.user?.id;
+    const res = await fetch('/api/pulse/lam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, user_id })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      status.style.background = '#1c0505';
+      status.style.borderColor = '#7f1d1d';
+      status.style.color = '#f87171';
+      status.textContent = '❌ ' + (data.error || 'Failed to start LAM audit');
+    } else {
+      status.textContent = '✅ LAM audit started! Run ID: ' + data.run_id + ' — Check back in 20-30 minutes for results.';
+      loadLAMRuns();
+    }
+  } catch(e) {
+    status.textContent = '❌ Error: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = '⚡ Run LAM Audit';
+}
+
+async function loadLAMRuns() {
+  const { data: runs } = await sb.from('lam_runs').select('*').order('created_at', { ascending: false }).limit(10);
+  if (!runs || runs.length === 0) return;
+  const list = document.getElementById('lam-runs-list');
+  document.getElementById('lam-results').style.display = 'block';
+  list.innerHTML = runs.map(r => `
+    <div style="background:#0d1520;border:1px solid #1e2a3a;border-radius:12px;padding:16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="color:white;font-weight:700;font-size:13px">${r.url}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;padding:2px 10px;border-radius:20px;background:${r.status==='complete'?'#052e16':r.status==='running'?'#1a1040':'#1c1c0a'};color:${r.status==='complete'?'#4ade80':r.status==='running'?'#a78bfa':'#fbbf24'}">${r.status}</span>
+          ${r.overall_score ? `<span style="font-size:18px;font-weight:900;color:${r.overall_score>=75?'#4ade80':r.overall_score>=50?'#fbbf24':'#f87171'}">${r.overall_score}/100</span>` : ''}
+          ${r.grade ? `<span style="font-size:13px;font-weight:900;color:#a78bfa">${r.grade}</span>` : ''}
+        </div>
+      </div>
+      ${r.executive_brief?.one_line_verdict ? `<div style="color:#94a3b8;font-size:12px;margin-bottom:6px">${r.executive_brief.one_line_verdict}</div>` : ''}
+      <div style="display:flex;gap:12px;font-size:11px;color:#475569">
+        ${r.ada_score ? `<span>ADA: ${r.ada_score}/100</span>` : ''}
+        ${r.soc_score ? `<span>SOC: ${r.soc_score}/100</span>` : ''}
+        ${r.executive_brief?.urgency ? `<span>Urgency: ${r.executive_brief.urgency}</span>` : ''}
+        <span>${new Date(r.created_at).toLocaleDateString()}</span>
+      </div>
+      ${r.executive_brief?.top_3_actions ? `
+        <div style="margin-top:10px;font-size:11px;color:#64748b">
+          <div style="color:#475569;font-weight:700;margin-bottom:4px">Top Actions:</div>
+          ${r.executive_brief.top_3_actions.map(a => `<div style="padding:2px 0">→ ${a}</div>`).join('')}
+        </div>` : ''}
+    </div>
+  `).join('');
 }
 </script>
 </body>
