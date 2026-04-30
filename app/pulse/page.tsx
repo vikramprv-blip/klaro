@@ -129,7 +129,7 @@ export default function PulsePage() {
     function addFooter() {
       doc.setFillColor(15,22,38); doc.rect(0,284,W,13,"F")
       doc.setDrawColor(99,102,241); doc.line(0,284,W,284)
-      doc.setTextColor(200,210,230); doc.setFontSize(7); doc.setFont("helvetica","normal")
+      doc.setTextColor(220,225,235); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
       doc.text(`${name}  |  ${log.url||""}  |  Klaro Pulse Site Intelligence`, M, 291)
       doc.setTextColor(200,210,230)
       doc.text(`klaro.services/pulse  |  (c) ${new Date().getFullYear()} Klaro Global`, W-M, 291, {align:"right"})
@@ -155,7 +155,8 @@ export default function PulsePage() {
     }
 
     function textBox(x: number, y: number, w: number, text: string, bgHex: string, borderHex: string, titleColor: string, title: string): number {
-      const lines = doc.splitTextToSize(text, w-10)
+      doc.setFontSize(7); doc.setFont("helvetica","normal")
+      const lines = doc.splitTextToSize(text, w-14)
       const h = lines.length * 4.5 + (title ? 14 : 8)
       const bg = hex(bgHex); const br = hex(borderHex)
       doc.setFillColor(bg[0],bg[1],bg[2]); doc.setDrawColor(br[0],br[1],br[2]); doc.setLineWidth(0.3)
@@ -254,7 +255,8 @@ export default function PulsePage() {
       const actionLabels = ["THIS WEEK","THIS MONTH","THIS QUARTER"];
       (eb.top_3_actions||[]).slice(0,3).forEach((action: string, i: number) => {
         const ac = hex(actionColors[i]); const ab = hex(actionBgs[i]); const abr = hex(actionBorders[i])
-        const lines = doc.splitTextToSize(action, CW-38)
+        doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        const lines = doc.splitTextToSize(action, CW-42)
         const h = lines.length * 4.5 + 8
         doc.setFillColor(ab[0],ab[1],ab[2]); doc.setDrawColor(abr[0],abr[1],abr[2]); doc.setLineWidth(0.3)
         doc.roundedRect(M, y, CW, h, 2, 2, "FD")
@@ -305,9 +307,11 @@ export default function PulsePage() {
         const priorityColors: Record<string,string> = {Critical:"#ef4444",High:"#f97316",Medium:"#f59e0b",Low:"#94a3b8"}
         const pc = hex(priorityColors[issue.priority]||"#f59e0b")
         const pbg = issue.priority==="Critical"?hex("#1c0505"):issue.priority==="High"?hex("#1c0a05"):hex("#0f1420")
-        const issueLines = doc.splitTextToSize(issue.issue||"", CW-50)
-        const fixLines = doc.splitTextToSize(`Fix: ${issue.fix||""}`, CW-12)
-        const impactLines = doc.splitTextToSize(`Impact: ${issue.business_impact||""}`, CW-12)
+        doc.setFontSize(8); doc.setFont("helvetica","bold")
+        const issueLines = doc.splitTextToSize(issue.issue||"", CW-55)
+        doc.setFontSize(7); doc.setFont("helvetica","normal")
+        const fixLines = doc.splitTextToSize(`Fix: ${issue.fix||""}`, CW-16)
+        const impactLines = doc.splitTextToSize(`Impact: ${issue.business_impact||""}`, CW-16)
         const h = issueLines.length*4.5 + fixLines.length*4 + impactLines.length*4 + 18
         doc.setFillColor(pbg[0],pbg[1],pbg[2]); doc.setDrawColor(pc[0],pc[1],pc[2]); doc.setLineWidth(0.4)
         doc.roundedRect(M, y, CW, h, 3, 3, "FD")
@@ -340,7 +344,8 @@ export default function PulsePage() {
     if ((ux.quick_wins||[]).length > 0) {
       y = addSectionTitle("QUICK WINS — FREE, UNDER 1 HOUR", y, "#10b981")
       ;(ux.quick_wins||[]).forEach((win: string) => {
-        const lines = doc.splitTextToSize(`+ ${win}`, CW-8)
+        doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        const lines = doc.splitTextToSize(`+ ${win}`, CW-14)
         doc.setFillColor(5,30,20); doc.setDrawColor(22,101,52); doc.setLineWidth(0.3)
         doc.roundedRect(M, y, CW, lines.length*4.5+6, 2, 2, "FD")
         doc.setTextColor(74,222,128); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
@@ -400,7 +405,8 @@ export default function PulsePage() {
     if ((r.strengths||[]).length > 0) {
       y = addSectionTitle("WHAT THIS SITE DOES WELL", y, "#818cf8")
       ;(r.strengths||[]).forEach((s: string) => {
-        const lines = doc.splitTextToSize(`+ ${s}`, CW-8)
+        doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        const lines = doc.splitTextToSize(`+ ${s}`, CW-14)
         doc.setFillColor(12,18,40); doc.setDrawColor(49,46,129); doc.setLineWidth(0.3)
         doc.roundedRect(M, y, CW, lines.length*4.5+6, 2, 2, "FD")
         doc.setTextColor(165,180,252); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
@@ -466,7 +472,8 @@ export default function PulsePage() {
     if ((sec.legal_risks||[]).length > 0) {
       y = addSectionTitle("LEGAL RISKS IDENTIFIED", y, "#ef4444")
       ;(sec.legal_risks||[]).forEach((risk: string) => {
-        const lines = doc.splitTextToSize(`! ${risk}`, CW-8)
+        doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        const lines = doc.splitTextToSize(`! ${risk}`, CW-14)
         doc.setFillColor(28,5,5); doc.setDrawColor(127,29,29); doc.setLineWidth(0.3)
         doc.roundedRect(M, y, CW, lines.length*4.5+6, 2, 2, "FD")
         doc.setTextColor(252,165,165); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
@@ -479,7 +486,8 @@ export default function PulsePage() {
     if ((sec.security_issues||[]).length > 0) {
       y = addSectionTitle("SECURITY ISSUES", y, "#f97316")
       ;(sec.security_issues||[]).forEach((issue: string) => {
-        const lines = doc.splitTextToSize(`- ${issue}`, CW-8)
+        doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        const lines = doc.splitTextToSize(`- ${issue}`, CW-14)
         doc.setFillColor(28,14,5); doc.setDrawColor(154,52,18); doc.setLineWidth(0.3)
         doc.roundedRect(M, y, CW, lines.length*4.5+6, 2, 2, "FD")
         doc.setTextColor(253,186,116); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
@@ -492,7 +500,8 @@ export default function PulsePage() {
     if ((sec.recommendations||[]).length > 0) {
       y = addSectionTitle("REMEDIATION RECOMMENDATIONS", y, "#10b981")
       ;(sec.recommendations||[]).forEach((rec: string, i: number) => {
-        const lines = doc.splitTextToSize(`${i+1}. ${rec}`, CW-8)
+        doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        const lines = doc.splitTextToSize(`${i+1}. ${rec}`, CW-14)
         doc.setFillColor(5,30,20); doc.setDrawColor(22,101,52); doc.setLineWidth(0.3)
         doc.roundedRect(M, y, CW, lines.length*4.5+6, 2, 2, "FD")
         doc.setTextColor(74,222,128); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
@@ -560,7 +569,8 @@ export default function PulsePage() {
       y += 6
       // Actions
       phase.actions.forEach((action: string, i: number) => {
-        const lines = doc.splitTextToSize(`${i+1}. ${action}`, CW-12)
+        doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        const lines = doc.splitTextToSize(`${i+1}. ${action}`, CW-16)
         const h = lines.length*4.5+6
         doc.setFillColor(pb[0],pb[1],pb[2]); doc.setDrawColor(pbr[0],pbr[1],pbr[2]); doc.setLineWidth(0.2)
         doc.roundedRect(M, y, CW, h, 2, 2, "FD")
@@ -574,7 +584,8 @@ export default function PulsePage() {
     // Expected outcome
     if (rm.expected_outcome) {
       doc.setFillColor(5,46,22); doc.setDrawColor(16,185,129); doc.setLineWidth(0.4)
-      const outLines = doc.splitTextToSize(`Expected Outcome After 90 Days: ${rm.expected_outcome}`, CW-8)
+      doc.setFontSize(8); doc.setFont("helvetica","normal")
+    const outLines = doc.splitTextToSize(`Expected Outcome After 90 Days: ${rm.expected_outcome}`, CW-14)
       doc.roundedRect(M, y, CW, outLines.length*5+10, 3, 3, "FD")
       doc.setTextColor(74,222,128); doc.setFontSize(8.5); doc.setFont("helvetica","bold")
       doc.setFont("helvetica","normal"); doc.setFontSize(8)
