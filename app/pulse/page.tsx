@@ -1,7 +1,8 @@
 "use client"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import Link from "next/link"nimport { isMasterAdmin } from "@/app/lib/admins"
+import Link from "next/link"
+import { isMasterAdmin } from "@/app/lib/admins"
 
 function sc(s: number) { return s>=75?'#4ade80':s>=50?'#fbbf24':'#f87171' }
 function scBorder(s: number) { return s>=75?'#166534':s>=50?'#92400e':'#991b1b' }
@@ -128,9 +129,9 @@ export default function PulsePage() {
     y += 12
 
     // Score circle area
-    doc.setFillColor(...(score>=75?[5,46,22]:score>=50?[28,21,5]:[28,5,5]))
+    const fillRgb = score>=75?[5,46,22]:score>=50?[28,21,5]:[28,5,5]; doc.setFillColor(fillRgb[0],fillRgb[1],fillRgb[2])
     doc.roundedRect(margin, y, 50, 28, 4, 4, "F")
-    doc.setTextColor(...(score>=75?[16,185,129]:score>=50?[245,158,11]:[248,113,113]))
+    const textRgb = score>=75?[16,185,129]:score>=50?[245,158,11]:[248,113,113]; doc.setTextColor(textRgb[0],textRgb[1],textRgb[2])
     doc.setFontSize(28)
     doc.setFont("helvetica","bold")
     doc.text(String(score), margin + 25, y + 18, { align: "center" })
