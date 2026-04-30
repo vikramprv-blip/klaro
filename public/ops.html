@@ -237,16 +237,17 @@ document.addEventListener('keydown', e => { if(e.key==='Enter' && document.getEl
 async function auth() {
   const k = document.getElementById('key').value.trim();
   if (!k) return;
-  sb = createClient(SB_URL, k);
-  const { error } = await sb.from('pulse_logs').select('id').limit(1);
-  if (error) { alert('Access denied. Wrong key.'); return; }
+  const tempSb = createClient(SB_URL, SB_KEY_ANON);
+  const { data, error } = await tempSb.auth.signInWithPassword({
+    email: 'vikramprv@gmail.com',
+    password: k
+  });
+  if (error || !data.session) { alert('Access denied. Wrong key.'); return; }
+  sb = createClient(SB_URL, SB_KEY_ANON, { global: { headers: { Authorization: 'Bearer ' + data.session.access_token } } });
   document.getElementById('gate').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
-  // Show email from session
-  const { data: { user } } = await sb.auth.getUser();
-  const email = user?.email || 'Admin';
-  document.getElementById('u-email').textContent = email;
-  document.getElementById('u-avatar').textContent = email.charAt(0).toUpperCase();
+  document.getElementById('u-email').textContent = data.user.email;
+  document.getElementById('u-avatar').textContent = data.user.email.charAt(0).toUpperCase();
   loadAll();
   loadTargetCount();
   setInterval(loadAll, 30000);
