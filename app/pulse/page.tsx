@@ -227,7 +227,7 @@ export default function PulsePage() {
     doc.setFillColor(15,20,32)
     doc.setDrawColor(30,42,58)
     doc.setLineWidth(0.3)
-    const summaryLines = doc.splitTextToSize(r.novice_summary || "No summary available.", CW-8)
+    const summaryLines = doc.splitTextToSize(r.executive_brief?.plain_english_summary || r.novice_summary || "No summary available.", CW-8)
     const summaryH = summaryLines.length * 5 + 10
     doc.roundedRect(M, y, CW, summaryH, 3, 3, "FD")
     doc.setTextColor(203,213,225)
@@ -285,9 +285,9 @@ export default function PulsePage() {
 
     // THREE COLUMNS
     const cols = [
-      { title: "PROBLEMS FOUND", titleColor: "#ef4444", borderColor: "#7f1d1d", bg: [28,5,5] as [number,number,number], textColor: "#fca5a5", items: (r.ux_friction_points||[]).slice(0,4) },
-      { title: "HOW TO FIX", titleColor: "#10b981", borderColor: "#14532d", bg: [5,46,22] as [number,number,number], textColor: "#6ee7b7", items: (r.resolution_steps||[]).slice(0,4) },
-      { title: "REVENUE OPPORTUNITIES", titleColor: "#f59e0b", borderColor: "#78350f", bg: [28,21,5] as [number,number,number], textColor: "#fcd34d", items: (r.revenue_opportunities||[]).slice(0,4) },
+      { title: "PROBLEMS FOUND", titleColor: "#ef4444", borderColor: "#7f1d1d", bg: [28,5,5] as [number,number,number], textColor: "#fca5a5", items: ((r.ux_conversion_audit?.issues||[]).map((i:any)=>i.issue).filter(Boolean).concat(r.ux_friction_points||[])).slice(0,4) },
+      { title: "HOW TO FIX", titleColor: "#10b981", borderColor: "#14532d", bg: [5,46,22] as [number,number,number], textColor: "#6ee7b7", items: ((r.ux_conversion_audit?.issues||[]).map((i:any)=>i.fix).filter(Boolean).concat(r.resolution_steps||[])).slice(0,4) },
+      { title: "REVENUE OPPORTUNITIES", titleColor: "#f59e0b", borderColor: "#78350f", bg: [28,21,5] as [number,number,number], textColor: "#fcd34d", items: ((r.ux_conversion_audit?.quick_wins||[]).concat(r.revenue_opportunities||[])).slice(0,4) },
     ]
 
     const colW2 = (CW - 2*4) / 3
