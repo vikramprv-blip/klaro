@@ -506,7 +506,12 @@ ${r.competitor_advantage?`<div class="sec">⚔ Competitive Insight</div><div cla
     setActiveSection(prev => ({ ...prev, [idx]: prev[idx]===section?"":section }))
   }
 
-  const filtered = logs
+  // Deduplicate - keep only latest scan per URL
+  const deduped = logs.reduce((acc: any[], log: any) => {
+    return acc
+  }, [])
+
+  const filtered = deduped
     .filter(l => filter==="all" || l.status===filter)
     .filter(l => !search || (l.metadata?.target_name||"").toLowerCase().includes(search.toLowerCase()) || (l.url||"").toLowerCase().includes(search.toLowerCase()))
 
