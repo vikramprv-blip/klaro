@@ -129,9 +129,10 @@ export default function PulsePage() {
     function addFooter() {
       doc.setFillColor(15,22,38); doc.rect(0,284,W,13,"F")
       doc.setDrawColor(99,102,241); doc.line(0,284,W,284)
-      doc.setTextColor(148,163,184); doc.setFontSize(6.5); doc.setFont("helvetica","normal")
+      doc.setTextColor(200,210,230); doc.setFontSize(7); doc.setFont("helvetica","normal")
       doc.text(`${name}  |  ${log.url||""}  |  Klaro Pulse Site Intelligence`, M, 291)
-      doc.text(`klaro.services/pulse  |  © ${new Date().getFullYear()} Klaro Global`, W-M, 291, {align:"right"})
+      doc.setTextColor(200,210,230)
+      doc.text(`klaro.services/pulse  |  (c) ${new Date().getFullYear()} Klaro Global`, W-M, 291, {align:"right"})
     }
 
     function addSectionTitle(title: string, y: number, color: string = "#818cf8"): number {
@@ -195,7 +196,7 @@ export default function PulsePage() {
       doc.setFillColor(5,46,22); doc.setDrawColor(16,185,129)
       doc.roundedRect(M+doc.getTextWidth(r.industry||"")+12, y+18, 28, 7, 2, 2, "FD")
       doc.setTextColor(74,222,128); doc.setFontSize(6.5); doc.setFont("helvetica","bold")
-      doc.text("🤖 LAM AUDIT", M+doc.getTextWidth(r.industry||"")+16, y+23)
+      doc.text("LAM AUDIT", M+doc.getTextWidth(r.industry||"")+16, y+23)
     }
 
     // Score cards row
@@ -253,7 +254,7 @@ export default function PulsePage() {
       const actionLabels = ["THIS WEEK","THIS MONTH","THIS QUARTER"];
       (eb.top_3_actions||[]).slice(0,3).forEach((action: string, i: number) => {
         const ac = hex(actionColors[i]); const ab = hex(actionBgs[i]); const abr = hex(actionBorders[i])
-        const lines = doc.splitTextToSize(action, CW-35)
+        const lines = doc.splitTextToSize(action, CW-38)
         const h = lines.length * 4.5 + 8
         doc.setFillColor(ab[0],ab[1],ab[2]); doc.setDrawColor(abr[0],abr[1],abr[2]); doc.setLineWidth(0.3)
         doc.roundedRect(M, y, CW, h, 2, 2, "FD")
@@ -577,7 +578,7 @@ export default function PulsePage() {
       doc.roundedRect(M, y, CW, outLines.length*5+10, 3, 3, "FD")
       doc.setTextColor(74,222,128); doc.setFontSize(8.5); doc.setFont("helvetica","bold")
       doc.setFont("helvetica","normal"); doc.setFontSize(8)
-      doc.text(outLines, M+4, y+8)
+      doc.text(outLines, M+4, y+7)
       y += outLines.length*5+16
     }
 
