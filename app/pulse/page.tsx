@@ -90,319 +90,509 @@ export default function PulsePage() {
 
   async function downloadPDF(log: any) {
     const r = log.metadata?.full_report || {}
-    const name = log.metadata?.target_name || (()=>{ try{ return new URL(log.url||"").hostname }catch{ return log.url||"Unknown" }})()
+    const name = log.metadata?.target_name || (()=>{ try{ return new URL(log.url||"").hostname }catch{ return "Unknown" }})()
     const score = r.overall_score || r.authority_score || r.lam_score || 0
     const trust = r.ux_conversion_audit?.trust_score || r.trust_score || 0
     const conv = r.ux_conversion_audit?.conversion_score || r.conversion_score || 0
     const httpsScore = (log.url||"").startsWith("https") ? 100 : 0
-    const mobileScore = r.mobile_readiness==="Good" ? 90 : r.mobile_readiness==="Needs Work" ? 60 : 30
+    const mobileScore = r.mobile_readiness==="Good"?90:r.mobile_readiness==="Needs Work"?60:30
+    const eb = r.executive_brief || {}
+    const sec = r.security_compliance || {}
+    const ux = r.ux_conversion_audit || {}
+    const ci = r.competitive_intelligence || {}
+    const rm = r.ninety_day_roadmap || {}
+    const isLAM = r.report_type === "LAM"
     const date = new Date().toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"})
 
     const { jsPDF } = await import("jspdf")
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
-    const W = 210
-    const M = 16
-    const CW = W - M * 2
-    let y = 0
+    const W = 210, M = 16, CW = W - M * 2
 
-    // Helper functions
-    const setColor = (hex: string) => {
-      const r = parseInt(hex.slice(1,3),16)
-      const g = parseInt(hex.slice(3,5),16)
-      const b = parseInt(hex.slice(5,7),16)
-      return [r,g,b] as [number,number,number]
+    const hex = (h: string): [number,number,number] => [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]
+    const scoreCol = (s: number) => s>=75?"#10b981":s>=50?"#f59e0b":"#ef4444"
+    const scoreBgHex = (s: number) => s>=75?"#052e16":s>=50?"#1c1505":"#1c0505"
+
+    function addHeader(pageNum: number, totalPages: number, pageTitle: string) {
+      doc.setFillColor(10,15,26)
+      doc.rect(0,0,W,14,"F")
+      doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont("helvetica","bold")
+      doc.text("KLARO", M, 9)
+      const kw = doc.getTextWidth("KLARO")
+      doc.setTextColor(99,102,241)
+      doc.text(" PULSE", M+kw, 9)
+      doc.setTextColor(100,116,139); doc.setFontSize(7); doc.setFont("helvetica","normal")
+      doc.text(pageTitle.toUpperCase(), M+42, 9)
+      doc.text(`Page ${pageNum} of ${totalPages}  |  ${date}  |  CONFIDENTIAL`, W-M, 9, {align:"right"})
+      doc.setDrawColor(30,42,58); doc.setLineWidth(0.3); doc.line(0,14,W,14)
     }
-    const scoreColor = (s: number) => s>=75?"#10b981":s>=50?"#f59e0b":"#ef4444"
-    const scoreBg = (s: number) => s>=75?"#052e16":s>=50?"#1c1505":"#1c0505"
 
-    // PAGE BACKGROUND
-    doc.setFillColor(8,12,20)
-    doc.rect(0,0,W,297,"F")
+    function addFooter() {
+      doc.setFillColor(10,15,26); doc.rect(0,284,W,13,"F")
+      doc.setDrawColor(30,42,58); doc.line(0,284,W,284)
+      doc.setTextColor(71,85,105); doc.setFontSize(6.5); doc.setFont("helvetica","normal")
+      doc.text(`${name}  |  ${log.url||""}  |  Klaro Pulse Site Intelligence`, M, 291)
+      doc.text(`klaro.services/pulse  |  © ${new Date().getFullYear()} Klaro Global`, W-M, 291, {align:"right"})
+    }
 
-    // TOP HEADER BAR
-    doc.setFillColor(10,15,26)
-    doc.rect(0,0,W,32,"F")
-    doc.setDrawColor(30,42,58)
-    doc.setLineWidth(0.3)
-    doc.line(0,32,W,32)
+    function addSectionTitle(title: string, y: number, color: string = "#818cf8"): number {
+      const rgb = hex(color)
+      doc.setTextColor(rgb[0],rgb[1],rgb[2]); doc.setFontSize(9); doc.setFont("helvetica","bold")
+      doc.text(title, M, y)
+      doc.setDrawColor(rgb[0],rgb[1],rgb[2]); doc.setLineWidth(0.3)
+      doc.line(M, y+2, W-M, y+2)
+      return y + 8
+    }
 
-    // Logo
-    doc.setTextColor(255,255,255)
-    doc.setFontSize(15)
-    doc.setFont("helvetica","bold")
-    doc.text("KLARO", M, 14)
-    const klaroW = doc.getTextWidth("KLARO")
-    doc.setTextColor(99,102,241)
-    doc.text(" PULSE", M + klaroW, 14)
-    doc.setTextColor(100,116,139)
-    doc.setFontSize(7)
-    doc.setFont("helvetica","normal")
-    doc.text("SITE INTELLIGENCE REPORT", M, 22)
+    function scoreCard(x: number, y: number, w: number, h: number, value: number, label: string, big: boolean = false) {
+      const sc = hex(scoreBgHex(value)); const tc = hex(scoreCol(value)); const bc = hex(scoreCol(value))
+      doc.setFillColor(sc[0],sc[1],sc[2]); doc.setDrawColor(bc[0],bc[1],bc[2]); doc.setLineWidth(0.5)
+      doc.roundedRect(x,y,w,h,3,3,"FD")
+      doc.setTextColor(tc[0],tc[1],tc[2]); doc.setFontSize(big?22:14); doc.setFont("helvetica","bold")
+      doc.text(String(value), x+w/2, y+h*0.55, {align:"center"})
+      doc.setTextColor(100,116,139); doc.setFontSize(6); doc.setFont("helvetica","normal")
+      doc.text(label, x+w/2, y+h*0.82, {align:"center"})
+    }
 
-    // Date + URL top right
-    doc.setTextColor(100,116,139)
-    doc.setFontSize(8)
-    doc.text(date, W-M, 14, {align:"right"})
-    doc.setFontSize(7)
-    doc.text("klaro.services/pulse", W-M, 21, {align:"right"})
-    y = 42
+    function textBox(x: number, y: number, w: number, text: string, bgHex: string, borderHex: string, titleColor: string, title: string): number {
+      const lines = doc.splitTextToSize(text, w-8)
+      const h = lines.length * 4.5 + (title ? 14 : 8)
+      const bg = hex(bgHex); const br = hex(borderHex)
+      doc.setFillColor(bg[0],bg[1],bg[2]); doc.setDrawColor(br[0],br[1],br[2]); doc.setLineWidth(0.3)
+      doc.roundedRect(x,y,w,h,3,3,"FD")
+      if (title) {
+        const tc = hex(titleColor)
+        doc.setTextColor(tc[0],tc[1],tc[2]); doc.setFontSize(7); doc.setFont("helvetica","bold")
+        doc.text(title, x+4, y+7)
+        doc.setTextColor(203,213,225); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        doc.text(lines, x+4, y+13)
+      } else {
+        doc.setTextColor(203,213,225); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        doc.text(lines, x+4, y+6)
+      }
+      return h
+    }
 
-    // SITE NAME + URL
-    doc.setTextColor(255,255,255)
-    doc.setFontSize(22)
-    doc.setFont("helvetica","bold")
-    doc.text(name, M, y)
-    y += 7
-    doc.setTextColor(71,85,105)
-    doc.setFontSize(9)
-    doc.setFont("helvetica","normal")
-    doc.text(log.url || "", M, y)
-    y += 14
+    // ═══════════════════════════════════════
+    // PAGE 1 — EXECUTIVE BRIEF
+    // ═══════════════════════════════════════
+    addHeader(1, 5, "Executive Brief")
+    let y = 22
 
-    // SCORE CARDS ROW
-    const cards = [
-      { label: "OVERALL SCORE", value: score, big: true },
-      { label: "TRUST", value: trust },
-      { label: "CONVERSION", value: conv },
-      { label: "HTTPS", value: httpsScore },
-      { label: "MOBILE", value: mobileScore },
-    ]
-    const bigW = 44
-    const smallW = (CW - bigW - 4*3) / 4
-    let cx = M
-
-    cards.forEach((card, i) => {
-      const cw = i===0 ? bigW : smallW
-      const ch = 28
-      const sc = setColor(scoreBg(card.value))
-      const tc = setColor(scoreColor(card.value))
-      const bc = setColor(scoreColor(card.value))
-
-      // Card bg
-      doc.setFillColor(sc[0],sc[1],sc[2])
-      doc.setDrawColor(bc[0],bc[1],bc[2])
-      doc.setLineWidth(0.5)
-      doc.roundedRect(cx, y, cw, ch, 3, 3, "FD")
-
-      // Score value
-      doc.setTextColor(tc[0],tc[1],tc[2])
-      doc.setFontSize(i===0 ? 22 : 16)
-      doc.setFont("helvetica","bold")
-      doc.text(String(card.value), cx+cw/2, y+14, {align:"center"})
-
-      // Label
-      doc.setTextColor(100,116,139)
-      doc.setFontSize(6)
-      doc.setFont("helvetica","bold")
-      doc.text(card.label, cx+cw/2, y+22, {align:"center"})
-
-      cx += cw + 3
-    })
-    y += 36
-
-    // STATUS BADGE
-    const statusText = score>=75 ? "STRONG" : score>=50 ? "NEEDS WORK" : "CRITICAL"
-    const statusBg = score>=75 ? [5,46,22] : score>=50 ? [28,21,5] : [28,5,5]
-    const statusFg = setColor(scoreColor(score))
-    doc.setFillColor(statusBg[0],statusBg[1],statusBg[2])
-    doc.setDrawColor(statusFg[0],statusFg[1],statusFg[2])
-    doc.setLineWidth(0.4)
-    doc.roundedRect(M, y, 32, 7, 2, 2, "FD")
-    doc.setTextColor(statusFg[0],statusFg[1],statusFg[2])
-    doc.setFontSize(7)
-    doc.setFont("helvetica","bold")
-    doc.text(statusText, M+16, y+5, {align:"center"})
-
-    // Industry badge
+    // Site name + score hero
+    doc.setFillColor(8,12,20); doc.rect(0,14,W,40,"F")
+    doc.setTextColor(255,255,255); doc.setFontSize(20); doc.setFont("helvetica","bold")
+    doc.text(name, M, y+8)
+    doc.setTextColor(71,85,105); doc.setFontSize(8); doc.setFont("helvetica","normal")
+    doc.text(log.url||"", M, y+15)
     if (r.industry) {
-      doc.setFillColor(15,26,58)
-      doc.setDrawColor(63,72,180)
-      doc.roundedRect(M+36, y, doc.getTextWidth(r.industry)+6, 7, 2, 2, "FD")
-      doc.setTextColor(129,140,248)
-      doc.text(r.industry, M+39, y+5)
+      doc.setFillColor(15,26,58); doc.setDrawColor(63,72,180)
+      const iw = doc.getTextWidth(r.industry)+8
+      doc.roundedRect(M, y+18, iw, 7, 2, 2, "FD")
+      doc.setTextColor(129,140,248); doc.setFontSize(6.5); doc.setFont("helvetica","bold")
+      doc.text(r.industry, M+4, y+23)
     }
+    if (isLAM) {
+      doc.setFillColor(5,46,22); doc.setDrawColor(16,185,129)
+      doc.roundedRect(M+doc.getTextWidth(r.industry||"")+12, y+18, 28, 7, 2, 2, "FD")
+      doc.setTextColor(74,222,128); doc.setFontSize(6.5); doc.setFont("helvetica","bold")
+      doc.text("🤖 LAM AUDIT", M+doc.getTextWidth(r.industry||"")+16, y+23)
+    }
+
+    // Score cards row
+    const cards = [
+      {label:"OVERALL",value:score,big:true},
+      {label:"TRUST",value:trust},
+      {label:"CONVERSION",value:conv},
+      {label:"SECURITY",value:sec.security_score||(httpsScore===100?75:40)},
+      {label:"MOBILE",value:mobileScore},
+    ]
+    const bigW = 44, sW = (CW-bigW-12)/4
+    let cx = M
+    cards.forEach((c,i) => { scoreCard(cx, y+28, i===0?bigW:sW, 22, c.value, c.label, i===0); cx += (i===0?bigW:sW)+3 })
+    y = 68
+
+    // Grade + urgency badges
+    const grade = r.grade || (score>=90?"A":score>=75?"B":score>=60?"C":score>=50?"D":"F")
+    const urgency = eb.urgency || "Medium"
+    const urgencyColors: Record<string,string> = {Low:"#10b981",Medium:"#f59e0b",High:"#ef4444",Critical:"#dc2626"}
+    const uc = hex(urgencyColors[urgency]||"#f59e0b")
+    doc.setFillColor(hex(scoreBgHex(score))[0],hex(scoreBgHex(score))[1],hex(scoreBgHex(score))[2])
+    doc.setDrawColor(hex(scoreCol(score))[0],hex(scoreCol(score))[1],hex(scoreCol(score))[2])
+    doc.setLineWidth(0.4); doc.roundedRect(M, y, 22, 8, 2, 2, "FD")
+    doc.setTextColor(hex(scoreCol(score))[0],hex(scoreCol(score))[1],hex(scoreCol(score))[2])
+    doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.text(`Grade: ${grade}`, M+11, y+5.5, {align:"center"})
+    doc.setFillColor(uc[0]>100?28:5, uc[1]>100?21:5, uc[2]>100?5:28)
+    doc.setDrawColor(uc[0],uc[1],uc[2]); doc.roundedRect(M+26, y, 28, 8, 2, 2, "FD")
+    doc.setTextColor(uc[0],uc[1],uc[2]); doc.text(`Urgency: ${urgency}`, M+40, y+5.5, {align:"center"})
     y += 14
 
-    // EXECUTIVE SUMMARY BOX
-    doc.setFillColor(15,20,32)
-    doc.setDrawColor(30,42,58)
-    doc.setLineWidth(0.3)
-    const summaryLines = doc.splitTextToSize(r.executive_brief?.plain_english_summary || r.novice_summary || "No summary available.", CW-8)
-    const summaryH = summaryLines.length * 5 + 10
-    doc.roundedRect(M, y, CW, summaryH, 3, 3, "FD")
-    doc.setTextColor(203,213,225)
-    doc.setFontSize(9)
-    doc.setFont("helvetica","normal")
-    doc.text(summaryLines, M+4, y+7)
-    y += summaryH + 6
-
-    // COMPETITIVE INSIGHT BOX
-    if (r.competitor_advantage) {
-      doc.setFillColor(28,21,5)
-      doc.setDrawColor(146,64,14)
-      doc.setLineWidth(0.4)
-      const insightLines = doc.splitTextToSize(r.competitor_advantage, CW-20)
-      const insightH = insightLines.length * 5 + 10
-      doc.roundedRect(M, y, CW, insightH, 3, 3, "FD")
-      doc.setTextColor(251,191,36)
-      doc.setFontSize(8)
-      doc.setFont("helvetica","bold")
-      doc.text("Competitive Insight", M+4, y+7)
-      doc.setFont("helvetica","normal")
-      doc.setTextColor(253,230,138)
-      doc.text(insightLines, M+4, y+13)
-      y += insightH + 6
+    // Verdict box
+    if (eb.one_line_verdict) {
+      const h = textBox(M, y, CW, `"${eb.one_line_verdict}"`, "#1c1505", "#92400e", "#fbbf24", "EXECUTIVE VERDICT")
+      y += h + 5
     }
 
-    // METRICS ROW
-    const metrics = [
-      { label: "Load Time", value: r.load_time_ms ? `${(r.load_time_ms/1000).toFixed(1)}s` : "N/A", good: r.load_time_ms ? r.load_time_ms < 3000 : null },
-      { label: "Pricing", value: r.pricing_clarity || "N/A", good: r.pricing_clarity === "Clear" ? true : r.pricing_clarity === "Hidden" ? false : null },
-      { label: "CTA", value: r.cta_effectiveness || "N/A", good: r.cta_effectiveness === "Strong" ? true : r.cta_effectiveness === "Missing" ? false : null },
-      { label: "Audience", value: r.target_audience_clarity || "N/A", good: r.target_audience_clarity === "Clear" ? true : r.target_audience_clarity === "Confusing" ? false : null },
-    ]
-    const mW = (CW - 3*3) / 4
-    cx = M
-    metrics.forEach(m => {
-      const bg = m.good === true ? [5,46,22] : m.good === false ? [28,5,5] : [15,20,32]
-      const fg = m.good === true ? "#10b981" : m.good === false ? "#ef4444" : "#94a3b8"
-      const fgRgb = setColor(fg)
-      doc.setFillColor(bg[0],bg[1],bg[2])
-      doc.setDrawColor(fgRgb[0],fgRgb[1],fgRgb[2])
-      doc.setLineWidth(0.3)
-      doc.roundedRect(cx, y, mW, 14, 2, 2, "FD")
-      doc.setTextColor(fgRgb[0],fgRgb[1],fgRgb[2])
-      doc.setFontSize(8)
-      doc.setFont("helvetica","bold")
-      doc.text(m.value, cx+mW/2, y+7, {align:"center"})
-      doc.setTextColor(100,116,139)
-      doc.setFontSize(6)
-      doc.setFont("helvetica","normal")
-      doc.text(m.label, cx+mW/2, y+12, {align:"center"})
-      cx += mW + 3
-    })
-    y += 20
+    // Summary
+    if (eb.plain_english_summary || r.novice_summary) {
+      const h = textBox(M, y, CW, eb.plain_english_summary||r.novice_summary||"", "#0f1420", "#1e2a3a", "#94a3b8", "ANALYSIS SUMMARY")
+      y += h + 5
+    }
 
-    // THREE COLUMNS
-    const cols = [
-      { title: "PROBLEMS FOUND", titleColor: "#ef4444", borderColor: "#7f1d1d", bg: [28,5,5] as [number,number,number], textColor: "#fca5a5", items: ((r.ux_conversion_audit?.issues||[]).map((i:any)=>i.issue).filter(Boolean).concat(r.ux_friction_points||[])).slice(0,4) },
-      { title: "HOW TO FIX", titleColor: "#10b981", borderColor: "#14532d", bg: [5,46,22] as [number,number,number], textColor: "#6ee7b7", items: ((r.ux_conversion_audit?.issues||[]).map((i:any)=>i.fix).filter(Boolean).concat(r.resolution_steps||[])).slice(0,4) },
-      { title: "REVENUE OPPORTUNITIES", titleColor: "#f59e0b", borderColor: "#78350f", bg: [28,21,5] as [number,number,number], textColor: "#fcd34d", items: ((r.ux_conversion_audit?.quick_wins||[]).concat(r.revenue_opportunities||[])).slice(0,4) },
-    ]
+    // Revenue impact
+    if (eb.estimated_revenue_impact) {
+      const h = textBox(M, y, CW, `Revenue Impact: ${eb.estimated_revenue_impact}`, "#052e16", "#166534", "#4ade80", "")
+      y += h + 5
+    }
 
-    const colW2 = (CW - 2*4) / 3
-    const colStartY = y
-
-    // Find tallest column first
-    let maxH = 0
-    cols.forEach(col => {
-      let h = 10
-      col.items.forEach((item: string) => {
-        const lines = doc.splitTextToSize(`- ${item}`, colW2 - 6)
-        h += lines.length * 4.5 + 3
+    // Top 3 actions
+    if ((eb.top_3_actions||[]).length > 0) {
+      y = addSectionTitle("PRIORITY ACTIONS", y, "#818cf8")
+      const actionColors = ["#10b981","#f59e0b","#818cf8"]
+      const actionBgs = ["#052e16","#1c1505","#0c1230"]
+      const actionBorders = ["#166534","#92400e","#312e81"]
+      const actionLabels = ["THIS WEEK","THIS MONTH","THIS QUARTER"];
+      (eb.top_3_actions||[]).slice(0,3).forEach((action: string, i: number) => {
+        const ac = hex(actionColors[i]); const ab = hex(actionBgs[i]); const abr = hex(actionBorders[i])
+        const lines = doc.splitTextToSize(action, CW-30)
+        const h = lines.length * 4.5 + 8
+        doc.setFillColor(ab[0],ab[1],ab[2]); doc.setDrawColor(abr[0],abr[1],abr[2]); doc.setLineWidth(0.3)
+        doc.roundedRect(M, y, CW, h, 2, 2, "FD")
+        doc.setFillColor(ac[0],ac[1],ac[2]); doc.roundedRect(M+2, y+2, 22, h-4, 1, 1, "F")
+        doc.setTextColor(8,12,20); doc.setFontSize(5.5); doc.setFont("helvetica","bold")
+        doc.text(actionLabels[i], M+13, y+h/2+1, {align:"center"})
+        doc.setTextColor(220,230,240); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        doc.text(lines, M+28, y+6)
+        y += h + 3
       })
-      if (h > maxH) maxH = h
+    }
+
+    addFooter()
+
+    // ═══════════════════════════════════════
+    // PAGE 2 — UX & CONVERSION AUDIT
+    // ═══════════════════════════════════════
+    doc.addPage()
+    addHeader(2, 5, "UX & Conversion Audit")
+    y = 22
+
+    // Score bars
+    y = addSectionTitle("PERFORMANCE SCORES", y, "#818cf8")
+    const bars = [
+      ["Overall Score", score],
+      ["Trust & Credibility", trust],
+      ["Conversion Rate", conv],
+      ["Security Surface", sec.security_score||(httpsScore===100?75:40)],
+    ]
+    bars.forEach(([label, val]) => {
+      doc.setTextColor(180,190,210); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+      doc.text(label as string, M, y+4)
+      doc.setTextColor(hex(scoreCol(val as number))[0],hex(scoreCol(val as number))[1],hex(scoreCol(val as number))[2])
+      doc.setFontSize(7.5); doc.setFont("helvetica","bold")
+      doc.text(`${val}/100`, W-M, y+4, {align:"right"})
+      doc.setFillColor(25,30,45); doc.rect(M, y+6, CW, 4, "F")
+      const fc = hex(scoreCol(val as number))
+      doc.setFillColor(fc[0],fc[1],fc[2]); doc.rect(M, y+6, CW*(val as number)/100, 4, "F")
+      y += 13
     })
+    y += 4
 
-    cols.forEach((col, ci) => {
-      const cx2 = M + ci * (colW2 + 4)
-      const titleRgb = setColor(col.titleColor)
-      const borderRgb = setColor(col.borderColor)
-
-      // Column background
-      doc.setFillColor(col.bg[0],col.bg[1],col.bg[2])
-      doc.setDrawColor(borderRgb[0],borderRgb[1],borderRgb[2])
-      doc.setLineWidth(0.4)
-      doc.roundedRect(cx2, colStartY, colW2, maxH+4, 3, 3, "FD")
-
-      // Title
-      doc.setTextColor(titleRgb[0],titleRgb[1],titleRgb[2])
-      doc.setFontSize(7)
-      doc.setFont("helvetica","bold")
-      doc.text(col.title, cx2+colW2/2, colStartY+7, {align:"center"})
-
-      // Divider
-      doc.setDrawColor(borderRgb[0],borderRgb[1],borderRgb[2])
-      doc.line(cx2+4, colStartY+9, cx2+colW2-4, colStartY+9)
-
-      let iy = colStartY + 14
-      const textRgb = setColor(col.textColor)
-      col.items.forEach((item: string) => {
-        const lines = doc.splitTextToSize(`- ${item}`, colW2-6)
-        doc.setTextColor(textRgb[0],textRgb[1],textRgb[2])
-        doc.setFontSize(7)
-        doc.setFont("helvetica","normal")
-        doc.text(lines, cx2+3, iy)
-        iy += lines.length * 4.5 + 3
+    // Issues
+    const issues = ux.issues || []
+    if (issues.length > 0) {
+      y = addSectionTitle("CONVERSION KILLERS — DETAILED ANALYSIS", y, "#ef4444")
+      issues.slice(0,5).forEach((issue: any) => {
+        const priorityColors: Record<string,string> = {Critical:"#ef4444",High:"#f97316",Medium:"#f59e0b",Low:"#94a3b8"}
+        const pc = hex(priorityColors[issue.priority]||"#f59e0b")
+        const pbg = issue.priority==="Critical"?hex("#1c0505"):issue.priority==="High"?hex("#1c0a05"):hex("#0f1420")
+        const issueLines = doc.splitTextToSize(issue.issue||"", CW-50)
+        const fixLines = doc.splitTextToSize(`Fix: ${issue.fix||""}`, CW-12)
+        const impactLines = doc.splitTextToSize(`Impact: ${issue.business_impact||""}`, CW-12)
+        const h = issueLines.length*4.5 + fixLines.length*4 + impactLines.length*4 + 18
+        doc.setFillColor(pbg[0],pbg[1],pbg[2]); doc.setDrawColor(pc[0],pc[1],pc[2]); doc.setLineWidth(0.4)
+        doc.roundedRect(M, y, CW, h, 3, 3, "FD")
+        // Priority badge
+        doc.setFillColor(pc[0],pc[1],pc[2]); doc.roundedRect(M+3, y+3, 20, 6, 1, 1, "F")
+        doc.setTextColor(8,12,20); doc.setFontSize(5.5); doc.setFont("helvetica","bold")
+        doc.text((issue.priority||"").toUpperCase(), M+13, y+7, {align:"center"})
+        // Issue title
+        doc.setTextColor(240,240,250); doc.setFontSize(8); doc.setFont("helvetica","bold")
+        doc.text(issueLines, M+27, y+7)
+        let iy = y + 7 + issueLines.length*4.5
+        // Fix
+        doc.setTextColor(74,222,128); doc.setFontSize(7); doc.setFont("helvetica","normal")
+        doc.text(fixLines, M+4, iy+2)
+        iy += fixLines.length*4+4
+        // Impact
+        doc.setTextColor(251,191,36); doc.setFontSize(7)
+        doc.text(impactLines, M+4, iy)
+        // Effort + cost
+        if (issue.effort||issue.cost) {
+          doc.setTextColor(100,116,139); doc.setFontSize(6)
+          doc.text(`${issue.effort||""} · ${issue.cost||""}`.trim(), W-M-4, y+7, {align:"right"})
+        }
+        y += h + 4
+        if (y > 270) { doc.addPage(); addHeader(2,5,"UX & Conversion Audit (cont.)"); y = 22 }
       })
-    })
-    y = colStartY + maxH + 10
+    }
 
-    // STRENGTHS
+    // Quick wins
+    if ((ux.quick_wins||[]).length > 0) {
+      y = addSectionTitle("QUICK WINS — FREE, UNDER 1 HOUR", y, "#10b981")
+      ;(ux.quick_wins||[]).forEach((win: string) => {
+        const lines = doc.splitTextToSize(`✓ ${win}`, CW-8)
+        doc.setFillColor(5,30,20); doc.setDrawColor(22,101,52); doc.setLineWidth(0.3)
+        doc.roundedRect(M, y, CW, lines.length*4.5+6, 2, 2, "FD")
+        doc.setTextColor(74,222,128); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        doc.text(lines, M+4, y+5)
+        y += lines.length*4.5+9
+      })
+    }
+
+    addFooter()
+
+    // ═══════════════════════════════════════
+    // PAGE 3 — COMPETITIVE INTELLIGENCE
+    // ═══════════════════════════════════════
+    doc.addPage()
+    addHeader(3, 5, "Competitive Intelligence")
+    y = 22
+
+    // Market position
+    if (ci.market_position) {
+      y = addSectionTitle("MARKET POSITION ANALYSIS", y, "#818cf8")
+      const h = textBox(M, y, CW, ci.market_position, "#0f1420", "#1e2a3a", "#94a3b8", "")
+      y += h + 8
+    }
+
+    // Where losing clients
+    if (ci.where_losing_clients) {
+      y = addSectionTitle("WHY CLIENTS CHOOSE COMPETITORS", y, "#ef4444")
+      const h = textBox(M, y, CW, ci.where_losing_clients, "#1c0505", "#991b1b", "#f87171", "")
+      y += h + 8
+    }
+
+    // Competitor advantage
+    if (ci.biggest_competitor_advantage) {
+      y = addSectionTitle("BIGGEST COMPETITOR ADVANTAGE", y, "#f97316")
+      const h = textBox(M, y, CW, ci.biggest_competitor_advantage, "#1c0a05", "#9a3412", "#fb923c", "")
+      y += h + 8
+    }
+
+    // Opportunity
+    if (ci.opportunity_to_win) {
+      y = addSectionTitle("YOUR OPPORTUNITY TO WIN", y, "#10b981")
+      const h = textBox(M, y, CW, ci.opportunity_to_win, "#052e16", "#166534", "#4ade80", "")
+      y += h + 8
+    }
+
+    // Competitors scanned
+    if ((r.competitors_scanned||[]).length > 0) {
+      y = addSectionTitle("SITES COMPARED IN THIS ANALYSIS", y, "#475569")
+      doc.setFillColor(10,15,26); doc.setDrawColor(30,42,58); doc.setLineWidth(0.3)
+      doc.roundedRect(M, y, CW, 10, 2, 2, "FD")
+      doc.setTextColor(100,116,139); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+      doc.text(r.competitors_scanned.join("  ·  "), M+4, y+6.5)
+      y += 18
+    }
+
+    // Strengths
     if ((r.strengths||[]).length > 0) {
-      doc.setFillColor(12,18,40)
-      doc.setDrawColor(49,46,129)
-      doc.setLineWidth(0.3)
-      const strItems = (r.strengths||[]).slice(0,3)
-      const strH = strItems.length * 8 + 12
-      doc.roundedRect(M, y, CW, strH, 3, 3, "FD")
-      doc.setTextColor(129,140,248)
-      doc.setFontSize(8)
-      doc.setFont("helvetica","bold")
-      doc.text("WHAT THEY DO WELL", M+4, y+7)
-      let sy = y+13
-      strItems.forEach((s: string) => {
-        doc.setTextColor(165,180,252)
-        doc.setFontSize(8)
-        doc.setFont("helvetica","normal")
+      y = addSectionTitle("WHAT THIS SITE DOES WELL", y, "#818cf8")
+      ;(r.strengths||[]).forEach((s: string) => {
         const lines = doc.splitTextToSize(`+ ${s}`, CW-8)
-        doc.text(lines[0], M+4, sy)
-        sy += 7
+        doc.setFillColor(12,18,40); doc.setDrawColor(49,46,129); doc.setLineWidth(0.3)
+        doc.roundedRect(M, y, CW, lines.length*4.5+6, 2, 2, "FD")
+        doc.setTextColor(165,180,252); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        doc.text(lines, M+4, y+5)
+        y += lines.length*4.5+9
       })
-      y += strH + 6
     }
 
-    // SOC2 COMPLIANCE ROW
-    doc.setFillColor(10,15,26)
-    doc.setDrawColor(30,42,58)
-    doc.setLineWidth(0.3)
-    doc.roundedRect(M, y, CW, 22, 3, 3, "FD")
-    doc.setTextColor(100,116,139)
-    doc.setFontSize(7)
-    doc.setFont("helvetica","bold")
-    doc.text("COMPLIANCE & SECURITY SURFACE", M+4, y+7)
-    const compScores = [
-      { label: "HTTPS Security", value: httpsScore },
-      { label: "Mobile / ADA", value: mobileScore },
-      { label: "ADA/WCAG", value: score>70?75:45 },
-      { label: "SOC2 Surface", value: httpsScore===100&&mobileScore>=60?80:45 },
-    ]
-    cx = M+4
-    const compW = (CW-8)/4
-    compScores.forEach(cs => {
-      const rgb = setColor(scoreColor(cs.value))
-      doc.setTextColor(rgb[0],rgb[1],rgb[2])
-      doc.setFontSize(9)
-      doc.setFont("helvetica","bold")
-      doc.text(String(cs.value), cx+compW/2, y+14, {align:"center"})
-      doc.setTextColor(71,85,105)
-      doc.setFontSize(6)
-      doc.setFont("helvetica","normal")
-      doc.text(cs.label, cx+compW/2, y+19, {align:"center"})
-      cx += compW
-    })
-    y += 28
+    addFooter()
 
-    // FOOTER
-    doc.setFillColor(10,15,26)
-    doc.rect(0,282,W,15,"F")
-    doc.setDrawColor(30,42,58)
-    doc.line(0,282,W,282)
-    doc.setTextColor(71,85,105)
-    doc.setFontSize(7)
-    doc.setFont("helvetica","normal")
-    doc.text("Generated by Klaro Pulse  |  klaro.services/pulse  |  AI-powered site intelligence", M, 290)
-    doc.text(`Confidential  |  (c) ${new Date().getFullYear()} Klaro Global`, W-M, 290, {align:"right"})
+    // ═══════════════════════════════════════
+    // PAGE 4 — SECURITY & COMPLIANCE
+    // ═══════════════════════════════════════
+    doc.addPage()
+    addHeader(4, 5, "Security & Compliance")
+    y = 22
+
+    // Security scores grid
+    y = addSectionTitle("COMPLIANCE SURFACE SCAN", y, "#818cf8")
+    const compItems = [
+      {label:"HTTPS / SSL", value:httpsScore, detail: httpsScore===100?"Valid SSL certificate, HTTPS enforced":"Missing SSL — critical security risk"},
+      {label:"Mobile / ADA", value:mobileScore, detail: r.mobile_readiness||"Mobile experience assessment"},
+      {label:"Cookie Consent", value:sec.cookie_consent?90:15, detail: sec.cookie_consent?"Cookie consent banner detected":"No cookie consent — GDPR/DPDP violation risk"},
+      {label:"Privacy Policy", value:sec.privacy_policy?90:20, detail: sec.privacy_policy?"Privacy policy page found":"No privacy policy — legal requirement"},
+      {label:"SOC2 Readiness", value:sec.soc2_readiness==="Ready"?90:sec.soc2_readiness==="Partial"?60:30, detail: sec.soc2_readiness||"SOC2 surface assessment"},
+      {label:"GDPR Status", value:sec.gdpr_compliance==="Compliant"?90:sec.gdpr_compliance==="Partial"?60:25, detail: sec.gdpr_compliance||"GDPR compliance surface check"},
+    ]
+    const gridW = (CW-8)/3
+    compItems.forEach((item, i) => {
+      const gx = M + (i%3)*(gridW+4)
+      const gy = y + Math.floor(i/3)*28
+      const vc = hex(scoreCol(item.value)); const vbg = hex(scoreBgHex(item.value))
+      doc.setFillColor(vbg[0],vbg[1],vbg[2]); doc.setDrawColor(vc[0],vc[1],vc[2]); doc.setLineWidth(0.4)
+      doc.roundedRect(gx, gy, gridW, 24, 3, 3, "FD")
+      doc.setTextColor(vc[0],vc[1],vc[2]); doc.setFontSize(14); doc.setFont("helvetica","bold")
+      doc.text(String(item.value), gx+gridW/2, gy+10, {align:"center"})
+      doc.setTextColor(200,210,220); doc.setFontSize(6.5); doc.setFont("helvetica","bold")
+      doc.text(item.label, gx+gridW/2, gy+16, {align:"center"})
+      const detLines = doc.splitTextToSize(item.detail, gridW-4)
+      doc.setTextColor(100,116,139); doc.setFontSize(5.5); doc.setFont("helvetica","normal")
+      doc.text(detLines[0]||"", gx+gridW/2, gy+21, {align:"center"})
+    })
+    y += Math.ceil(compItems.length/3)*32 + 6
+
+    // ADA section
+    y = addSectionTitle("ADA / WCAG 2.1 ACCESSIBILITY AUDIT", y, "#f97316")
+    const adaScore = sec.accessibility_score || (mobileScore>=75?70:45)
+    const adaRisk = adaScore < 50 ? "CRITICAL" : adaScore < 70 ? "HIGH RISK" : "MEDIUM RISK"
+    const adaColor = adaScore < 50 ? "#ef4444" : adaScore < 70 ? "#f97316" : "#f59e0b"
+
+    doc.setFillColor(28,5,5); doc.setDrawColor(127,29,29); doc.setLineWidth(0.3)
+    doc.roundedRect(M, y, CW, 18, 3, 3, "FD")
+    const adaC = hex(adaColor)
+    doc.setTextColor(adaC[0],adaC[1],adaC[2]); doc.setFontSize(18); doc.setFont("helvetica","bold")
+    doc.text(String(adaScore), M+12, y+12, {align:"center"})
+    doc.setFontSize(7); doc.text("/100", M+20, y+12)
+    doc.setFontSize(9); doc.text(adaRisk, M+32, y+8)
+    doc.setTextColor(200,210,220); doc.setFontSize(7); doc.setFont("helvetica","normal")
+    doc.text("ADA compliance failures expose US businesses to lawsuit risk.", M+32, y+14)
+    y += 24
+
+    // Legal risks
+    if ((sec.legal_risks||[]).length > 0) {
+      y = addSectionTitle("LEGAL RISKS IDENTIFIED", y, "#ef4444")
+      ;(sec.legal_risks||[]).forEach((risk: string) => {
+        const lines = doc.splitTextToSize(`⚠ ${risk}`, CW-8)
+        doc.setFillColor(28,5,5); doc.setDrawColor(127,29,29); doc.setLineWidth(0.3)
+        doc.roundedRect(M, y, CW, lines.length*4.5+6, 2, 2, "FD")
+        doc.setTextColor(252,165,165); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        doc.text(lines, M+4, y+5)
+        y += lines.length*4.5+9
+      })
+    }
+
+    // Security issues
+    if ((sec.security_issues||[]).length > 0) {
+      y = addSectionTitle("SECURITY ISSUES", y, "#f97316")
+      ;(sec.security_issues||[]).forEach((issue: string) => {
+        const lines = doc.splitTextToSize(`• ${issue}`, CW-8)
+        doc.setFillColor(28,14,5); doc.setDrawColor(154,52,18); doc.setLineWidth(0.3)
+        doc.roundedRect(M, y, CW, lines.length*4.5+6, 2, 2, "FD")
+        doc.setTextColor(253,186,116); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        doc.text(lines, M+4, y+5)
+        y += lines.length*4.5+9
+      })
+    }
+
+    // Security recommendations
+    if ((sec.recommendations||[]).length > 0) {
+      y = addSectionTitle("REMEDIATION RECOMMENDATIONS", y, "#10b981")
+      ;(sec.recommendations||[]).forEach((rec: string, i: number) => {
+        const lines = doc.splitTextToSize(`${i+1}. ${rec}`, CW-8)
+        doc.setFillColor(5,30,20); doc.setDrawColor(22,101,52); doc.setLineWidth(0.3)
+        doc.roundedRect(M, y, CW, lines.length*4.5+6, 2, 2, "FD")
+        doc.setTextColor(74,222,128); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        doc.text(lines, M+4, y+5)
+        y += lines.length*4.5+9
+      })
+    }
+
+    addFooter()
+
+    // ═══════════════════════════════════════
+    // PAGE 5 — 90-DAY ROADMAP
+    // ═══════════════════════════════════════
+    doc.addPage()
+    addHeader(5, 5, "90-Day Action Roadmap")
+    y = 22
+
+    y = addSectionTitle("YOUR 90-DAY DIGITAL TRANSFORMATION PLAN", y, "#818cf8")
+
+    // Phase blocks
+    const phases = [
+      {
+        label:"WEEK 1 — QUICK WINS",
+        subtitle:"No developer needed · Cost: " + (rm.week_1?.cost||"Free"),
+        color:"#10b981", bg:"#052e16", border:"#166534",
+        actions: rm.week_1?.actions||[],
+        score: rm.week_1?.expected_score,
+        icon:"⚡"
+      },
+      {
+        label:"MONTH 1 — FOUNDATION",
+        subtitle:"Basic developer needed · Cost: " + (rm.month_1?.cost||"£500-2,000"),
+        color:"#f59e0b", bg:"#1c1505", border:"#92400e",
+        actions: rm.month_1?.actions||[],
+        score: rm.month_1?.expected_score,
+        icon:"🏗"
+      },
+      {
+        label:"MONTH 2-3 — GROWTH",
+        subtitle:"Content & SEO investment · Cost: " + (rm.month_2_3?.cost||"£2,000-5,000"),
+        color:"#818cf8", bg:"#0c1230", border:"#312e81",
+        actions: rm.month_2_3?.actions||[],
+        score: rm.month_2_3?.expected_score,
+        icon:"🚀"
+      }
+    ]
+
+    phases.forEach(phase => {
+      if (!phase.actions.length) return
+      const pc = hex(phase.color); const pb = hex(phase.bg); const pbr = hex(phase.border)
+      // Phase header
+      doc.setFillColor(pb[0],pb[1],pb[2]); doc.setDrawColor(pbr[0],pbr[1],pbr[2]); doc.setLineWidth(0.5)
+      doc.roundedRect(M, y, CW, 12, 3, 3, "FD")
+      doc.setTextColor(pc[0],pc[1],pc[2]); doc.setFontSize(9); doc.setFont("helvetica","bold")
+      doc.text(phase.label, M+4, y+8)
+      if (phase.score) {
+        doc.setFillColor(pc[0],pc[1],pc[2]); doc.roundedRect(W-M-24, y+2, 22, 8, 2, 2, "F")
+        doc.setTextColor(8,12,20); doc.setFontSize(7); doc.setFont("helvetica","bold")
+        doc.text(`Target: ${phase.score}/100`, W-M-13, y+7.5, {align:"center"})
+      }
+      y += 14
+      // Subtitle
+      doc.setTextColor(100,116,139); doc.setFontSize(7); doc.setFont("helvetica","normal")
+      doc.text(phase.subtitle, M, y)
+      y += 6
+      // Actions
+      phase.actions.forEach((action: string, i: number) => {
+        const lines = doc.splitTextToSize(`${i+1}. ${action}`, CW-12)
+        const h = lines.length*4.5+6
+        doc.setFillColor(pb[0],pb[1],pb[2]); doc.setDrawColor(pbr[0],pbr[1],pbr[2]); doc.setLineWidth(0.2)
+        doc.roundedRect(M, y, CW, h, 2, 2, "FD")
+        doc.setTextColor(210,220,235); doc.setFontSize(7.5); doc.setFont("helvetica","normal")
+        doc.text(lines, M+4, y+5)
+        y += h+3
+      })
+      y += 6
+    })
+
+    // Expected outcome
+    if (rm.expected_outcome) {
+      doc.setFillColor(5,46,22); doc.setDrawColor(16,185,129); doc.setLineWidth(0.4)
+      const outLines = doc.splitTextToSize(`Expected Outcome After 90 Days: ${rm.expected_outcome}`, CW-8)
+      doc.roundedRect(M, y, CW, outLines.length*5+10, 3, 3, "FD")
+      doc.setTextColor(74,222,128); doc.setFontSize(8.5); doc.setFont("helvetica","bold")
+      doc.text("🎯 ", M+4, y+8)
+      doc.setFont("helvetica","normal"); doc.setFontSize(8)
+      doc.text(outLines, M+10, y+8)
+      y += outLines.length*5+16
+    }
+
+    // Final CTA box
+    doc.setFillColor(12,18,40); doc.setDrawColor(99,102,241); doc.setLineWidth(0.5)
+    doc.roundedRect(M, y, CW, 28, 4, 4, "FD")
+    doc.setTextColor(129,140,248); doc.setFontSize(11); doc.setFont("helvetica","bold")
+    doc.text("Ready to implement this roadmap?", W/2, y+9, {align:"center"})
+    doc.setTextColor(203,213,225); doc.setFontSize(8); doc.setFont("helvetica","normal")
+    doc.text("Klaro Pulse monitors your site continuously and alerts you when competitors change strategy.", W/2, y+16, {align:"center"})
+    doc.setTextColor(129,140,248); doc.setFontSize(8); doc.setFont("helvetica","bold")
+    doc.text("klaro.services/pulse  ·  Monthly monitoring from $49/month", W/2, y+23, {align:"center"})
+
+    addFooter()
 
     const filename = `klaro-pulse-${name.replace(/[^a-z0-9]/gi,"-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.pdf`
     doc.save(filename)
