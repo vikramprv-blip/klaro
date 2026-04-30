@@ -86,6 +86,201 @@ export default function PulsePage() {
     </div>
   )
 
+  async function downloadPDF(log: any) {
+    const r = log.metadata?.full_report || {}
+    const name = log.metadata?.target_name || (()=>{ try{ return new URL(log.url||"").hostname }catch{ return log.url||"Unknown" }})()
+    const score = r.authority_score || 0
+    const scoreColor = score>=75?"#10b981":score>=50?"#f59e0b":"#ef4444"
+    const date = new Date().toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"})
+
+    // Dynamic import jspdf
+    const { jsPDF } = await import("jspdf")
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
+    const W = 210, margin = 18, contentW = W - margin * 2
+    let y = 0
+
+    // Header bar
+    doc.setFillColor(15, 20, 32)
+    doc.rect(0, 0, W, 28, "F")
+    doc.setTextColor(255,255,255)
+    doc.setFontSize(16)
+    doc.setFont("helvetica","bold")
+    doc.text("KLARO PULSE", margin, 13)
+    doc.setTextColor(99,102,241)
+    doc.text(" INTELLIGENCE", margin + 35, 13)
+    doc.setTextColor(180,180,180)
+    doc.setFontSize(8)
+    doc.setFont("helvetica","normal")
+    doc.text("klaro.services/pulse", margin, 21)
+    doc.text(date, W - margin, 21, { align: "right" })
+    y = 38
+
+    // Site name + score
+    doc.setTextColor(15,20,32)
+    doc.setFontSize(20)
+    doc.setFont("helvetica","bold")
+    doc.text(name, margin, y)
+    y += 7
+    doc.setFontSize(10)
+    doc.setFont("helvetica","normal")
+    doc.setTextColor(100,116,139)
+    doc.text(log.url || "", margin, y)
+    y += 12
+
+    // Score circle area
+    doc.setFillColor(...(score>=75?[5,46,22]:score>=50?[28,21,5]:[28,5,5]))
+    doc.roundedRect(margin, y, 50, 28, 4, 4, "F")
+    doc.setTextColor(...(score>=75?[16,185,129]:score>=50?[245,158,11]:[248,113,113]))
+    doc.setFontSize(28)
+    doc.setFont("helvetica","bold")
+    doc.text(String(score), margin + 25, y + 18, { align: "center" })
+    doc.setFontSize(9)
+    doc.setFont("helvetica","normal")
+    doc.text("/100 Overall", margin + 25, y + 24, { align: "center" })
+
+    // Sub scores
+    const scores = [
+      ["Trust", r.trust_score||0],
+      ["Conversion", r.conversion_score||0],
+      ["HTTPS", (log.url||"").startsWith("https")?100:0],
+      ["Mobile", r.mobile_readiness==="Good"?90:r.mobile_readiness==="Needs Work"?60:30],
+    ]
+    let sx = margin + 58
+    scores.forEach(([label, val]) => {
+      const c = (val as number)>=75?[16,185,129]:(val as number)>=50?[245,158,11]:[248,113,113]
+      doc.setFillColor(20,28,42)
+      doc.roundedRect(sx, y, 28, 28, 3, 3, "F")
+      doc.setTextColor(...c as [number,number,number])
+      doc.setFontSize(14)
+      doc.setFont("helvetica","bold")
+      doc.text(String(val), sx+14, y+14, { align:"center" })
+      doc.setFontSize(7)
+      doc.setFont("helvetica","normal")
+      doc.setTextColor(100,116,139)
+      doc.text(label as string, sx+14, y+22, { align:"center" })
+      sx += 31
+    })
+    y += 36
+
+    // Summary
+    doc.setFillColor(241,245,249)
+    doc.roundedRect(margin, y, contentW, 22, 3, 3, "F")
+    doc.setTextColor(30,41,59)
+    doc.setFontSize(9)
+    doc.setFont("helvetica","normal")
+    const summaryLines = doc.splitTextToSize(r.novice_summary || "No summary available.", contentW - 8)
+    doc.text(summaryLines.slice(0,3), margin+4, y+7)
+    y += 28
+
+    // Competitive insight
+    if (r.competitor_advantage) {
+      doc.setFillColor(254,243,199)
+      doc.roundedRect(margin, y, contentW, 14, 3, 3, "F")
+      doc.setTextColor(146,64,14)
+      doc.setFontSize(8)
+      doc.setFont("helvetica","bold")
+      doc.text("💡 Competitive Insight:", margin+4, y+6)
+      doc.setFont("helvetica","normal")
+      const insightLines = doc.splitTextToSize(r.competitor_advantage, contentW - 45)
+      doc.text(insightLines[0], margin+42, y+6)
+      if (insightLines[1]) doc.text(insightLines[1], margin+4, y+11)
+      y += 20
+    }
+
+    // Pills row
+    const pills = [
+      r.mobile_readiness && `📱 Mobile: ${r.mobile_readiness}`,
+      r.pricing_clarity && `💰 Pricing: ${r.pricing_clarity}`,
+      r.cta_effectiveness && `🎯 CTA: ${r.cta_effectiveness}`,
+      r.load_time_ms && `⚡ Load: ${(r.load_time_ms/1000).toFixed(1)}s`,
+      r.industry && `🏢 ${r.industry}`,
+    ].filter(Boolean)
+    let px = margin
+    pills.forEach(pill => {
+      doc.setFillColor(30,45,70)
+      doc.setTextColor(180,190,220)
+      doc.setFontSize(7)
+      const pw = doc.getTextWidth(pill as string) + 6
+      doc.roundedRect(px, y, pw, 7, 2, 2, "F")
+      doc.text(pill as string, px+3, y+5)
+      px += pw + 3
+    })
+    y += 14
+
+    // Three columns — Problems, Fixes, Opportunities
+    const cols = [
+      { title: "🔴 Problems Found", color: [239,68,68] as [number,number,number], bg: [28,5,5] as [number,number,number], items: r.ux_friction_points||[] },
+      { title: "🟢 How to Fix", color: [16,185,129] as [number,number,number], bg: [5,46,22] as [number,number,number], items: r.resolution_steps||[] },
+      { title: "💰 Revenue Opportunities", color: [245,158,11] as [number,number,number], bg: [28,21,5] as [number,number,number], items: r.revenue_opportunities||[] },
+    ]
+    const colW = (contentW - 8) / 3
+    const colStartY = y
+
+    cols.forEach((col, ci) => {
+      let cy = colStartY
+      const cx = margin + ci * (colW + 4)
+      doc.setTextColor(...col.color)
+      doc.setFontSize(8)
+      doc.setFont("helvetica","bold")
+      doc.text(col.title, cx, cy)
+      cy += 6
+      col.items.slice(0,4).forEach((item: string) => {
+        doc.setFillColor(...col.bg)
+        const lines = doc.splitTextToSize(item, colW - 4)
+        const h = lines.length * 4 + 4
+        doc.roundedRect(cx, cy, colW, h, 2, 2, "F")
+        doc.setTextColor(200,210,220)
+        doc.setFontSize(7)
+        doc.setFont("helvetica","normal")
+        doc.text(lines, cx+2, cy+4)
+        cy += h + 2
+      })
+    })
+
+    // Find max column height
+    const maxColH = Math.max(...cols.map(col => {
+      let h = 6
+      col.items.slice(0,4).forEach((item: string) => {
+        const lines = doc.splitTextToSize(item, colW - 4)
+        h += lines.length * 4 + 4 + 2
+      })
+      return h
+    }))
+    y = colStartY + maxColH + 10
+
+    // Strengths
+    if ((r.strengths||[]).length > 0) {
+      doc.setTextColor(99,102,241)
+      doc.setFontSize(9)
+      doc.setFont("helvetica","bold")
+      doc.text("✓ What They Do Well", margin, y)
+      y += 6
+      ;(r.strengths||[]).slice(0,3).forEach((s: string) => {
+        doc.setFillColor(15,26,58)
+        const lines = doc.splitTextToSize(`✓ ${s}`, contentW - 4)
+        doc.roundedRect(margin, y, contentW, lines.length*4+4, 2, 2, "F")
+        doc.setTextColor(147,151,255)
+        doc.setFontSize(7)
+        doc.setFont("helvetica","normal")
+        doc.text(lines, margin+2, y+4)
+        y += lines.length*4+6
+      })
+    }
+
+    // Footer
+    doc.setFillColor(15,20,32)
+    doc.rect(0, 285, W, 12, "F")
+    doc.setTextColor(100,116,139)
+    doc.setFontSize(7)
+    doc.text("Generated by Klaro Pulse — klaro.services/pulse", margin, 292)
+    doc.text(`© ${new Date().getFullYear()} Klaro Global · Confidential`, W-margin, 292, { align:"right" })
+
+    // Save
+    const filename = `klaro-pulse-${name.replace(/[^a-z0-9]/gi,"-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.pdf`
+    doc.save(filename)
+    console.log(`PDF saved: ${filename}`)
+  }
+
   async function triggerScan(url = "") {
     const res = await fetch("/api/pulse/trigger", {
       method: "POST",
@@ -434,6 +629,9 @@ ${r.competitor_advantage?`<div class="sec">⚔ Competitive Insight</div><div cla
                       </button>
                       <button onClick={()=>saveReport(log)} className="text-xs text-slate-500 border border-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-800 hover:text-white">
                         💾 Save Report
+                      </button>
+                      <button onClick={()=>downloadPDF(log)} className="text-xs text-indigo-400 border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 rounded-lg hover:bg-indigo-500/20">
+                        ⬇ Download PDF
                       </button>
                       <button onClick={async()=>{
                         setStatus({msg:`⏳ Re-scanning ${log.url}...`,type:"scanning"})
