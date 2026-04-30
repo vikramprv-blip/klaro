@@ -1,9 +1,9 @@
 {
   "rewrites": [
-    { "source": "/pulse", "destination": "/public/pulse.html" },
-    { "source": "/pulse/signin", "destination": "/public/signin.html" },
-    { "source": "/pulse/signup", "destination": "/public/signup.html" },
-    { "source": "/pulse/dashboard", "destination": "/public/ops.html" },
-    { "source": "/pulse/ops", "destination": "/public/ops.html" }
+    { "source": "/pulse", "destination": "/pulse.html" },
+    { "source": "/pulse/signin", "destination": "/signin.html" },
+    { "source": "/pulse/signup", "destination": "/signup.html" },
+    { "source": "/pulse/dashboard", "destination": "/ops.html" },
+    { "source": "/pulse/ops", "destination": "/ops.html" }
   ]
 }
