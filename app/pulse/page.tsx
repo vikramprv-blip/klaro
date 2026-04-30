@@ -677,7 +677,7 @@ ${r.competitor_advantage?`<div class="sec">⚔ Competitive Insight</div><div cla
                         <div className="flex items-center gap-3 mb-1 flex-wrap">
                           <span className="text-white font-black text-lg">{name}</span>
                           <a href={log.url||"#"} target="_blank" className="text-slate-600 text-xs hover:text-slate-400">{log.url}</a>
-                          {isV2&&<span className="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-bold">v2</span>}
+                          {isV2&&<span className="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-bold">{r.report_type==='LAM'?'🤖 LAM':'v2'}</span>}
                           {isAdmin&&log.triggered_by_email&&<span className="text-xs text-amber-400/60">by {log.triggered_by_email}</span>}
                         </div>
                         <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{eb.plain_english_summary||r.novice_summary||log.reasoning||"—"}</p>
