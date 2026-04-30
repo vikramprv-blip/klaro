@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   // Trigger GitHub Action
   const ghRes = await fetch(
-    `https://api.github.com/repos/vikramprv-blip/klaro/actions/workflows/pulse.yml/dispatches`,
+    `https://api.github.com/repos/vikramprv-blip/klaro-pulse/actions/workflows/pulse.yml/dispatches`,
     {
       method: 'POST',
       headers: {
