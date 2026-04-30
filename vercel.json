@@ -1,11 +1,11 @@
 {
   "rewrites": [
     {
-      "source": "/klaro-pulse",
+      "source": "/pulse",
       "destination": "https://klaro-pulse.vercel.app/index.html"
     },
     {
-      "source": "/klaro-pulse/:path*",
+      "source": "/pulse/:path*",
       "destination": "https://klaro-pulse.vercel.app/:path*"
     }
   ]
