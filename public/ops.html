@@ -232,8 +232,9 @@ let sb, allLogs = [], activeFilter = 'all', scanMode = 'single';
 // Auth
 document.addEventListener('DOMContentLoaded', auth);
 
+const sb = createClient(SB_URL, SB_KEY_ANON);
+
 async function auth() {
-  sb = createClient(SB_URL, SB_KEY_ANON);
   const { data: { session } } = await sb.auth.getSession();
   if (!session) {
     window.location.href = '/pulse/signin';
