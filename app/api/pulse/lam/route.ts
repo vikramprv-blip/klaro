@@ -10,26 +10,24 @@ export async function POST(req: NextRequest) {
   const { url, user_id } = await req.json()
   if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 })
 
-  // Check trial/subscription
-  const { data: trial } = await supabase
-    .from('trials')
-    .select('*')
-    .eq('user_id', user_id)
-    .single()
+  // Get user email for admin check
+  const { data: { user } } = await supabase.auth.admin.getUserById(user_id)
+  const isAdmin = user?.email === process.env.ADMIN_EMAIL || user?.email === 'vikramprv@gmail.com'
 
-  const { data: sub } = await supabase
-    .from('subscriptions')
-    .select('*, plans(*)')
-    .eq('user_id', user_id)
-    .eq('status', 'active')
-    .single()
+  if (!isAdmin) {
+    // Check trial/subscription for non-admin
+    const { data: trial } = await supabase
+      .from('trials').select('*').eq('user_id', user_id).single()
+    const { data: sub } = await supabase
+      .from('subscriptions').select('*, plans(*)').eq('user_id', user_id).eq('status', 'active').single()
 
-  const now = new Date()
-  const trialActive = trial && new Date(trial.ends_at) > now
-  const hasLAM = sub?.plans?.lam_monitoring || sub?.plans?.lam_audits > 0
+    const now = new Date()
+    const trialActive = trial && new Date(trial.ends_at) > now
+    const hasLAM = sub?.plans?.lam_monitoring || sub?.plans?.lam_audits > 0
 
-  if (!trialActive && !hasLAM) {
-    return NextResponse.json({ error: 'LAM not included in your plan' }, { status: 403 })
+    if (!trialActive && !hasLAM) {
+      return NextResponse.json({ error: 'LAM not included in your plan' }, { status: 403 })
+    }
   }
 
   // Create pending run in Supabase
@@ -51,10 +49,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         ref: 'main',
-        inputs: {
-          target_url: url,
-          scan_mode: 'lam'
-        }
+        inputs: { target_url: url, scan_mode: 'lam' }
       })
     }
   )
