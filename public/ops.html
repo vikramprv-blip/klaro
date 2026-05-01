@@ -51,6 +51,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .scan-input::placeholder{color:#334155}
 .scan-status{font-size:12px;padding:8px 14px;border-radius:8px;margin-top:10px;display:none}
 .scan-status.scanning{display:block;background:#1e2d4a;color:#818cf8;border:1px solid #3b4fd8}
+.progress-wrap{margin-top:10px;background:#0a0f1a;border-radius:20px;overflow:hidden;height:6px}
+.progress-bar{height:6px;border-radius:20px;background:linear-gradient(90deg,#6366f1,#8b5cf6,#06b6d4);background-size:200% 100%;animation:progress-shift 2s linear infinite;transition:width 1s ease}
+.progress-steps{display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:#475569}
+.progress-step{display:flex;align-items:center;gap:4px}
+.progress-step.done{color:#4ade80}
+.progress-step.active{color:#818cf8;font-weight:700}
+@keyframes progress-shift{0%{background-position:0% 0}100%{background-position:200% 0}}
 .scan-status.success{display:block;background:#052e16;color:#4ade80;border:1px solid #166534}
 .scan-status.error{display:block;background:#1c0505;color:#f87171;border:1px solid #991b1b}
 
@@ -218,6 +225,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <!-- Reports -->
     <div id="reports-container">
       <div class="loading-pulse"><div class="spinner"></div><div style="font-size:13px;color:#334155">Loading reports...</div></div>
+      <div id="scan-progress-wrap" style="display:none;background:#0f1420;border:1px solid #1e2a3a;border-radius:12px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:#818cf8" id="progress-label">⏳ Initialising scan...</div>
+          <div style="font-size:12px;color:#475569" id="progress-pct">0%</div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+        </div>
+        <div class="progress-steps" id="progress-steps">
+          <div class="progress-step" id="pstep-1"><span>🔍</span> Fetching</div>
+          <div class="progress-step" id="pstep-2"><span>🤖</span> AI Analysis</div>
+          <div class="progress-step" id="pstep-3"><span>🔒</span> Security</div>
+          <div class="progress-step" id="pstep-4"><span>📊</span> Scoring</div>
+          <div class="progress-step" id="pstep-5"><span>✅</span> Complete</div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -289,6 +312,81 @@ async function triggerScan(target_url = '') {
     body: JSON.stringify({ target_url })
   });
   return res.json();
+}
+
+// ── Progress Bar ──
+let progressInterval = null;
+
+function startProgress(durationMs = 240000) { // 4 min default
+  const wrap = document.getElementById('scan-progress-wrap');
+  const bar = document.getElementById('progress-bar');
+  const label = document.getElementById('progress-label');
+  const pct = document.getElementById('progress-pct');
+  if (!wrap) return;
+
+  wrap.style.display = 'block';
+  const steps = [
+    { at: 0,   label: '🔍 Fetching site content...', step: 1 },
+    { at: 15,  label: '🤖 Running AI analysis...', step: 2 },
+    { at: 40,  label: '🔒 Security & compliance check...', step: 3 },
+    { at: 65,  label: '📊 Calculating scores...', step: 4 },
+    { at: 85,  label: '📝 Generating report...', step: 4 },
+    { at: 95,  label: '⏳ Finalising results...', step: 4 },
+  ];
+
+  const start = Date.now();
+  clearInterval(progressInterval);
+
+  progressInterval = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const rawPct = Math.min((elapsed / durationMs) * 100, 97);
+    // Ease the progress - fast at start, slow at end
+    const easedPct = rawPct < 50 ? rawPct * 1.2 : 60 + (rawPct - 50) * 0.74;
+    const finalPct = Math.min(Math.round(easedPct), 97);
+
+    bar.style.width = finalPct + '%';
+    pct.textContent = finalPct + '%';
+
+    // Update label based on progress
+    const currentStep = steps.filter(s => finalPct >= s.at).pop();
+    if (currentStep) {
+      label.textContent = currentStep.label;
+      // Update step indicators
+      for (let i = 1; i <= 5; i++) {
+        const el = document.getElementById('pstep-' + i);
+        if (!el) continue;
+        if (i < currentStep.step) el.className = 'progress-step done';
+        else if (i === currentStep.step) el.className = 'progress-step active';
+        else el.className = 'progress-step';
+      }
+    }
+  }, 500);
+}
+
+function completeProgress() {
+  clearInterval(progressInterval);
+  const bar = document.getElementById('progress-bar');
+  const label = document.getElementById('progress-label');
+  const pct = document.getElementById('progress-pct');
+  const wrap = document.getElementById('scan-progress-wrap');
+  if (!bar) return;
+  bar.style.width = '100%';
+  if (pct) pct.textContent = '100%';
+  if (label) label.textContent = '✅ Scan complete! Loading results...';
+  // Mark all steps done
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('pstep-' + i);
+    if (el) el.className = 'progress-step done';
+  }
+  setTimeout(() => { if (wrap) wrap.style.display = 'none'; }, 3000);
+}
+
+function resetProgress() {
+  clearInterval(progressInterval);
+  const wrap = document.getElementById('scan-progress-wrap');
+  const bar = document.getElementById('progress-bar');
+  if (wrap) wrap.style.display = 'none';
+  if (bar) bar.style.width = '0%';
 }
 
 function showStatus(msg, type) {
@@ -440,7 +538,7 @@ function renderReports(logs) {
         <div class="card-site">
           <div class="card-name">${name}</div>
           <a href="${log.url||'#'}" target="_blank" class="card-url">${log.url||'—'}</a>
-          <div class="card-time">${ago(log.created_at)} · ${log.status}</div>
+          <div class="card-time">${ago(log.created_at)} · <span style='color:${log.status==="ERROR"||log.status==="DEGRADED"?"#f87171":log.status==="COMPLETE"?"#4ade80":"#fbbf24"}'>${log.status}</span></div>
         </div>
         <div class="card-score">
           <div class="score-circle" style="border-color:${scBorder(score)};color:${sc(score)}">
@@ -1445,6 +1543,7 @@ async function runLAM() {
   btn.textContent = 'Starting...';
   status.style.display = 'block';
   status.textContent = '⚡ Triggering LAM audit... GitHub Action starting in ~10 seconds';
+  startProgress(1200000); // 20 min for LAM
 
   try {
     const session = await sb.auth.getSession();
@@ -1461,14 +1560,41 @@ async function runLAM() {
       status.style.color = '#f87171';
       status.textContent = '❌ ' + (data.error || 'Failed to start LAM audit');
     } else {
+      completeProgress();
       status.textContent = '✅ LAM audit started! Run ID: ' + data.run_id + ' — Check back in 20-30 minutes for results.';
       loadLAMRuns();
     }
   } catch(e) {
+    resetProgress();
     status.textContent = '❌ Error: ' + e.message;
   }
   btn.disabled = false;
   btn.textContent = '⚡ Run LAM Audit';
+}
+
+function toggleLAMDetail(btn, id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isHidden = el.style.display === 'none' || !el.style.display;
+  el.style.display = isHidden ? 'block' : 'none';
+  btn.textContent = isHidden ? '▲ Hide details' : '▼ View full report';
+}
+
+async function retryLAM(url) {
+  const session = await sb.auth.getSession();
+  const user_id = session.data.session?.user?.id;
+  const res = await fetch('/api/pulse/lam', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, user_id })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    alert('LAM scan restarted for ' + url);
+    loadLAMRuns();
+  } else {
+    alert('Failed to restart: ' + (data.error || 'Unknown error'));
+  }
 }
 
 async function loadLAMRuns() {
@@ -1576,11 +1702,23 @@ async function loadLAMRuns() {
       <!-- Actions -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
         ${r.status === 'complete' ? `
-          <button onclick="document.getElementById('lam-detail-${idx}').style.display=document.getElementById('lam-detail-${idx}').style.display==='none'?'block':'none';this.textContent=this.textContent.includes('View')?'▲ Hide details':'▼ View full report'" style="padding:6px 14px;background:#1e2d4a;color:#818cf8;border:1px solid #3b4fd8;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">▼ View full report</button>
+          <button onclick="toggleLAMDetail(this,'lam-detail-${idx}')" style="padding:6px 14px;background:#1e2d4a;color:#818cf8;border:1px solid #3b4fd8;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">▼ View full report</button>
           <button onclick="downloadLAMReport('${r.id}')" style="padding:6px 14px;background:#1a1040;color:#a78bfa;border:1px solid #4c1d95;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">⬇ Download PDF</button>
         ` : ''}
         ${r.status === 'pending' || r.status === 'running' ? `
-          <button onclick="cancelLAM('${r.id}','${r.gh_run_id||''}')" style="padding:6px 16px;background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">✕ Cancel</button>
+          <div style="display:flex;align-items:center;gap:8px;width:100%">
+            <div style="flex:1;background:#0a0f1a;border-radius:20px;overflow:hidden;height:4px">
+              <div style="height:4px;border-radius:20px;background:linear-gradient(90deg,#6366f1,#8b5cf6);background-size:200%;animation:progress-shift 2s linear infinite;width:60%"></div>
+            </div>
+            <span style="font-size:11px;color:#a78bfa;font-weight:700">Running...</span>
+            <button onclick="cancelLAM('${r.id}','${r.gh_run_id||''}')" style="padding:5px 14px;background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">✕ Cancel Scan</button>
+          </div>
+        ` : ''}
+        ${r.status === 'error' || r.status === 'cancelled' ? `
+          <div style="width:100%;background:#1c0505;border:1px solid #7f1d1d;border-radius:8px;padding:8px 12px;font-size:11px;color:#f87171">
+            ${r.status === 'cancelled' ? '✕ Scan was cancelled' : '❌ Scan failed — ' + (r.error_message||'Unknown error. Try running again.')}
+          </div>
+          <button onclick="retryLAM('${r.url}')" style="padding:5px 14px;background:#1e2d4a;color:#818cf8;border:1px solid #3b4fd8;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">↺ Retry Scan</button>
         ` : ''}
       </div>
     </div>
