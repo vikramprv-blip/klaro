@@ -568,6 +568,86 @@ function setMode(mode, btn) {
   if (btn) btn.classList.add('active');
 }
 
+
+// ── Plan Management ──
+const MASTER_ADMIN = 'vikramprv@gmail.com';
+let userPlan = null;
+let userEmail = null;
+
+const PLAN_FEATURES = {
+  single_report:  { scans: 1,      compare: false, batch: false, lam: false, competitors: 2 },
+  starter:        { scans: 5,      compare: true,  batch: false, lam: false, competitors: 2 },
+  growth:         { scans: 20,     compare: true,  batch: true,  lam: false, competitors: 3 },
+  agency:         { scans: 999999, compare: true,  batch: true,  lam: false, competitors: 5 },
+  lam_one_off:    { scans: 0,      compare: false, batch: false, lam: true,  lam_runs: 1 },
+  lam_monthly:    { scans: 0,      compare: true,  batch: false, lam: true,  lam_runs: 999, lam_compare: true },
+  soc_monthly:    { scans: 0,      compare: false, batch: false, lam: true,  lam_runs: 999 },
+  lam_soc_bundle: { scans: 0,      compare: true,  batch: false, lam: true,  lam_runs: 999, lam_compare: true },
+  trial:          { scans: 5,      compare: true,  batch: false, lam: false, competitors: 2 },
+  admin:          { scans: 999999, compare: true,  batch: true,  lam: true,  competitors: 5, lam_runs: 999, lam_compare: true }
+};
+
+async function loadUserPlan() {
+  const { data: { session } } = await sb.auth.getSession();
+  userEmail = session?.user?.email;
+  if (userEmail === MASTER_ADMIN) {
+    userPlan = 'admin';
+    showPlanBadge('Admin', '#6366f1');
+    return;
+  }
+  const { data: sub } = await sb.from('subscriptions').select('plan_id,status').eq('user_id', session.user.id).eq('status','active').order('created_at',{ascending:false}).limit(1).maybeSingle();
+  if (sub) { userPlan = sub.plan_id; showPlanBadge(sub.plan_id.replace(/_/g,' '), '#4ade80'); applyPlanRestrictions(); return; }
+  const { data: trial } = await sb.from('trials').select('ends_at,plan_id').eq('user_id', session.user.id).maybeSingle();
+  if (trial && new Date(trial.ends_at) > new Date()) {
+    userPlan = 'trial';
+    const daysLeft = Math.ceil((new Date(trial.ends_at) - new Date()) / 86400000);
+    showPlanBadge(`Trial (${daysLeft}d left)`, '#fbbf24');
+    applyPlanRestrictions();
+    return;
+  }
+  userPlan = null;
+  showPlanBadge('No Active Plan', '#f87171');
+  applyPlanRestrictions();
+}
+
+function showPlanBadge(label, color) {
+  const el = document.getElementById('u-email');
+  if (el) el.innerHTML += ` <span style="font-size:10px;background:${color}22;color:${color};border:1px solid ${color}44;border-radius:10px;padding:1px 8px;font-weight:700">${label}</span>`;
+}
+
+function canAccess(feature) {
+  if (!userPlan) return false;
+  const plan = PLAN_FEATURES[userPlan] || PLAN_FEATURES.trial;
+  return !!plan[feature];
+}
+
+function applyPlanRestrictions() {
+  const plan = PLAN_FEATURES[userPlan] || {};
+  if (!plan.compare) {
+    document.querySelectorAll('[onclick*="compare"]').forEach(b => { b.style.opacity='0.4'; b.style.cursor='not-allowed'; b.onclick=()=>showUpgradePrompt('Compare mode requires Starter plan or higher'); });
+  }
+  if (!plan.batch) {
+    document.querySelectorAll('[onclick*="batch"]').forEach(b => { b.style.opacity='0.4'; b.style.cursor='not-allowed'; b.onclick=()=>showUpgradePrompt('Batch scanning requires Growth plan or higher'); });
+  }
+  if (!plan.lam) {
+    document.querySelectorAll('[onclick*="lam"]').forEach(b => { b.style.opacity='0.4'; b.style.cursor='not-allowed'; b.onclick=()=>showUpgradePrompt('LAM Audit requires LAM One-Off ($299) or LAM Monthly ($499/mo)'); });
+  }
+}
+
+function showUpgradePrompt(message) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999';
+  modal.innerHTML = `<div style="background:#0f1420;border:1px solid #3b4fd8;border-radius:20px;padding:32px;max-width:420px;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">🔒</div>
+    <div style="font-size:16px;font-weight:700;color:white;margin-bottom:8px">Upgrade Required</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:24px">${message}</div>
+    <a href="/pulse#pricing" style="display:block;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border-radius:10px;font-weight:700;text-decoration:none;margin-bottom:10px">View Pricing →</a>
+    <button onclick="this.closest('div[style*=fixed]').remove()" style="padding:8px 20px;background:transparent;border:1px solid #1e2a3a;color:#64748b;border-radius:8px;cursor:pointer;font-size:12px">Maybe Later</button>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+}
+
 async function downloadLAMReport(runId) {
   const { data, error } = await sb.from('lam_runs').select('*').eq('id', runId).single();
   if (error || !data) return alert('LAM report not found');
