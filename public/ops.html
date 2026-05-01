@@ -529,7 +529,23 @@ function renderReports(logs) {
 
   container.innerHTML = logs.map((log, idx) => {
     const r = log.metadata?.full_report || {};
-    const name = log.metadata?.target_name || log.metadata?.full_report?.target_audience?.split(' ')[0] || (() => { try { return new URL(log.url||'').hostname; } catch { return log.url||'Unknown'; } })();
+    const name = (() => {
+      // Try to get a clean company name
+      const tn = log.metadata?.target_name || '';
+      const url = log.url || '';
+      try {
+        const host = new URL(url).hostname.replace('www.','');
+        const parts = host.split('.');
+        const raw = parts[0];
+        // Capitalise and clean: housecallpro -> HouseCallPro, legalzoom -> LegalZoom
+        const clean = raw.replace(/([a-z])([A-Z])/g,'$1 $2')
+                        .replace(/-/g,' ')
+                        .split(' ')
+                        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                        .join(' ');
+        return clean || host;
+      } catch { return tn || url; }
+    })();
     const score = r.overall_score || 0;
     const trust = r.ux_conversion_audit?.trust_score || 0;
     const conv = r.ux_conversion_audit?.conversion_score || 0;
