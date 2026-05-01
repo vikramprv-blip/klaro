@@ -195,11 +195,48 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
       <!-- Batch mode -->
       <div id="mode-batch" style="display:none">
-        <div style="font-size:13px;color:#64748b;margin-bottom:12px">Scans all active targets in your database. Currently <span id="target-count" style="color:white;font-weight:700">—</span> targets queued.</div>
+        <div style="font-size:13px;color:#64748b;margin-bottom:10px">Paste URLs to scan — one per line, or scan all saved targets.</div>
+        <textarea class="scan-input" id="urls-batch" placeholder="https://site1.com&#10;https://site2.com&#10;https://site3.com&#10;&#10;Leave empty to scan all saved targets" style="height:100px;resize:vertical;font-size:13px;margin-bottom:8px"></textarea>
         <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn btn-primary" id="btn-batch" onclick="scanBatch()">▶ Run Full Batch Scan</button>
-          <div style="font-size:11px;color:#334155">Takes 10-30 min depending on number of sites · Runs on GitHub Actions (free)</div>
+          <button class="btn btn-primary" id="btn-batch" onclick="scanBatch()">▶ Run Batch Scan</button>
+          <div style="font-size:11px;color:#334155">Takes 3-5 min per site · Runs on GitHub Actions (free)</div>
         </div>
+      </div>
+
+      <!-- LAM mode -->
+      <div id="mode-lam" style="display:none">
+        <div style="font-size:11px;color:#a78bfa;margin-bottom:10px;font-weight:600">⚡ LAM Agent visits your site as a real human client — tests UX, ADA, SOC, auth flow. Takes 20-30 min per site.</div>
+        <!-- LAM sub-tabs -->
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <button id="lam-mode-single" onclick="setLAMMode('single')" style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:#1e2d4a;color:#818cf8;border:1px solid #3b4fd8">Single Audit</button>
+          <button id="lam-mode-compare" onclick="setLAMMode('compare')" style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:#64748b;border:1px solid #1e2a3a">Compare (2-5 sites)</button>
+          <button id="lam-mode-batch" onclick="setLAMMode('batch')" style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:#64748b;border:1px solid #1e2a3a">Batch</button>
+        </div>
+        <!-- Single LAM -->
+        <div id="lam-panel-single">
+          <div style="display:flex;gap:8px">
+            <input class="scan-input" id="url-lam" type="url" placeholder="https://competitor.com — LAM will visit and audit as a human would..."/>
+            <button class="btn btn-primary" id="btn-lam" onclick="runLAM()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);white-space:nowrap">⚡ Run LAM</button>
+          </div>
+        </div>
+        <!-- Compare LAM -->
+        <div id="lam-panel-compare" style="display:none">
+          <div style="font-size:12px;color:#a78bfa;margin-bottom:8px">Enter 2-5 competitor URLs to compare side by side</div>
+          <div id="lam-compare-inputs">
+            <input class="scan-input" placeholder="https://competitor1.com" style="margin-bottom:6px"/>
+            <input class="scan-input" placeholder="https://competitor2.com" style="margin-bottom:6px"/>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button onclick="addLAMCompareRow()" style="padding:6px 14px;background:transparent;border:1px solid #1e2a3a;color:#64748b;border-radius:8px;font-size:11px;cursor:pointer">+ Add site</button>
+            <button onclick="runLAMCompare()" style="padding:6px 20px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">⚡ Run LAM Compare</button>
+          </div>
+        </div>
+        <!-- Batch LAM -->
+        <div id="lam-panel-batch" style="display:none">
+          <textarea class="scan-input" id="urls-batch-lam" placeholder="https://site1.com&#10;https://site2.com&#10;https://site3.com" style="height:100px;resize:vertical;font-size:13px"></textarea>
+          <button onclick="runBatchLAM()" style="margin-top:8px;width:100%;padding:10px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">⚡ Run Batch LAM Audit</button>
+        </div>
+        <div class="scan-status" id="lam-status" style="margin-top:10px"></div>
       </div>
 
       <div class="scan-status" id="scan-status"></div>
@@ -222,6 +259,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="filter-btn" onclick="applyFilter('DOWN',this)">Critical (&lt;50)</button>
       <button class="filter-btn" onclick="applyFilter('ERROR',this)">Errors</button>
       <input id="search-input" placeholder="Search sites..." oninput="applySearch()"/>
+    </div>
+
+    <!-- LAM Results -->
+    <div id="lam-results" style="display:none;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:12px">⚡ LAM Audit Results</div>
+      <div id="lam-runs-list"></div>
     </div>
 
     <!-- Reports -->
@@ -284,10 +327,21 @@ async function logout() {
 function setMode(mode, el) {
   scanMode = mode;
   document.querySelectorAll('.scan-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('mode-single').style.display = mode==='single' ? 'block' : 'none';
-  document.getElementById('mode-compare').style.display = mode==='compare' ? 'block' : 'none';
-  document.getElementById('mode-batch').style.display = mode==='batch' ? 'block' : 'none';
+  if (el) el.classList.add('active');
+  ['single','compare','batch','lam'].forEach(m => {
+    const panel = document.getElementById('mode-'+m);
+    if (panel) panel.style.display = m === mode ? 'block' : 'none';
+  });
+  const lamResults = document.getElementById('lam-results');
+  const reports = document.getElementById('reports-container');
+  if (mode === 'lam') {
+    if (lamResults) lamResults.style.display = 'block';
+    if (reports) reports.style.display = 'none';
+    loadLAMRuns();
+  } else {
+    if (lamResults) lamResults.style.display = 'none';
+    if (reports) reports.style.display = 'block';
+  }
   clearStatus();
 }
 
@@ -445,12 +499,32 @@ async function scanCompare() {
 
 async function scanBatch() {
   const btn = document.getElementById('btn-batch');
-  btn.disabled = true; btn.textContent = 'Triggering batch...';
-  showStatus('⏳ Full batch scan triggered — all targets will be scanned over the next 10-30 minutes...', 'scanning');
-  const data = await triggerScan('');
-  btn.disabled = false; btn.textContent = '▶ Run Full Batch Scan';
-  if (data.ok) showStatus(`✅ ${data.message}`, 'success');
-  else showStatus(`❌ ${data.error || 'Failed. Check GITHUB_PAT in Vercel env vars.'}`, 'error');
+  const textarea = document.getElementById('urls-batch');
+  const rawUrls = textarea ? textarea.value.trim() : '';
+  btn.disabled = true; btn.textContent = 'Queuing...';
+  if (rawUrls) {
+    const urls = rawUrls.split('\n').map(u => u.trim()).filter(u => u.startsWith('http'));
+    if (!urls.length) { showStatus('No valid URLs found', 'error'); btn.disabled=false; btn.textContent='▶ Run Batch Scan'; return; }
+    showStatus(`⏳ Queuing ${urls.length} scans...`, 'scanning');
+    startProgress(urls.length * 30000);
+    let ok = 0;
+    for (const url of urls) {
+      const res = await fetch('/api/pulse/trigger', { method:'POST', headers:{'Content-Type':'application/json','x-admin-key':SB_KEY_ANON}, body:JSON.stringify({target_url:url,scan_mode:'standard'}) });
+      const d = await res.json();
+      if (d.ok) ok++;
+      await new Promise(r => setTimeout(r, 2000));
+    }
+    completeProgress();
+    showStatus(`✅ ${ok}/${urls.length} scans queued — results in 3-5 min each`, 'success');
+  } else {
+    showStatus('⏳ Full batch scan triggered...', 'scanning');
+    startProgress(300000);
+    const data = await triggerScan('');
+    completeProgress();
+    if (data.ok) showStatus(`✅ ${data.message}`, 'success');
+    else showStatus(`❌ ${data.error||'Failed'}`, 'error');
+  }
+  btn.disabled = false; btn.textContent = '▶ Run Batch Scan';
 }
 
 // Load & render
@@ -684,14 +758,7 @@ function shareReport(url, name, score) {
 }
 
 // LAM Functions
-function setMode(mode, btn) {
-  ['single','compare','batch','lam'].forEach(m => {
-    const el = document.getElementById('mode-'+m);
-    if (el) el.style.display = m === mode ? 'block' : 'none';
-  });
-  document.querySelectorAll('.scan-tab').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-}
+// setMode defined above
 
 
 // ── Plan Management ──
