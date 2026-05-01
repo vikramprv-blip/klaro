@@ -484,15 +484,15 @@ function renderReports(logs) {
         <div class="card-grid">
           <div class="detail-col">
             <h4 style="color:#f87171"><span>🔴</span> Problems Found</h4>
-            ${(r.ux_conversion_audit?.friction_points || []||[]).length ? (r.ux_conversion_audit?.friction_points || []||[]).map(p=>`<div class="detail-item">⚠ ${p}</div>`).join('') : '<div class="detail-item" style="color:#334155">None detected</div>'}
+            ${(r.ux_conversion_audit?.friction_points||r.ux_conversion_audit?.quick_wins||[]).length ? (r.ux_conversion_audit?.friction_points||r.ux_conversion_audit?.quick_wins||[]).map(p=>`<div class="detail-item">⚠ ${typeof p === 'object' ? p.issue||JSON.stringify(p) : p}</div>`).join('') : '<div class="detail-item" style="color:#334155">None detected</div>'}
           </div>
           <div class="detail-col">
             <h4 style="color:#4ade80"><span>🟢</span> How to Fix</h4>
-            ${(r.ninety_day_roadmap?.week_1?.actions || []||[]).length ? (r.ninety_day_roadmap?.week_1?.actions || []||[]).map((s,i)=>`<div class="detail-item"><span style="color:#4ade80;font-weight:700;font-family:monospace">0${i+1}</span> ${s}</div>`).join('') : '<div class="detail-item" style="color:#334155">—</div>'}
+            ${(r.ninety_day_roadmap?.week_1?.actions||[]).length ? (r.ninety_day_roadmap?.week_1?.actions||[]).map((s,i)=>`<div class="detail-item"><span style="color:#4ade80;font-weight:700;font-family:monospace">0${i+1}</span> ${s}</div>`).join('') : '<div class="detail-item" style="color:#334155">—</div>'}
           </div>
           <div class="detail-col">
             <h4 style="color:#fbbf24"><span>💰</span> Revenue Opportunities</h4>
-            ${(r.revenue_opportunities||[]).length ? (r.revenue_opportunities||[]).map(o=>`<div class="detail-item">💰 ${o}</div>`).join('') : '<div class="detail-item" style="color:#334155">—</div>'}
+            ${r.competitive_intelligence?.opportunity_to_win ? `<div class="detail-item">💰 ${r.competitive_intelligence.opportunity_to_win}</div><div class="detail-item">📍 ${r.competitive_intelligence.where_losing_clients||''}</div>` : '<div class="detail-item" style="color:#334155">—</div>'}
           </div>
         </div>
         ${(r.strengths||[]).length ? `
