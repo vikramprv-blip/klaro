@@ -785,6 +785,7 @@ async function loadUserPlan() {
   if (userEmail === MASTER_ADMIN) {
     userPlan = 'admin';
     showPlanBadge('Admin', '#6366f1');
+    // Admin gets everything — no restrictions applied
     return;
   }
   const { data: sub } = await sb.from('subscriptions').select('plan_id,status').eq('user_id', session.user.id).eq('status','active').order('created_at',{ascending:false}).limit(1).maybeSingle();
@@ -815,6 +816,7 @@ function canAccess(feature) {
 }
 
 function applyPlanRestrictions() {
+  if (userPlan === 'admin') return; // Admin has full access
   const plan = PLAN_FEATURES[userPlan] || {};
   if (!plan.compare) {
     document.querySelectorAll('[onclick*="compare"]').forEach(b => { b.style.opacity='0.4'; b.style.cursor='not-allowed'; b.onclick=()=>showUpgradePrompt('Compare mode requires Starter plan or higher'); });
