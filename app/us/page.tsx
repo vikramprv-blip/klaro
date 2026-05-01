@@ -409,10 +409,10 @@ export default function USHomePage() {
                 ))}
               </div>
               <div className="flex gap-3">
-                <a href="/klaro-pulse" className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-sm transition-colors">
+                <a href="/pulse" className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-sm transition-colors">
                   Explore Klaro Pulse →
                 </a>
-                <a href="/klaro-pulse#pricing" className="px-6 py-3 border border-gray-700 hover:border-gray-500 text-gray-300 rounded-xl text-sm transition-colors">
+                <a href="/pulse#pricing" className="px-6 py-3 border border-gray-700 hover:border-gray-500 text-gray-300 rounded-xl text-sm transition-colors">
                   View pricing
                 </a>
               </div>
@@ -434,7 +434,7 @@ export default function USHomePage() {
                   <p className="text-lg font-bold text-white ml-4 flex-shrink-0">{p.price}</p>
                 </div>
               ))}
-              <a href="/klaro-pulse#pricing" className="block text-center text-xs text-indigo-400 hover:text-indigo-300 mt-2">14-day pilot available on Omni-Audit Pro →</a>
+              <a href="/pulse#pricing" className="block text-center text-xs text-indigo-400 hover:text-indigo-300 mt-2">14-day pilot available on Omni-Audit Pro →</a>
             </div>
           </div>
         </div>
