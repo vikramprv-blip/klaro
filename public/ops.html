@@ -349,9 +349,9 @@ async function loadAll() {
 }
 
 function updateStats(logs) {
-  const scores = logs.map(l => l.metadata?.full_report?.authority_score || 0).filter(s => s > 0);
+  const scores = logs.map(l => l.metadata?.full_report?.overall_score || 0).filter(s => s > 0);
   const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
-  const critical = logs.filter(l => (l.metadata?.full_report?.authority_score||0) < 50 && l.status !== 'ERROR').length;
+  const critical = logs.filter(l => (l.metadata?.full_report?.overall_score||0) < 50 && l.status !== 'ERROR').length;
   const last = logs[0]?.created_at ? ago(logs[0].created_at) : '—';
   document.getElementById('s-total').textContent = logs.length;
   document.getElementById('s-avg').textContent = avg || '—';
@@ -409,16 +409,16 @@ function renderReports(logs) {
   container.innerHTML = logs.map((log, idx) => {
     const r = log.metadata?.full_report || {};
     const name = log.metadata?.target_name || (() => { try { return new URL(log.url||'').hostname; } catch { return log.url||'Unknown'; } })();
-    const score = r.authority_score || 0;
-    const trust = r.trust_score || 0;
-    const conv = r.conversion_score || 0;
+    const score = r.overall_score || 0;
+    const trust = r.ux_conversion_audit?.trust_score || 0;
+    const conv = r.ux_conversion_audit?.conversion_score || 0;
     const id = `card-${idx}`;
 
     // Compliance scores (derived from our data)
-    const httpsScore = (log.url||'').startsWith('https') ? 100 : 0;
+    const httpsScore = r.security_compliance?.https ? 100 : ((log.url||'').startsWith('https') ? 100 : 0);
     const mobileScore = r.mobile_readiness === 'Good' ? 90 : r.mobile_readiness === 'Needs Work' ? 60 : 30;
-    const accessScore = r.accessibility_score || (score > 70 ? 75 : 50);
-    const seoScore = r.pricing_clarity === 'Clear' && r.target_audience_clarity === 'Clear' ? 80 : 55;
+    const accessScore = r.security_compliance?.accessibility_score || (score > 70 ? 75 : 50);
+    const seoScore = r.security_compliance?.security_score || 55;
 
     return `
     <div class="report-card" id="${id}">
@@ -437,7 +437,7 @@ function renderReports(logs) {
         </div>
       </div>
 
-      ${r.novice_summary||log.reasoning ? `<div class="card-summary">${r.novice_summary||log.reasoning}</div>` : ''}
+      ${r.executive_brief?.plain_english_summary||log.reasoning ? `<div class="card-summary">${r.executive_brief?.plain_english_summary||log.reasoning}</div>` : ''}
       ${r.competitor_advantage ? `<div class="card-insight">💡 ${r.competitor_advantage}</div>` : ''}
 
       <div class="card-bars">
@@ -484,11 +484,11 @@ function renderReports(logs) {
         <div class="card-grid">
           <div class="detail-col">
             <h4 style="color:#f87171"><span>🔴</span> Problems Found</h4>
-            ${(r.ux_friction_points||[]).length ? (r.ux_friction_points||[]).map(p=>`<div class="detail-item">⚠ ${p}</div>`).join('') : '<div class="detail-item" style="color:#334155">None detected</div>'}
+            ${(r.ux_conversion_audit?.friction_points || []||[]).length ? (r.ux_conversion_audit?.friction_points || []||[]).map(p=>`<div class="detail-item">⚠ ${p}</div>`).join('') : '<div class="detail-item" style="color:#334155">None detected</div>'}
           </div>
           <div class="detail-col">
             <h4 style="color:#4ade80"><span>🟢</span> How to Fix</h4>
-            ${(r.resolution_steps||[]).length ? (r.resolution_steps||[]).map((s,i)=>`<div class="detail-item"><span style="color:#4ade80;font-weight:700;font-family:monospace">0${i+1}</span> ${s}</div>`).join('') : '<div class="detail-item" style="color:#334155">—</div>'}
+            ${(r.ninety_day_roadmap?.week_1?.actions || []||[]).length ? (r.ninety_day_roadmap?.week_1?.actions || []||[]).map((s,i)=>`<div class="detail-item"><span style="color:#4ade80;font-weight:700;font-family:monospace">0${i+1}</span> ${s}</div>`).join('') : '<div class="detail-item" style="color:#334155">—</div>'}
           </div>
           <div class="detail-col">
             <h4 style="color:#fbbf24"><span>💰</span> Revenue Opportunities</h4>
