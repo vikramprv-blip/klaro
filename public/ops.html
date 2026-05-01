@@ -227,12 +227,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 const SB_URL = 'https://chwyrdublpuavcmjendw.supabase.co';
 const SB_KEY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNod3lyZHVibHB1YXZjbWplbmR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzU4ODAsImV4cCI6MjA5MjI1MTg4MH0.Jmohj83RKbeMyJwH-fru6pijTVb6GNc48W8wnSdm9DE';
 const { createClient } = supabase;
-let sb, allLogs = [], activeFilter = 'all', scanMode = 'single';
+let allLogs = [], activeFilter = 'all', scanMode = 'single';
+const sb = createClient(SB_URL, SB_KEY_ANON);
 
 // Auth
 document.addEventListener('DOMContentLoaded', auth);
-
-const sb = createClient(SB_URL, SB_KEY_ANON);
 
 async function auth() {
   const { data: { session } } = await sb.auth.getSession();
