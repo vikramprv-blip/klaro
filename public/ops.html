@@ -218,6 +218,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <input class="scan-input" id="url-lam" type="url" placeholder="https://competitor.com — LAM will visit and audit as a human would..."/>
             <button class="btn btn-primary" id="btn-lam" onclick="runLAM()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);white-space:nowrap">⚡ Run LAM</button>
           </div>
+          <div id="lam-progress-wrap" style="display:none;margin-top:12px;background:#0a0f1a;border:1px solid #1e2a3a;border-radius:10px;padding:14px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <div style="font-size:12px;font-weight:700;color:#a78bfa" id="lam-progress-label">⚡ Starting LAM audit...</div>
+              <div style="font-size:12px;color:#475569" id="lam-progress-pct">0%</div>
+            </div>
+            <div style="background:#080c14;border-radius:20px;overflow:hidden;height:5px">
+              <div id="lam-progress-bar" style="height:5px;border-radius:20px;background:linear-gradient(90deg,#7c3aed,#a78bfa);background-size:200%;animation:progress-shift 2s linear infinite;width:0%;transition:width 1s ease"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:#475569">
+              <span id="lpstep-1">🌐 Visiting</span>
+              <span id="lpstep-2">🤖 Analysing</span>
+              <span id="lpstep-3">⚖ ADA/SOC</span>
+              <span id="lpstep-4">📝 Reporting</span>
+              <span id="lpstep-5">✅ Done</span>
+            </div>
+          </div>
         </div>
         <!-- Compare LAM -->
         <div id="lam-panel-compare" style="display:none">
@@ -2017,7 +2033,36 @@ async function runLAM() {
   btn.textContent = 'Starting...';
   status.style.display = 'block';
   status.textContent = '⚡ Triggering LAM audit... GitHub Action starting in ~10 seconds';
-  startProgress(1200000); // 20 min for LAM
+  // Show LAM-specific progress bar
+  const lamPWrap = document.getElementById('lam-progress-wrap');
+  const lamPBar = document.getElementById('lam-progress-bar');
+  const lamPLabel = document.getElementById('lam-progress-label');
+  const lamPPct = document.getElementById('lam-progress-pct');
+  if (lamPWrap) lamPWrap.style.display = 'block';
+  const lamSteps = [
+    {at:0, label:'🌐 Visiting site as a potential client...', step:1},
+    {at:15, label:'🤖 AI analysing UX and conversion...', step:2},
+    {at:35, label:'⚖ Running ADA/WCAG audit...', step:3},
+    {at:55, label:'🔒 Checking SOC/compliance signals...', step:4},
+    {at:75, label:'📝 Generating executive report...', step:4},
+    {at:90, label:'⏳ Finalising LAM report...', step:4},
+  ];
+  const lamStart = Date.now();
+  const lamDuration = 1200000;
+  const lamTimer = setInterval(() => {
+    const pct = Math.min(Math.round((Date.now()-lamStart)/lamDuration*97), 97);
+    if (lamPBar) lamPBar.style.width = pct+'%';
+    if (lamPPct) lamPPct.textContent = pct+'%';
+    const step = lamSteps.filter(s => pct >= s.at).pop();
+    if (step && lamPLabel) lamPLabel.textContent = step.label;
+    for (let i=1;i<=5;i++) {
+      const el = document.getElementById('lpstep-'+i);
+      if (!el) continue;
+      el.style.color = i < (step?.step||1) ? '#4ade80' : i === (step?.step||1) ? '#a78bfa' : '#475569';
+      el.style.fontWeight = i === (step?.step||1) ? '700' : 'normal';
+    }
+  }, 2000);
+  window._lamTimer = lamTimer;
 
   try {
     const session = await sb.auth.getSession();
@@ -2034,12 +2079,17 @@ async function runLAM() {
       status.style.color = '#f87171';
       status.textContent = '❌ ' + (data.error || 'Failed to start LAM audit');
     } else {
-      completeProgress();
+      clearInterval(window._lamTimer);
+      if (lamPBar) lamPBar.style.width = '100%';
+      if (lamPPct) lamPPct.textContent = '100%';
+      if (lamPLabel) lamPLabel.textContent = '✅ LAM audit triggered successfully!';
+      setTimeout(() => { if (lamPWrap) lamPWrap.style.display = 'none'; }, 4000);
       status.textContent = '✅ LAM audit started! Run ID: ' + data.run_id + ' — Check back in 20-30 minutes for results.';
       loadLAMRuns();
     }
   } catch(e) {
-    resetProgress();
+    clearInterval(window._lamTimer);
+    if (lamPWrap) lamPWrap.style.display = 'none';
     status.textContent = '❌ Error: ' + e.message;
   }
   btn.disabled = false;
