@@ -556,6 +556,26 @@ function setMode(mode, btn) {
   if (btn) btn.classList.add('active');
 }
 
+async function cancelLAM(runId, ghRunId) {
+  if (!confirm('Cancel this LAM scan?')) return;
+  try {
+    const res = await fetch('/api/pulse/lam/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ run_id: runId, gh_run_id: ghRunId })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert('Scan cancelled successfully');
+      loadLAMRuns();
+    } else {
+      alert('Cancel failed: ' + (data.error || 'Unknown error'));
+    }
+  } catch(e) {
+    alert('Cancel error: ' + e.message);
+  }
+}
+
 async function runBatchLAM() {
   const raw = document.getElementById('urls-batch-lam').value.trim();
   if (!raw) return alert('Paste at least one URL');
@@ -655,6 +675,10 @@ async function loadLAMRuns() {
           <div style="color:#475569;font-weight:700;margin-bottom:4px">Top Actions:</div>
           ${r.executive_brief.top_3_actions.map(a => `<div style="padding:2px 0">→ ${a}</div>`).join('')}
         </div>` : ''}
+      ${r.status === 'pending' || r.status === 'running' ? `
+        <button onclick="cancelLAM('${r.id}','${r.gh_run_id||''}')" style="margin-top:10px;padding:6px 16px;background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">
+          ✕ Cancel Scan
+        </button>` : ''}
     </div>
   `).join('');
 }

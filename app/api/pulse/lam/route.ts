@@ -64,5 +64,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `GitHub Action failed: ${err}` }, { status: 500 })
   }
 
+  // Get the GitHub run ID for cancel support
+  await new Promise(r => setTimeout(r, 2000))
+  const runsRes = await fetch(
+    `https://api.github.com/repos/vikramprv-blip/klaro-pulse/actions/runs?per_page=1&event=workflow_dispatch`,
+    { headers: { 'Authorization': `Bearer ${process.env.GITHUB_PAT}`, 'Accept': 'application/vnd.github+json' } }
+  )
+  if (runsRes.ok) {
+    const runsData = await runsRes.json()
+    const ghRunId = runsData.workflow_runs?.[0]?.id
+    if (ghRunId) {
+      await supabase.from('lam_runs').update({ gh_run_id: String(ghRunId) }).eq('id', run.id)
+    }
+  }
+
   return NextResponse.json({ run_id: run.id, status: 'pending', message: 'LAM audit started' })
 }
