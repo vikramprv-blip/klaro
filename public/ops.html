@@ -808,6 +808,7 @@ function showPlanBadge(label, color) {
 }
 
 function canAccess(feature) {
+  if (userPlan === 'admin') return true;
   if (!userPlan) return false;
   const plan = PLAN_FEATURES[userPlan] || PLAN_FEATURES.trial;
   return !!plan[feature];
@@ -822,7 +823,12 @@ function applyPlanRestrictions() {
     document.querySelectorAll('[onclick*="batch"]').forEach(b => { b.style.opacity='0.4'; b.style.cursor='not-allowed'; b.onclick=()=>showUpgradePrompt('Batch scanning requires Growth plan or higher'); });
   }
   if (!plan.lam) {
-    document.querySelectorAll('[onclick*="lam"]').forEach(b => { b.style.opacity='0.4'; b.style.cursor='not-allowed'; b.onclick=()=>showUpgradePrompt('LAM Audit requires LAM One-Off ($299) or LAM Monthly ($499/mo)'); });
+    document.querySelectorAll('[onclick*="lam"]').forEach(b => {
+      // Don't restrict the LAM tab button itself for admins
+      if (b.textContent.includes('LAM Audit') && userPlan === 'admin') return;
+      b.style.opacity='0.4'; b.style.cursor='not-allowed';
+      b.onclick=()=>showUpgradePrompt('LAM Audit requires LAM One-Off ($299) or LAM Monthly ($499/mo)');
+    });
   }
 }
 
