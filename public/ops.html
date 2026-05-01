@@ -332,6 +332,11 @@ async function auth() {
   loadTargetCount();
   loadLAMRuns();
   setInterval(loadAll, 30000);
+  setInterval(() => {
+    if (document.getElementById('lam-results')?.style.display !== 'none') {
+      loadLAMRuns();
+    }
+  }, 30000);
 }
 
 async function logout() {
@@ -2079,12 +2084,24 @@ async function runLAM() {
       status.style.color = '#f87171';
       status.textContent = '❌ ' + (data.error || 'Failed to start LAM audit');
     } else {
-      clearInterval(window._lamTimer);
-      if (lamPBar) lamPBar.style.width = '100%';
-      if (lamPPct) lamPPct.textContent = '100%';
-      if (lamPLabel) lamPLabel.textContent = '✅ LAM audit triggered successfully!';
-      setTimeout(() => { if (lamPWrap) lamPWrap.style.display = 'none'; }, 4000);
-      status.textContent = '✅ LAM audit started! Run ID: ' + data.run_id + ' — Check back in 20-30 minutes for results.';
+      // Don't stop progress bar - keep running until scan completes
+      // Start polling for completion
+      if (lamPLabel) lamPLabel.textContent = '🌐 LAM agent is visiting the site...';
+      status.textContent = '✅ LAM audit running! Run ID: ' + data.run_id + ' — Progress bar shows estimated completion.';
+      const runId = data.run_id;
+      const pollInterval = setInterval(async () => {
+        const { data: run } = await sb.from('lam_runs').select('status,overall_score').eq('id', runId).single();
+        if (run?.status === 'complete' || run?.status === 'error' || run?.status === 'cancelled') {
+          clearInterval(pollInterval);
+          clearInterval(window._lamTimer);
+          if (lamPBar) lamPBar.style.width = '100%';
+          if (lamPPct) lamPPct.textContent = '100%';
+          if (lamPLabel) lamPLabel.textContent = run?.status === 'complete' ? '✅ LAM audit complete!' : '❌ Scan ended: ' + run?.status;
+          setTimeout(() => { if (lamPWrap) lamPWrap.style.display = 'none'; }, 3000);
+          loadLAMRuns();
+        }
+      }, 30000); // poll every 30 seconds
+      window._lamPollInterval = pollInterval;
       loadLAMRuns();
     }
   } catch(e) {
