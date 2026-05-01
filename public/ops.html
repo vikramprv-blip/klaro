@@ -418,6 +418,7 @@ async function scanSingle() {
   const btn = document.getElementById('btn-single');
   btn.disabled = true; btn.textContent = 'Queuing scan...';
   showStatus(`⏳ Scanning ${url} — results will appear below in 3-5 minutes...`, 'scanning');
+  startProgress(240000);
   const data = await triggerScan(url);
   btn.disabled = false; btn.textContent = 'Scan Now →';
   if (data.ok) {
@@ -512,6 +513,14 @@ function pillClass(val, good, warn, bad) {
 }
 
 function renderReports(logs) {
+  // Deduplicate - show only latest scan per URL
+  const seen = new Set();
+  logs = logs.filter(l => {
+    if (seen.has(l.url)) return false;
+    seen.add(l.url);
+    return true;
+  });
+
   const container = document.getElementById('reports-container');
   if (!logs.length) {
     container.innerHTML = `<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">${activeFilter==='all'?'No scans yet':'No results for this filter'}</div><div class="empty-sub">${activeFilter==='all'?'Enter a URL above and click Scan Now to get started':'Try a different filter'}</div></div>`;
@@ -520,7 +529,7 @@ function renderReports(logs) {
 
   container.innerHTML = logs.map((log, idx) => {
     const r = log.metadata?.full_report || {};
-    const name = log.metadata?.target_name || (() => { try { return new URL(log.url||'').hostname; } catch { return log.url||'Unknown'; } })();
+    const name = log.metadata?.target_name || log.metadata?.full_report?.target_audience?.split(' ')[0] || (() => { try { return new URL(log.url||'').hostname; } catch { return log.url||'Unknown'; } })();
     const score = r.overall_score || 0;
     const trust = r.ux_conversion_audit?.trust_score || 0;
     const conv = r.ux_conversion_audit?.conversion_score || 0;
@@ -756,8 +765,8 @@ async function downloadLAMReport(runId) {
   const css = `
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1e293b;background:white}
-    .page{width:210mm;min-height:297mm;padding:20mm 18mm 25mm;break-after:page;position:relative}
-    .page:last-child{break-after:auto}
+    .page{width:210mm;padding:20mm 18mm 16mm;break-after:page;page-break-after:always;position:relative;border-bottom:1px solid #e2e8f0}
+    .page:last-child{break-after:auto;page-break-after:auto;border-bottom:none}
     .page-label{font-size:8pt;color:#7c3aed;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4mm;font-weight:700}
     .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8mm;border-bottom:3px solid #1e1b4b;padding-bottom:6mm}
     .header-left h1{font-size:26pt;font-weight:900;color:#1e1b4b;line-height:1}
@@ -797,7 +806,12 @@ async function downloadLAMReport(runId) {
     .roadmap-phase li{font-size:9pt;color:#374151;margin-bottom:2mm;padding-left:3mm}
     .cta-box{background:#1e1b4b;color:white;border-radius:8px;padding:6mm;text-align:center;margin-top:6mm}
     .footer{position:absolute;bottom:8mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3mm}
-    @media print{.page{padding:15mm 15mm 20mm}}
+    @media print{
+      body{margin:0}
+      .page{padding:15mm;border-bottom:none;page-break-after:always;break-after:page}
+      .page:last-child{page-break-after:avoid;break-after:avoid}
+      .footer{position:fixed;bottom:5mm;left:15mm;right:15mm}
+    }
   `;
 
   const footer = () => `<div class="footer"><span>${hostname} | ${r.url}</span><span>Klaro Pulse LAM Audit · klaro.services/pulse · (c) 2026 Klaro Global</span></div>`;
@@ -1131,9 +1145,20 @@ async function downloadLAMReport(runId) {
 </body></html>`;
 
   const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  setTimeout(() => win.print(), 800);
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 800);
+  } else {
+    const blob = new Blob([html], {type: 'text/html'});
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: `Klaro_Pulse_Report_${name}.html`
+    });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 }
 
 
@@ -1153,8 +1178,8 @@ async function downloadReport(logId, name) {
   const css = `
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1e293b;background:white}
-    .page{width:210mm;min-height:297mm;padding:20mm 18mm;break-after:page;position:relative}
-    .page:last-child{break-after:auto}
+    .page{width:210mm;padding:20mm 18mm 16mm;break-after:page;page-break-after:always;position:relative;border-bottom:1px solid #e2e8f0}
+    .page:last-child{break-after:auto;page-break-after:auto;border-bottom:none}
     .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10mm;border-bottom:3px solid #1e1b4b;padding-bottom:6mm}
     .header-left h1{font-size:28pt;font-weight:900;color:#1e1b4b;line-height:1}
     .header-left .url{font-size:9pt;color:#64748b;margin-top:3mm}
@@ -1420,9 +1445,20 @@ async function downloadReport(logId, name) {
 </body></html>`;
 
   const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  setTimeout(() => win.print(), 800);
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 800);
+  } else {
+    const blob = new Blob([html], {type: 'text/html'});
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: `Klaro_Pulse_Report_${name}.html`
+    });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 }
 
 
