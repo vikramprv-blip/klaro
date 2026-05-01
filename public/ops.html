@@ -556,6 +556,43 @@ function setMode(mode, btn) {
   if (btn) btn.classList.add('active');
 }
 
+async function runBatchLAM() {
+  const raw = document.getElementById('urls-batch-lam').value.trim();
+  if (!raw) return alert('Paste at least one URL');
+  const urls = raw.split('
+').map(u => u.trim()).filter(u => u.startsWith('http'));
+  if (!urls.length) return alert('No valid URLs found');
+  
+  const btn = document.getElementById('btn-batch-lam');
+  btn.disabled = true;
+  btn.textContent = `Triggering ${urls.length} LAM audits...`;
+  
+  const session = await sb.auth.getSession();
+  const user_id = session.data.session?.user?.id;
+  
+  let success = 0, failed = 0;
+  for (const url of urls) {
+    try {
+      const res = await fetch('/api/pulse/lam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, user_id })
+      });
+      if (res.ok) { success++; } else { failed++; }
+    } catch(e) { failed++; }
+    await new Promise(r => setTimeout(r, 2000)); // 2s delay between triggers
+    btn.textContent = `Triggered ${success+failed}/${urls.length}...`;
+  }
+  
+  btn.disabled = false;
+  btn.textContent = '⚡ Run Batch LAM Audit (all URLs above)';
+  
+  const statusEl = document.getElementById('lam-status');
+  statusEl.style.display = 'block';
+  statusEl.textContent = `✅ Batch complete: ${success} started, ${failed} failed. Results appear below in 15-30 min.`;
+  loadLAMRuns();
+}
+
 async function runLAM() {
   const url = document.getElementById('url-lam').value.trim();
   if (!url) return alert('Enter a URL first');
