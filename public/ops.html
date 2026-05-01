@@ -576,8 +576,7 @@ async function cancelLAM(runId, ghRunId) {
 async function runBatchLAM() {
   const raw = document.getElementById('urls-batch-lam').value.trim();
   if (!raw) return alert('Paste at least one URL');
-  const urls = raw.split('
-').map(u => u.trim()).filter(u => u.startsWith('http'));
+  const urls = raw.split('\n').map(u => u.trim()).filter(u => u.startsWith('http'));
   if (!urls.length) return alert('No valid URLs found');
   
   const btn = document.getElementById('btn-batch-lam');
