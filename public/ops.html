@@ -649,273 +649,684 @@ function showUpgradePrompt(message) {
 }
 
 async function downloadLAMReport(runId) {
-  const { data, error } = await sb.from('lam_runs').select('*').eq('id', runId).single();
-  if (error || !data) return alert('LAM report not found');
-  const r = data;
+  const { data: r, error } = await sb.from('lam_runs').select('*').eq('id', runId).single();
+  if (error || !r) return alert('LAM report not found');
   const hostname = r.url.replace('https://','').replace('http://','').split('/')[0];
+  const today = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const scanDate = new Date(r.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
-  const html = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
+  const css = `
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1e293b;background:white}
+    .page{width:210mm;min-height:297mm;padding:20mm 18mm 25mm;page-break-after:always;position:relative}
+    .page:last-child{page-break-after:auto}
+    .page-label{font-size:8pt;color:#7c3aed;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4mm;font-weight:700}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8mm;border-bottom:3px solid #1e1b4b;padding-bottom:6mm}
+    .header-left h1{font-size:26pt;font-weight:900;color:#1e1b4b;line-height:1}
+    .header-left .url{font-size:9pt;color:#64748b;margin-top:2mm}
+    .lam-badge{background:#1e1b4b;color:#a5b4fc;padding:2mm 4mm;border-radius:4px;font-size:8pt;font-weight:700;display:inline-block;margin-bottom:3mm;letter-spacing:0.08em}
+    .score-box-main{text-align:center;background:#1e1b4b;color:white;border-radius:8px;padding:8mm 10mm}
+    .score-box-main .big{font-size:36pt;font-weight:900;line-height:1}
+    .score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:5mm 0}
+    .score-box{border:2px solid #e2e8f0;border-radius:6px;padding:4mm;text-align:center}
+    .score-num{font-size:20pt;font-weight:900}
+    .score-lbl{font-size:7pt;color:#64748b;text-transform:uppercase;font-weight:700;margin-top:1mm}
+    .section-title{font-size:11pt;font-weight:900;color:#1e1b4b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid #e2e8f0;padding-bottom:3mm;margin:7mm 0 4mm}
+    .verdict{background:#fef9c3;border-left:5px solid #f59e0b;padding:4mm 6mm;border-radius:0 6px 6px 0;font-size:11pt;font-weight:700;margin:4mm 0;font-style:italic}
+    .summary-box{background:#f5f3ff;border-left:4px solid #7c3aed;padding:5mm 7mm;border-radius:0 6px 6px 0;font-size:9.5pt;line-height:1.7;margin:4mm 0}
+    .revenue{background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3mm 5mm;font-size:9pt;color:#991b1b;margin:3mm 0}
+    .narrative{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5mm;font-size:9.5pt;line-height:1.8;color:#374151;margin:4mm 0;font-style:italic}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin:4mm 0}
+    .info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5mm}
+    .info-box h4{font-size:8.5pt;font-weight:700;color:#1e1b4b;text-transform:uppercase;margin-bottom:3mm;letter-spacing:0.05em}
+    .info-box p,.info-box li{font-size:9pt;color:#374151;line-height:1.7;margin-bottom:1mm}
+    .priority-table{width:100%;border-collapse:collapse;margin:4mm 0;font-size:9pt}
+    .priority-table th{background:#1e1b4b;color:white;padding:3mm 4mm;text-align:left;font-size:8pt;text-transform:uppercase}
+    .priority-table td{padding:3mm 4mm;border-bottom:1px solid #e2e8f0;vertical-align:top}
+    .priority-table tr:nth-child(even) td{background:#f8fafc}
+    .pill{display:inline-block;padding:1mm 3mm;border-radius:20px;font-size:7.5pt;font-weight:700}
+    .pill-red{background:#fee2e2;color:#991b1b}
+    .pill-yellow{background:#fef9c3;color:#854d0e}
+    .pill-green{background:#dcfce7;color:#166534}
+    .check-row{display:flex;justify-content:space-between;align-items:center;padding:2.5mm 0;border-bottom:1px solid #f1f5f9;font-size:9pt}
+    .check-label{color:#374151}
+    .check-val{font-weight:700}
+    .compliance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin:4mm 0}
+    .comp-score-box{border:1px solid #e2e8f0;border-radius:6px;padding:4mm;text-align:center}
+    .roadmap-phase{border:1px solid #e2e8f0;border-radius:8px;padding:5mm;margin:3mm 0}
+    .roadmap-phase h3{font-size:10pt;font-weight:900;color:#1e1b4b;margin-bottom:1mm}
+    .roadmap-phase .sub{font-size:8pt;color:#64748b;margin-bottom:3mm}
+    .roadmap-phase li{font-size:9pt;color:#374151;margin-bottom:2mm;padding-left:3mm}
+    .cta-box{background:#1e1b4b;color:white;border-radius:8px;padding:6mm;text-align:center;margin-top:6mm}
+    .footer{position:absolute;bottom:8mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3mm}
+    @media print{.page{padding:15mm 15mm 20mm}}
+  `;
+
+  const footer = () => `<div class="footer"><span>${hostname} | ${r.url}</span><span>Klaro Pulse LAM Audit · klaro.services/pulse · (c) 2026 Klaro Global</span></div>`;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>Klaro Pulse LAM Report — ${hostname}</title>
-<style>
-  body{font-family:Arial,sans-serif;max-width:850px;margin:0 auto;padding:40px;color:#1e293b}
-  h1{font-size:26px;font-weight:900;margin-bottom:4px}
-  h2{font-size:15px;font-weight:700;color:#3730a3;margin:28px 0 8px;border-bottom:2px solid #e2e8f0;padding-bottom:6px}
-  h3{font-size:12px;font-weight:700;color:#475569;margin:10px 0 5px;text-transform:uppercase;letter-spacing:0.05em}
-  .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;margin:2px}
-  .score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:16px 0}
-  .score-box{border:2px solid #e2e8f0;border-radius:12px;padding:16px;text-align:center}
-  .score-num{font-size:32px;font-weight:900}
-  .score-lbl{font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;margin-top:2px}
-  .verdict{background:#fef9c3;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:0 8px 8px 0;font-size:14px;font-weight:600;margin:12px 0}
-  .summary{background:#f0f9ff;border-left:4px solid #3730a3;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.7;margin:12px 0}
-  .revenue{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:#991b1b;margin:12px 0}
-  .roadmap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0}
-  .roadmap-col{border:1px solid #e2e8f0;border-radius:8px;padding:12px}
-  .roadmap-title{font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:8px}
-  ul{padding-left:18px;margin:6px 0}
-  li{font-size:12px;line-height:1.8;color:#374151}
-  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0}
-  .info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}
-  .info-box p{font-size:12px;line-height:1.6;color:#374151;margin:0}
-  .footer{margin-top:48px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:center}
-  .lam-badge{background:#1e1b4b;color:#a5b4fc;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;margin-bottom:8px}
-  @media print{body{padding:20px}}
-</style>
-</head><body>
+<style>${css}</style></head><body>
 
-<div class="lam-badge">⚡ KLARO PULSE — LARGE ACTION MODEL AUDIT</div>
-<div style="display:flex;justify-content:space-between;align-items:flex-start">
-  <div>
-    <h1>${hostname}</h1>
-    <div style="font-size:12px;color:#64748b">${r.url} · ${new Date(r.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})} · LAM v4</div>
+<!-- PAGE 1: COVER & EXECUTIVE BRIEF -->
+<div class="page">
+  <div class="page-label">⚡ KLARO PULSE — LARGE ACTION MODEL AUDIT &nbsp;·&nbsp; Page 1 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="header">
+    <div class="header-left">
+      <div class="lam-badge">⚡ LARGE ACTION MODEL AUDIT</div>
+      <h1>${hostname}</h1>
+      <div class="url">${r.url}</div>
+      <div class="url" style="margin-top:2mm">LAM Agent v4 · Browser-based audit · ${scanDate}</div>
+    </div>
+    <div class="score-box-main">
+      <div class="big">${r.overall_score||'—'}</div>
+      <div style="font-size:9pt;opacity:0.7">/100</div>
+      <div style="font-size:11pt;font-weight:700;margin-top:2mm">${r.grade||'—'}</div>
+    </div>
   </div>
-  <div style="text-align:center;background:#1e1b4b;color:white;border-radius:12px;padding:16px 20px">
-    <div style="font-size:42px;font-weight:900">${r.overall_score||'—'}</div>
-    <div style="font-size:10px;opacity:0.6">/100</div>
-    <div style="font-size:13px;font-weight:700;margin-top:2px">${r.grade||'—'}</div>
+
+  <div class="score-grid">
+    <div class="score-box"><div class="score-num" style="color:${(r.overall_score||0)>=75?'#16a34a':(r.overall_score||0)>=50?'#d97706':'#dc2626'}">${r.overall_score||0}</div><div class="score-lbl">Overall</div></div>
+    <div class="score-box"><div class="score-num" style="color:#7c3aed">${r.ada_score||0}</div><div class="score-lbl">ADA</div></div>
+    <div class="score-box"><div class="score-num" style="color:#0891b2">${r.soc_score||0}</div><div class="score-lbl">SOC</div></div>
+    <div class="score-box"><div class="score-num" style="color:#6366f1">${r.lam_score||0}</div><div class="score-lbl">LAM</div></div>
   </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4mm;margin:2mm 0 5mm">
+    <div class="score-box"><div class="score-num" style="color:#059669;font-size:18pt">${r.client_experience?.conversion_probability||'—'}</div><div class="score-lbl">Conversion Prob.</div></div>
+    <div class="score-box"><div class="score-num" style="font-size:16pt;color:${r.executive_brief?.urgency==='Critical'?'#dc2626':r.executive_brief?.urgency==='High'?'#d97706':'#16a34a'}">${r.executive_brief?.urgency||'—'}</div><div class="score-lbl">Urgency</div></div>
+  </div>
+
+  ${r.executive_brief?.one_line_verdict ? `<div class="verdict">"${r.executive_brief.one_line_verdict}"</div>` : ''}
+  ${r.executive_brief?.plain_english_summary ? `<div class="summary-box">${r.executive_brief.plain_english_summary}</div>` : ''}
+  ${r.executive_brief?.estimated_monthly_revenue_lost ? `<div class="revenue">💸 Estimated monthly revenue impact: <strong>${r.executive_brief.estimated_monthly_revenue_lost}</strong></div>` : ''}
+
+  <div class="section-title">Top 3 Immediate Actions</div>
+  <table class="priority-table">
+    <tr><th>Timeframe</th><th>Action</th></tr>
+    ${(r.executive_brief?.top_3_actions||[]).map((a,i)=>`<tr><td><span class="pill ${i===0?'pill-red':i===1?'pill-yellow':'pill-green'}">${i===0?'THIS WEEK':i===1?'THIS MONTH':'THIS QUARTER'}</span></td><td>${a}</td></tr>`).join('')}
+  </table>
+  ${footer()}
 </div>
 
-${r.executive_brief?.one_line_verdict ? `<div class="verdict">💡 ${r.executive_brief.one_line_verdict}</div>` : ''}
+<!-- PAGE 2: VISIT NARRATIVE -->
+<div class="page">
+  <div class="page-label">⚡ LAM AUDIT &nbsp;·&nbsp; Page 2 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">The LAM Agent Visit — First Person Narrative</div>
+  <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:6px;padding:5mm;margin:4mm 0;font-size:8.5pt;color:#374151;line-height:1.6">
+    <em style="color:#7c3aed;font-weight:700">How our AI agent experienced your website as a real potential client:</em>
+  </div>
+  ${r.executive_brief?.plain_english_summary ? `<div class="narrative">${r.executive_brief.plain_english_summary}</div>` : ''}
+  ${r.client_experience?.what_agent_experienced ? `<div class="narrative" style="margin-top:4mm">${r.client_experience.what_agent_experienced}</div>` : ''}
 
-<div class="score-grid">
-  <div class="score-box"><div class="score-num" style="color:${(r.overall_score||0)>=75?'#16a34a':(r.overall_score||0)>=50?'#d97706':'#dc2626'}">${r.overall_score||0}</div><div class="score-lbl">Overall</div></div>
-  <div class="score-box"><div class="score-num" style="color:#7c3aed">${r.ada_score||0}</div><div class="score-lbl">ADA Score</div></div>
-  <div class="score-box"><div class="score-num" style="color:#0891b2">${r.soc_score||0}</div><div class="score-lbl">SOC Score</div></div>
-  <div class="score-box"><div class="score-num" style="color:#6366f1">${r.lam_score||0}</div><div class="score-lbl">LAM Score</div></div>
+  <div class="section-title">Key Visit Metrics</div>
+  <div class="two-col">
+    <div class="info-box">
+      <h4>Time & Navigation</h4>
+      <p><strong>Time to understand business:</strong> ${r.client_experience?.time_to_understand_business||'—'}</p>
+      <p><strong>Time to find contact:</strong> ${r.client_experience?.time_to_find_contact||'—'}</p>
+      <p><strong>Contact form experience:</strong> ${r.client_experience?.contact_form_experience||'—'}</p>
+    </div>
+    <div class="info-box">
+      <h4>Conversion Verdict</h4>
+      <p><strong>Would convert:</strong> ${r.client_experience?.would_real_client_convert ? '✅ Yes' : '❌ Unlikely'}</p>
+      <p><strong>Probability:</strong> ${r.client_experience?.conversion_probability||'—'}</p>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:4mm">
+    <div class="info-box">
+      <h4>Trust Signals Found</h4>
+      <ul>${(r.client_experience?.trust_signals_found||['None identified']).map(s=>`<li>✓ ${s}</li>`).join('')}</ul>
+    </div>
+    <div class="info-box">
+      <h4>Trust Signals Missing</h4>
+      <ul>${(r.client_experience?.trust_signals_missing||[]).map(s=>`<li>✗ ${s}</li>`).join('')}</ul>
+    </div>
+  </div>
+
+  <div class="section-title">Conversion Blockers</div>
+  ${(r.client_experience?.conversion_blockers||[]).map((b,i)=>`<div style="display:flex;gap:3mm;align-items:flex-start;padding:2.5mm 0;border-bottom:1px solid #f1f5f9"><span style="color:#dc2626;font-weight:900;flex-shrink:0">${i+1}.</span><span style="font-size:9pt">${b}</span></div>`).join('')}
+  ${footer()}
 </div>
 
-<h2>Executive Summary</h2>
-${r.executive_brief?.plain_english_summary ? `<div class="summary">${r.executive_brief.plain_english_summary}</div>` : ''}
-${r.executive_brief?.estimated_monthly_revenue_lost ? `<div class="revenue">💸 Estimated monthly revenue impact: <strong>${r.executive_brief.estimated_monthly_revenue_lost}</strong> · Urgency: <strong>${r.executive_brief.urgency||'—'}</strong></div>` : ''}
-
-<h2>Top 3 Immediate Actions</h2>
-<ul>${(r.executive_brief?.top_3_actions||[]).map((a,i)=>`<li><strong>0${i+1}.</strong> ${a}</li>`).join('')||'<li>—</li>'}</ul>
-
-<h2>Client Experience Report</h2>
-${r.client_experience?.what_agent_experienced ? `<div class="summary">${r.client_experience.what_agent_experienced}</div>` : ''}
-<div class="two-col">
-  <div class="info-box">
-    <h3>Conversion Analysis</h3>
-    <p><strong>Would convert:</strong> ${r.client_experience?.would_real_client_convert ? '✅ Yes' : '❌ No'}</p>
-    <p><strong>Probability:</strong> ${r.client_experience?.conversion_probability||'—'}</p>
-    <p><strong>Time to find contact:</strong> ${r.client_experience?.time_to_find_contact||'—'}</p>
-    <p><strong>Contact form:</strong> ${r.client_experience?.contact_form_experience||'—'}</p>
+<!-- PAGE 3: AUTH FLOW TEST -->
+<div class="page">
+  <div class="page-label">⚡ LAM AUDIT — AUTH FLOW TEST &nbsp;·&nbsp; Page 3 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">Signin / Signup Experience Test</div>
+  <div style="background:#f0f9ff;border-left:4px solid #0891b2;padding:4mm 6mm;border-radius:0 6px 6px 0;font-size:9pt;margin:4mm 0">
+    Our LAM agent attempted to create an account and sign in to test the authentication experience.
   </div>
-  <div class="info-box">
-    <h3>Trust Signals</h3>
-    <strong>Found:</strong><ul>${(r.client_experience?.trust_signals_found||[]).map(s=>`<li>${s}</li>`).join('')||'<li>None found</li>'}</ul>
-    <strong>Missing:</strong><ul>${(r.client_experience?.trust_signals_missing||[]).map(s=>`<li>${s}</li>`).join('')||'<li>—</li>'}</ul>
+
+  <div class="two-col">
+    <div class="info-box">
+      <h4>Signup Flow</h4>
+      <p>${r.auth_flow_report?.signup_experience||'Not tested'}</p>
+      <p style="margin-top:3mm"><strong>Social Login:</strong> ${r.auth_flow_report?.has_social_login ? '✅ Available' : '❌ Not available'}</p>
+    </div>
+    <div class="info-box">
+      <h4>Signin Flow</h4>
+      <p>${r.auth_flow_report?.signin_experience||'Not tested'}</p>
+      <p style="margin-top:3mm"><strong>Auth Score:</strong> ${r.auth_flow_report?.auth_score||r.auth_score||0}/100</p>
+    </div>
   </div>
+
+  ${(r.auth_flow_report?.issues||[]).length ? `
+  <div class="section-title">Auth Issues Found</div>
+  ${r.auth_flow_report.issues.map(i=>`<div style="padding:2.5mm 0;border-bottom:1px solid #f1f5f9;font-size:9pt">⚠ ${i}</div>`).join('')}` : ''}
+
+  ${(r.auth_flow_report?.recommendations||[]).length ? `
+  <div class="section-title">Auth Recommendations</div>
+  <ol style="padding-left:5mm">${r.auth_flow_report.recommendations.map(rec=>`<li style="font-size:9pt;margin-bottom:2mm">${rec}</li>`).join('')}</ol>` : ''}
+
+  <div class="section-title">Pages Audited</div>
+  <table class="priority-table">
+    <tr><th>Page</th><th>Score</th><th>Key Finding</th></tr>
+    ${(r.raw_data?.pages||[]).slice(0,6).map(p=>`<tr><td>${p.page_name||p.url||'—'}</td><td>${p.score||'—'}</td><td>${p.first_impression||p.findings||'—'}</td></tr>`).join('')||'<tr><td colspan="3" style="color:#64748b">Browser data not available for this scan</td></tr>'}
+  </table>
+  ${footer()}
 </div>
-${(r.client_experience?.conversion_blockers||[]).length ? `<h3>Conversion Blockers</h3><ul>${r.client_experience.conversion_blockers.map(b=>`<li>${b}</li>`).join('')}</ul>` : ''}
 
-<h2>ADA / WCAG 2.1 Compliance</h2>
-<div class="two-col">
-  <div class="info-box">
-    <p><strong>ADA Score:</strong> ${r.ada_score||0}/100</p>
-    <p><strong>WCAG Level:</strong> ${r.ada_report?.wcag_level_achieved||'—'}</p>
-    <p><strong>Legal Risk:</strong> ${r.ada_report?.risk_level||'—'}</p>
-    <p><strong>Legal Exposure:</strong> ${r.ada_report?.legal_exposure||'—'}</p>
-    <p><strong>Keyboard Nav:</strong> ${r.ada_report?.keyboard_navigation||'—'}</p>
-    <p><strong>Screen Reader:</strong> ${r.ada_report?.screen_reader_compatible ? '✅' : '❌'}</p>
+<!-- PAGE 4: ADA COMPLIANCE -->
+<div class="page">
+  <div class="page-label">⚡ LAM AUDIT — ADA / WCAG 2.1 COMPLIANCE &nbsp;·&nbsp; Page 4 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">ADA / WCAG 2.1 AA Accessibility Audit</div>
+
+  <div style="display:flex;gap:6mm;align-items:stretch;margin:4mm 0">
+    <div style="text-align:center;background:${(r.ada_score||0)>=75?'#f0fdf4':(r.ada_score||0)>=50?'#fef9c3':'#fef2f2'};border:2px solid ${(r.ada_score||0)>=75?'#86efac':(r.ada_score||0)>=50?'#fde047':'#fecaca'};border-radius:8px;padding:6mm 8mm;min-width:35mm">
+      <div style="font-size:30pt;font-weight:900;color:${(r.ada_score||0)>=75?'#16a34a':(r.ada_score||0)>=50?'#d97706':'#dc2626'}">${r.ada_score||0}</div>
+      <div style="font-size:8pt;font-weight:700;color:#64748b">/100 ADA SCORE</div>
+      <div style="font-size:9pt;font-weight:700;margin-top:2mm;color:${(r.ada_report?.risk_level==='Critical'||r.ada_report?.risk_level==='High')?'#dc2626':'#d97706'}">${r.ada_report?.risk_level||'—'} RISK</div>
+    </div>
+    <div style="flex:1">
+      <div class="check-row"><span class="check-label">WCAG Level Achieved</span><span class="check-val">${r.ada_report?.wcag_level_achieved||'—'}</span></div>
+      <div class="check-row"><span class="check-label">Keyboard Navigation</span><span class="check-val">${r.ada_report?.keyboard_navigation||'—'}</span></div>
+      <div class="check-row"><span class="check-label">Screen Reader Compatible</span><span class="check-val">${r.ada_report?.screen_reader_compatible ? '✅ Yes' : '❌ No'}</span></div>
+      <div class="check-row"><span class="check-label">Images Missing Alt Text</span><span class="check-val">${r.ada_report?.images_missing_alt ? '❌ Yes' : '✅ No'}</span></div>
+      <div class="check-row"><span class="check-label">Color Contrast Issues</span><span class="check-val">${r.ada_report?.color_contrast_issues ? '❌ Yes' : '✅ No'}</span></div>
+    </div>
   </div>
-  <div class="info-box">
-    <p><strong>Remediation Cost:</strong> ${r.ada_report?.remediation_cost||'—'}</p>
-    <p><strong>Remediation Time:</strong> ${r.ada_report?.remediation_time||'—'}</p>
-    ${r.ada_report?.ada_narrative ? `<p style="margin-top:8px">${r.ada_report.ada_narrative}</p>` : ''}
+
+  ${r.ada_report?.ada_narrative ? `<div class="summary-box">${r.ada_report.ada_narrative}</div>` : ''}
+  ${r.ada_report?.legal_exposure ? `<div class="revenue">⚖ Legal Exposure: ${r.ada_report.legal_exposure}</div>` : ''}
+
+  ${(r.ada_report?.critical_violations||[]).length ? `
+  <div class="section-title">Critical Violations</div>
+  <table class="priority-table">
+    <tr><th>Violation</th><th>Impact</th><th>Recommended Fix</th></tr>
+    ${r.ada_report.critical_violations.map(v => {
+      const vObj = typeof v === 'object' ? v : {issue:v, impact:'High', fix:'Requires developer'};
+      return `<tr><td>${vObj.issue||v}</td><td><span class="pill pill-red">${vObj.impact||'High'}</span></td><td>${vObj.fix||'—'}</td></tr>`;
+    }).join('')}
+  </table>` : ''}
+
+  <div class="two-col">
+    <div class="info-box">
+      <h4>Remediation Estimate</h4>
+      <p><strong>Cost:</strong> ${r.ada_report?.remediation_cost||'—'}</p>
+      <p><strong>Time:</strong> ${r.ada_report?.remediation_time||'—'}</p>
+    </div>
+    <div class="info-box">
+      <h4>Why This Matters</h4>
+      <p>US businesses face real ADA lawsuit risk from accessibility failures. India DPDP and EU WCAG directives are increasingly enforced.</p>
+    </div>
   </div>
+  ${footer()}
 </div>
-${(r.ada_report?.critical_violations||[]).length ? `<h3>Critical Violations</h3><ul>${r.ada_report.critical_violations.map(v=>`<li>${v}</li>`).join('')}</ul>` : ''}
 
-<h2>SOC / Security Compliance</h2>
-<div class="two-col">
-  <div class="info-box">
-    <p><strong>SOC Score:</strong> ${r.soc_score||0}/100</p>
-    <p><strong>HTTPS:</strong> ${r.soc_report?.https_enforced ? '✅' : '❌'}</p>
-    <p><strong>Cookie Consent:</strong> ${r.soc_report?.cookie_consent_compliant ? '✅' : '❌'}</p>
-    <p><strong>Privacy Policy:</strong> ${r.soc_report?.privacy_policy_adequate ? '✅' : '❌'}</p>
-    <p><strong>GDPR:</strong> ${r.soc_report?.gdpr_compliant ? '✅' : '❌'}</p>
-    <p><strong>CCPA:</strong> ${r.soc_report?.ccpa_compliant ? '✅' : '❌'}</p>
-    <p><strong>India DPDP:</strong> ${r.soc_report?.india_dpdp_compliant ? '✅' : '❌'}</p>
+<!-- PAGE 5: SOC COMPLIANCE -->
+<div class="page">
+  <div class="page-label">⚡ LAM AUDIT — SOC / SECURITY COMPLIANCE &nbsp;·&nbsp; Page 5 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">SOC / Security Compliance Audit</div>
+
+  <div class="compliance-grid">
+    <div class="comp-score-box">
+      <div style="font-size:22pt;font-weight:900;color:${(r.soc_score||0)>=75?'#16a34a':(r.soc_score||0)>=50?'#d97706':'#dc2626'}">${r.soc_score||0}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">SOC Score</div>
+    </div>
+    <div class="comp-score-box">
+      <div style="font-size:22pt;font-weight:900;color:${r.soc_report?.https_enforced?'#16a34a':'#dc2626'}">${r.soc_report?.https_enforced?'✅':'❌'}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">HTTPS</div>
+    </div>
+    <div class="comp-score-box">
+      <div style="font-size:22pt;font-weight:900;color:${r.soc_report?.cookie_consent_compliant?'#16a34a':'#dc2626'}">${r.soc_report?.cookie_consent_compliant?'✅':'❌'}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">Cookie Consent</div>
+    </div>
+    <div class="comp-score-box">
+      <div style="font-size:22pt;font-weight:900;color:${r.soc_report?.gdpr_compliant?'#16a34a':'#dc2626'}">${r.soc_report?.gdpr_compliant?'✅':'❌'}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">GDPR</div>
+    </div>
+    <div class="comp-score-box">
+      <div style="font-size:22pt;font-weight:900;color:${r.soc_report?.ccpa_compliant?'#16a34a':'#dc2626'}">${r.soc_report?.ccpa_compliant?'✅':'❌'}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">CCPA</div>
+    </div>
+    <div class="comp-score-box">
+      <div style="font-size:22pt;font-weight:900;color:${r.soc_report?.india_dpdp_compliant?'#16a34a':'#dc2626'}">${r.soc_report?.india_dpdp_compliant?'✅':'❌'}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">India DPDP</div>
+    </div>
   </div>
-  <div class="info-box">
-    <p><strong>Legal Risk:</strong> ${r.soc_report?.legal_risk_level||'—'}</p>
-    ${r.soc_report?.soc_narrative ? `<p style="margin-top:8px">${r.soc_report.soc_narrative}</p>` : ''}
-  </div>
+
+  ${r.soc_report?.soc_narrative ? `<div class="summary-box">${r.soc_report.soc_narrative}</div>` : ''}
+  ${r.soc_report?.legal_risk_level ? `<div class="revenue">⚖ Legal Risk Level: <strong>${r.soc_report.legal_risk_level}</strong></div>` : ''}
+
+  ${(r.soc_report?.compliance_gaps||[]).length ? `
+  <div class="section-title">Compliance Gaps</div>
+  <table class="priority-table">
+    <tr><th>Gap</th><th>Risk</th></tr>
+    ${r.soc_report.compliance_gaps.map(g=>`<tr><td>${g}</td><td><span class="pill pill-red">Must Fix</span></td></tr>`).join('')}
+  </table>` : ''}
+
+  ${(r.soc_report?.third_party_trackers_found||[]).length ? `
+  <div class="section-title">Third Party Trackers Found</div>
+  <div style="font-size:9pt;color:#374151">${r.soc_report.third_party_trackers_found.join(' · ')}</div>` : ''}
+
+  <div class="section-title">Compliance Summary</div>
+  <div class="check-row"><span class="check-label">Privacy Policy Adequate</span><span class="check-val">${r.soc_report?.privacy_policy_adequate ? '✅ Yes' : '❌ No'}</span></div>
+  <div class="check-row"><span class="check-label">Cookie Consent Compliant</span><span class="check-val">${r.soc_report?.cookie_consent_compliant ? '✅ Yes' : '❌ No'}</span></div>
+  <div class="check-row"><span class="check-label">HTTPS Enforced</span><span class="check-val">${r.soc_report?.https_enforced ? '✅ Yes' : '❌ No'}</span></div>
+  <div class="check-row"><span class="check-label">GDPR Compliant</span><span class="check-val">${r.soc_report?.gdpr_compliant ? '✅ Yes' : '❌ No'}</span></div>
+  <div class="check-row"><span class="check-label">CCPA Compliant</span><span class="check-val">${r.soc_report?.ccpa_compliant ? '✅ Yes' : '❌ No'}</span></div>
+  <div class="check-row"><span class="check-label">India DPDP Compliant</span><span class="check-val">${r.soc_report?.india_dpdp_compliant ? '✅ Yes' : '❌ No'}</span></div>
+  ${footer()}
 </div>
-${(r.soc_report?.compliance_gaps||[]).length ? `<h3>Compliance Gaps</h3><ul>${r.soc_report.compliance_gaps.map(g=>`<li>${g}</li>`).join('')}</ul>` : ''}
 
-<h2>Competitive Intelligence</h2>
-${r.competitive_intel?.market_position ? `<p style="font-size:13px"><strong>Market Position:</strong> ${r.competitive_intel.market_position}</p>` : ''}
-${r.competitive_intel?.where_losing_clients_to_competitors ? `<p style="font-size:13px"><strong>Losing Clients Because:</strong> ${r.competitive_intel.where_losing_clients_to_competitors}</p>` : ''}
-${r.competitive_intel?.biggest_competitive_weakness ? `<p style="font-size:13px"><strong>Biggest Weakness:</strong> ${r.competitive_intel.biggest_competitive_weakness}</p>` : ''}
-${r.competitive_intel?.opportunity_to_win ? `<p style="font-size:13px"><strong>Opportunity:</strong> ${r.competitive_intel.opportunity_to_win}</p>` : ''}
+<!-- PAGE 6: COMPETITIVE INTELLIGENCE -->
+<div class="page">
+  <div class="page-label">⚡ LAM AUDIT — COMPETITIVE INTELLIGENCE &nbsp;·&nbsp; Page 6 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">Market Position Analysis</div>
+  ${r.competitive_intel?.market_position ? `<div class="summary-box">${r.competitive_intel.market_position}</div>` : ''}
 
-<h2>90-Day Roadmap</h2>
-<div class="roadmap-grid">
-  <div class="roadmap-col">
-    <div class="roadmap-title" style="color:#16a34a">Week 1 — Quick Wins</div>
-    <ul>${(r.roadmap?.week_1?.actions||[]).map(a=>`<li>${a}</li>`).join('')||'<li>—</li>'}</ul>
-    <div style="font-size:11px;color:#64748b;margin-top:6px">${r.roadmap?.week_1?.estimated_cost||''}</div>
+  <div class="two-col">
+    <div class="info-box">
+      <h4>Where Losing Clients</h4>
+      <p>${r.competitive_intel?.where_losing_clients_to_competitors||r.competitive_intel?.where_losing_clients||'—'}</p>
+    </div>
+    <div class="info-box">
+      <h4>Biggest Competitive Weakness</h4>
+      <p>${r.competitive_intel?.biggest_competitive_weakness||'—'}</p>
+    </div>
   </div>
-  <div class="roadmap-col">
-    <div class="roadmap-title" style="color:#d97706">Month 1</div>
-    <ul>${(r.roadmap?.month_1?.actions||[]).map(a=>`<li>${a}</li>`).join('')||'<li>—</li>'}</ul>
-    <div style="font-size:11px;color:#64748b;margin-top:6px">${r.roadmap?.month_1?.estimated_cost||''}</div>
+
+  <div class="info-box" style="margin-top:4mm">
+    <h4>Your Opportunity To Win</h4>
+    <p>${r.competitive_intel?.opportunity_to_win||'—'}</p>
   </div>
-  <div class="roadmap-col">
-    <div class="roadmap-title" style="color:#7c3aed">Month 2-3</div>
-    <ul>${(r.roadmap?.month_2_3?.actions||[]).map(a=>`<li>${a}</li>`).join('')||'<li>—</li>'}</ul>
-    <div style="font-size:11px;color:#64748b;margin-top:6px">${r.roadmap?.month_2_3?.estimated_cost||''}</div>
-  </div>
+
+  ${(r.strengths||[]).length ? `
+  <div class="section-title">Strengths Identified</div>
+  <ul style="padding-left:5mm">${r.strengths.map(s=>`<li style="font-size:9pt;color:#374151;margin-bottom:2mm">✓ ${s}</li>`).join('')}</ul>` : ''}
+
+  <div class="section-title">Additional Metrics</div>
+  <div class="check-row"><span class="check-label">Mobile Readiness</span><span class="check-val">${r.mobile_readiness||'—'}</span></div>
+  <div class="check-row"><span class="check-label">Pricing Clarity</span><span class="check-val">${r.pricing_clarity||'—'}</span></div>
+  <div class="check-row"><span class="check-label">CTA Effectiveness</span><span class="check-val">${r.cta_effectiveness||'—'}</span></div>
+  <div class="check-row"><span class="check-label">Load Speed</span><span class="check-val">${r.load_speed_impression||'—'}</span></div>
+  <div class="check-row"><span class="check-label">Content Quality</span><span class="check-val">${r.content_quality||'—'}</span></div>
+  ${footer()}
 </div>
-${r.roadmap?.expected_outcome_90_days ? `<p style="font-size:13px;color:#374151"><strong>Expected Outcome:</strong> ${r.roadmap.expected_outcome_90_days}</p>` : ''}
 
-${(r.strengths||[]).length ? `<h2>Strengths Identified</h2><ul>${r.strengths.map(s=>`<li>${s}</li>`).join('')}</ul>` : ''}
+<!-- PAGE 7: 90-DAY ROADMAP -->
+<div class="page">
+  <div class="page-label">⚡ LAM AUDIT — 90-DAY ACTION ROADMAP &nbsp;·&nbsp; Page 7 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">Your 90-Day Digital Transformation Plan</div>
 
-<div class="footer">
-  Generated by Klaro Pulse LAM Engine · klaro.services/pulse · ${new Date().toLocaleDateString()} · Confidential — for client use only<br>
-  Large Action Model v4 · Browser-based audit · Powered by AI
+  <div class="roadmap-phase" style="border-left:4px solid #16a34a">
+    <h3>Week 1 — ${r.roadmap?.week_1?.title||'Quick Wins'} &nbsp;<span style="color:#16a34a;font-weight:400;font-size:9pt">+${r.roadmap?.week_1?.expected_score_improvement||15} points expected</span></h3>
+    <div class="sub">No developer needed &nbsp;·&nbsp; Cost: ${r.roadmap?.week_1?.estimated_cost||'Free'}</div>
+    <ol>${(r.roadmap?.week_1?.actions||[]).map(a=>`<li>${a}</li>`).join('')||'<li>Review and update contact information visibility</li>'}</ol>
+  </div>
+
+  <div class="roadmap-phase" style="border-left:4px solid #d97706">
+    <h3>Month 1 — ${r.roadmap?.month_1?.title||'Conversion Fixes'} &nbsp;<span style="color:#d97706;font-weight:400;font-size:9pt">+${r.roadmap?.month_1?.expected_score_improvement||20} points expected</span></h3>
+    <div class="sub">Minor development &nbsp;·&nbsp; Cost: ${r.roadmap?.month_1?.estimated_cost||'$500-2,000'}</div>
+    <ol>${(r.roadmap?.month_1?.actions||[]).map(a=>`<li>${a}</li>`).join('')||'<li>Improve conversion pathways and trust signals</li>'}</ol>
+  </div>
+
+  <div class="roadmap-phase" style="border-left:4px solid #7c3aed">
+    <h3>Month 2-3 — ${r.roadmap?.month_2_3?.title||'Strategic Improvements'} &nbsp;<span style="color:#7c3aed;font-weight:400;font-size:9pt">+${r.roadmap?.month_2_3?.expected_score_improvement||25} points expected</span></h3>
+    <div class="sub">Strategic investment &nbsp;·&nbsp; Cost: ${r.roadmap?.month_2_3?.estimated_cost||'$2,000-10,000'}</div>
+    <ol>${(r.roadmap?.month_2_3?.actions||[]).map(a=>`<li>${a}</li>`).join('')||'<li>Full ADA/SOC compliance implementation</li>'}</ol>
+  </div>
+
+  ${r.roadmap?.expected_outcome_90_days ? `
+  <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:5mm;margin:4mm 0;font-size:9pt;color:#166534;line-height:1.6">
+    <strong>Expected in 90 Days:</strong> ${r.roadmap.expected_outcome_90_days}
+  </div>` : ''}
+  ${footer()}
 </div>
+
+<!-- PAGE 8: METHODOLOGY & CTA -->
+<div class="page">
+  <div class="page-label">⚡ LAM AUDIT — METHODOLOGY &nbsp;·&nbsp; Page 8 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">About This LAM Audit</div>
+
+  <div class="summary-box" style="background:#faf5ff;border-color:#7c3aed">
+    Unlike standard AI reports that only read your website's HTML, our <strong>Large Action Model (LAM)</strong> actually visits your website as a real potential client would. It navigates pages, attempts to contact you, tests your signin/signup flow, and reports every moment of friction it experiences.
+  </div>
+
+  <div class="section-title">What Our LAM Agent Did</div>
+  <table class="priority-table">
+    <tr><th>Task</th><th>What Was Tested</th></tr>
+    <tr><td>Site Exploration</td><td>Visited homepage, about, services, pricing, contact pages as a potential client</td></tr>
+    <tr><td>Conversion Attempt</td><td>Tried to contact the business — found phone, email, filled contact form</td></tr>
+    <tr><td>Auth Flow Test</td><td>Attempted to create account and sign in, noted all friction points</td></tr>
+    <tr><td>ADA/WCAG Audit</td><td>Full WCAG 2.1 AA check — keyboard nav, screen reader, contrast, alt text</td></tr>
+    <tr><td>SOC/Compliance</td><td>Scanned all public pages for HTTPS, cookie consent, privacy policy, GDPR signals</td></tr>
+    <tr><td>Executive Report</td><td>AI synthesized all findings into business-focused recommendations</td></tr>
+  </table>
+
+  <div class="section-title">Scan Details</div>
+  <div class="check-row"><span class="check-label">Target URL</span><span class="check-val">${r.url}</span></div>
+  <div class="check-row"><span class="check-label">Scan Date</span><span class="check-val">${scanDate}</span></div>
+  <div class="check-row"><span class="check-label">Agent Version</span><span class="check-val">LAM v4 — Browser Use + Multi-LLM</span></div>
+  <div class="check-row"><span class="check-label">Report ID</span><span class="check-val" style="font-family:monospace;font-size:8pt">${r.id}</span></div>
+  <div class="check-row"><span class="check-label">Triggered By</span><span class="check-val">${r.triggered_by||'Manual'}</span></div>
+
+  <div class="cta-box">
+    <div style="font-size:13pt;font-weight:900;margin-bottom:2mm">Ready to fix these issues?</div>
+    <div style="font-size:9pt;opacity:0.8;margin-bottom:4mm">Klaro Pulse LAM monitors your site weekly and alerts you when competitors change strategy. We also audit your competitors so you stay one step ahead.</div>
+    <div style="font-size:10pt;font-weight:700">klaro.services/pulse &nbsp;·&nbsp; LAM Monthly from $499/month</div>
+  </div>
+  ${footer()}
+</div>
+
 </body></html>`;
 
   const win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
-  setTimeout(() => win.print(), 500);
+  setTimeout(() => win.print(), 800);
 }
 
+
 async function downloadReport(logId, name) {
-  // Find the log data
   const log = allLogs.find(l => l.id === logId);
   if (!log) return alert('Report data not found');
-  
   const r = log.metadata?.full_report || {};
   const score = r.overall_score || 0;
   const trust = r.ux_conversion_audit?.trust_score || 0;
   const conv = r.ux_conversion_audit?.conversion_score || 0;
+  const sec = r.security_compliance?.security_score || 0;
+  const mobile = r.mobile_readiness === 'Good' ? 90 : r.mobile_readiness === 'Needs Work' ? 60 : 30;
   const hostname = name;
+  const today = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const scanDate = new Date(log.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
+  const css = `
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1e293b;background:white}
+    .page{width:210mm;min-height:297mm;padding:20mm 18mm;page-break-after:always;position:relative}
+    .page:last-child{page-break-after:auto}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10mm;border-bottom:3px solid #1e1b4b;padding-bottom:6mm}
+    .header-left h1{font-size:28pt;font-weight:900;color:#1e1b4b;line-height:1}
+    .header-left .url{font-size:9pt;color:#64748b;margin-top:3mm}
+    .header-right{text-align:center;background:#1e1b4b;color:white;border-radius:8px;padding:8mm 10mm;min-width:30mm}
+    .header-right .big{font-size:36pt;font-weight:900;line-height:1}
+    .header-right .lbl{font-size:8pt;opacity:0.7;margin-top:1mm}
+    .page-label{font-size:8pt;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4mm;font-weight:700}
+    .section-title{font-size:13pt;font-weight:900;color:#1e1b4b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid #e2e8f0;padding-bottom:3mm;margin:8mm 0 5mm}
+    .score-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4mm;margin:6mm 0}
+    .score-box{border:2px solid #e2e8f0;border-radius:6px;padding:5mm;text-align:center}
+    .score-num{font-size:22pt;font-weight:900}
+    .score-lbl{font-size:7pt;color:#64748b;text-transform:uppercase;font-weight:700;margin-top:1mm}
+    .verdict{background:#fef9c3;border-left:5px solid #f59e0b;padding:5mm 7mm;border-radius:0 6px 6px 0;font-size:12pt;font-weight:700;margin:5mm 0;font-style:italic}
+    .summary-box{background:#f0f9ff;border-left:4px solid #1e1b4b;padding:5mm 7mm;border-radius:0 6px 6px 0;font-size:9.5pt;line-height:1.7;margin:4mm 0}
+    .revenue{background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:4mm 6mm;font-size:9pt;color:#991b1b;margin:4mm 0}
+    .priority-table{width:100%;border-collapse:collapse;margin:4mm 0;font-size:9pt}
+    .priority-table th{background:#1e1b4b;color:white;padding:3mm 4mm;text-align:left;font-size:8pt;text-transform:uppercase;letter-spacing:0.05em}
+    .priority-table td{padding:3mm 4mm;border-bottom:1px solid #e2e8f0;vertical-align:top}
+    .priority-table tr:nth-child(even) td{background:#f8fafc}
+    .pill{display:inline-block;padding:1mm 3mm;border-radius:20px;font-size:7.5pt;font-weight:700}
+    .pill-red{background:#fee2e2;color:#991b1b}
+    .pill-yellow{background:#fef9c3;color:#854d0e}
+    .pill-green{background:#dcfce7;color:#166534}
+    .pill-blue{background:#eff6ff;color:#1d4ed8}
+    .quick-wins{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:5mm;margin:4mm 0}
+    .quick-wins h4{font-size:9pt;font-weight:700;color:#166534;margin-bottom:3mm;text-transform:uppercase}
+    .quick-wins li{font-size:9pt;color:#166534;margin-bottom:2mm;list-style:none;padding-left:4mm}
+    .quick-wins li:before{content:"+ ";font-weight:900}
+    .comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin:4mm 0}
+    .comp-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5mm}
+    .comp-box h4{font-size:8.5pt;font-weight:700;color:#1e1b4b;text-transform:uppercase;margin-bottom:2mm;letter-spacing:0.05em}
+    .comp-box p{font-size:9pt;color:#374151;line-height:1.6}
+    .strengths li{font-size:9pt;color:#374151;margin-bottom:2mm;list-style:none;padding-left:4mm}
+    .strengths li:before{content:"+ ";color:#16a34a;font-weight:900}
+    .compliance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin:4mm 0}
+    .comp-score-box{border:1px solid #e2e8f0;border-radius:6px;padding:4mm;text-align:center}
+    .comp-score-num{font-size:20pt;font-weight:900}
+    .comp-score-desc{font-size:7.5pt;color:#64748b;margin-top:1mm}
+    .risk-item{display:flex;align-items:flex-start;gap:3mm;padding:2mm 0;border-bottom:1px solid #f1f5f9;font-size:9pt}
+    .risk-icon{font-weight:900;flex-shrink:0}
+    .roadmap-phase{border:1px solid #e2e8f0;border-radius:8px;padding:6mm;margin:4mm 0}
+    .roadmap-phase h3{font-size:10pt;font-weight:900;color:#1e1b4b;margin-bottom:1mm}
+    .roadmap-phase .target{font-size:8pt;color:#64748b;margin-bottom:3mm}
+    .roadmap-phase li{font-size:9pt;color:#374151;margin-bottom:2mm;padding-left:4mm}
+    .roadmap-phase .cost{font-size:8pt;color:#64748b;margin-top:2mm;font-style:italic}
+    .cta-box{background:#1e1b4b;color:white;border-radius:8px;padding:6mm;text-align:center;margin-top:8mm}
+    .footer{position:absolute;bottom:10mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3mm}
+    @media print{.page{margin:0;padding:15mm 15mm 20mm}}
+  `;
+
+  const footerHtml = (page, total) => `
+    <div class="footer">
+      <span>${hostname} | ${log.url}</span>
+      <span>Klaro Pulse Site Intelligence klaro.services/pulse | (c) 2026 Klaro Global</span>
+    </div>`;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>Klaro Pulse Report — ${hostname}</title>
-<style>
-  body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#1e293b}
-  h1{font-size:24px;font-weight:900;color:#1e293b;margin-bottom:4px}
-  h2{font-size:16px;font-weight:700;color:#3730a3;margin:24px 0 8px;border-bottom:2px solid #e2e8f0;padding-bottom:6px}
-  h3{font-size:13px;font-weight:700;color:#475569;margin:12px 0 6px}
-  .meta{font-size:12px;color:#64748b;margin-bottom:24px}
-  .score-row{display:flex;gap:20px;margin:16px 0;flex-wrap:wrap}
-  .score-box{background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:16px 20px;text-align:center;min-width:120px}
-  .score-num{font-size:32px;font-weight:900;color:#3730a3}
-  .score-lbl{font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700}
-  .summary{background:#f0f9ff;border-left:4px solid #3730a3;padding:12px 16px;margin:12px 0;font-size:13px;line-height:1.6;border-radius:0 8px 8px 0}
-  .verdict{font-size:18px;font-weight:700;color:#1e293b;background:#fef9c3;padding:12px 16px;border-radius:8px;margin:12px 0}
-  ul{padding-left:20px;margin:8px 0}
-  li{font-size:13px;line-height:1.8;color:#374151}
-  .tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin:2px}
-  .green{background:#dcfce7;color:#166534}
-  .red{background:#fee2e2;color:#991b1b}
-  .yellow{background:#fef9c3;color:#854d0e}
-  .compliance{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0}
-  .comp-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center}
-  .comp-score{font-size:22px;font-weight:900}
-  .comp-lbl{font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700}
-  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:center}
-  @media print{body{padding:20px}.no-print{display:none}}
-</style>
-</head>
-<body>
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-  <div>
-    <div style="font-size:11px;font-weight:900;color:#6366f1;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px">KLARO PULSE — SITE INTELLIGENCE REPORT</div>
-    <h1>${hostname}</h1>
-    <div class="meta">${log.url} · Scanned ${new Date(log.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})} · Klaro Pulse AI Analysis</div>
+<style>${css}</style></head><body>
+
+<!-- PAGE 1: EXECUTIVE BRIEF -->
+<div class="page">
+  <div class="page-label">KLARO PULSE EXECUTIVE BRIEF &nbsp;·&nbsp; Page 1 of 5 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="header">
+    <div class="header-left">
+      <h1>${hostname}</h1>
+      <div class="url">${log.url}</div>
+      <div class="url" style="margin-top:2mm">${r.industry||''}</div>
+    </div>
+    <div class="header-right">
+      <div class="big">${score}</div>
+      <div class="lbl">OVERALL</div>
+      <div style="margin-top:3mm;font-size:9pt;font-weight:700">Grade: ${r.grade||'—'}</div>
+    </div>
   </div>
-  <div style="text-align:center;background:#1e1b4b;color:white;border-radius:12px;padding:16px 20px">
-    <div style="font-size:40px;font-weight:900">${score}</div>
-    <div style="font-size:10px;opacity:0.7;text-transform:uppercase">/100</div>
-    <div style="font-size:11px;margin-top:4px;font-weight:700">${r.grade||'—'}</div>
+
+  <div class="score-grid">
+    <div class="score-box"><div class="score-num" style="color:${score>=75?'#16a34a':score>=50?'#d97706':'#dc2626'}">${score}</div><div class="score-lbl">OVERALL</div></div>
+    <div class="score-box"><div class="score-num" style="color:#3730a3">${trust}</div><div class="score-lbl">TRUST</div></div>
+    <div class="score-box"><div class="score-num" style="color:#0891b2">${conv}</div><div class="score-lbl">CONVERSION</div></div>
+    <div class="score-box"><div class="score-num" style="color:#059669">${sec}</div><div class="score-lbl">SECURITY</div></div>
+    <div class="score-box"><div class="score-num" style="color:#7c3aed">${mobile}</div><div class="score-lbl">MOBILE</div></div>
   </div>
+  <div style="text-align:center;font-size:9pt;color:#64748b;margin-bottom:5mm">Grade: <strong>${r.grade||'—'}</strong> &nbsp;·&nbsp; Urgency: <strong>${r.executive_brief?.urgency||'—'}</strong></div>
+
+  <div class="section-title">Executive Verdict</div>
+  ${r.executive_brief?.one_line_verdict ? `<div class="verdict">"${r.executive_brief.one_line_verdict}"</div>` : ''}
+  ${r.executive_brief?.plain_english_summary ? `<div class="summary-box">${r.executive_brief.plain_english_summary}</div>` : ''}
+  ${r.executive_brief?.estimated_revenue_impact ? `<div class="revenue">Revenue Impact: ${r.executive_brief.estimated_revenue_impact}</div>` : ''}
+
+  <div class="section-title">Priority Actions</div>
+  <table class="priority-table">
+    <tr><th>Timeframe</th><th>Action</th></tr>
+    ${(r.executive_brief?.top_3_actions||[]).map((a,i)=>`<tr><td><span class="pill ${i===0?'pill-red':i===1?'pill-yellow':'pill-blue'}">${i===0?'THIS WEEK':i===1?'THIS MONTH':'THIS QUARTER'}</span></td><td>${a}</td></tr>`).join('')}
+  </table>
+  ${footerHtml(1,5)}
 </div>
 
-${r.executive_brief?.one_line_verdict ? `<div class="verdict">💡 ${r.executive_brief.one_line_verdict}</div>` : ''}
+<!-- PAGE 2: UX & CONVERSION -->
+<div class="page">
+  <div class="page-label">KLARO PULSE UX & CONVERSION AUDIT &nbsp;·&nbsp; Page 2 of 5 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">Performance Scores</div>
+  <table class="priority-table">
+    <tr><th>Metric</th><th>Score</th></tr>
+    <tr><td>Overall Score</td><td><strong>${score}/100</strong></td></tr>
+    <tr><td>Trust & Credibility</td><td><strong>${trust}/100</strong></td></tr>
+    <tr><td>Conversion Rate</td><td><strong>${conv}/100</strong></td></tr>
+    <tr><td>Security Surface</td><td><strong>${sec}/100</strong></td></tr>
+  </table>
 
-<div class="score-row">
-  <div class="score-box"><div class="score-num" style="color:${score>=75?'#16a34a':score>=50?'#d97706':'#dc2626'}">${score}</div><div class="score-lbl">Overall Score</div></div>
-  <div class="score-box"><div class="score-num" style="color:#3730a3">${trust}</div><div class="score-lbl">Trust Score</div></div>
-  <div class="score-box"><div class="score-num" style="color:#0891b2">${conv}</div><div class="score-lbl">Conversion</div></div>
-  <div class="score-box"><div class="score-num" style="color:#7c3aed">${r.security_compliance?.security_score||0}</div><div class="score-lbl">Security</div></div>
+  <div class="section-title">Conversion Killers — Detailed Analysis</div>
+  <table class="priority-table">
+    <tr><th>Priority</th><th>Issue</th><th>Fix</th><th>Impact</th><th>Effort</th></tr>
+    ${(r.ux_conversion_audit?.friction_points||[]).map(f => {
+      const issue = typeof f === 'object' ? f : {issue:f, fix:'', priority:'Medium', effort:'', cost:'', business_impact:''};
+      return `<tr>
+        <td><span class="pill ${issue.priority==='Critical'?'pill-red':issue.priority==='High'?'pill-yellow':'pill-green'}">${issue.priority||'Medium'}</span></td>
+        <td>${issue.issue||''}</td>
+        <td>${issue.fix||''}</td>
+        <td style="color:#64748b;font-size:8.5pt">${issue.business_impact||''}</td>
+        <td style="white-space:nowrap;font-size:8.5pt">${issue.effort||''} · ${issue.cost||''}</td>
+      </tr>`;
+    }).join('')}
+  </table>
+
+  ${(r.ux_conversion_audit?.quick_wins||[]).length ? `
+  <div class="quick-wins">
+    <h4>Quick Wins — Free, Under 1 Hour</h4>
+    <ul>${r.ux_conversion_audit.quick_wins.map(q=>`<li>${q}</li>`).join('')}</ul>
+  </div>` : ''}
+  ${footerHtml(2,5)}
 </div>
 
-<h2>Executive Summary</h2>
-${r.executive_brief?.plain_english_summary ? `<div class="summary">${r.executive_brief.plain_english_summary}</div>` : ''}
-${r.executive_brief?.estimated_revenue_impact ? `<p style="font-size:13px"><strong>Revenue Impact:</strong> ${r.executive_brief.estimated_revenue_impact}</p>` : ''}
+<!-- PAGE 3: COMPETITIVE INTELLIGENCE -->
+<div class="page">
+  <div class="page-label">KLARO PULSE COMPETITIVE INTELLIGENCE &nbsp;·&nbsp; Page 3 of 5 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">Market Position Analysis</div>
+  ${r.competitive_intelligence?.market_position ? `<div class="summary-box">${r.competitive_intelligence.market_position}</div>` : ''}
 
-<h2>Compliance & Technical</h2>
-<div class="compliance">
-  <div class="comp-box"><div class="comp-score" style="color:${log.url?.startsWith('https')?'#16a34a':'#dc2626'}">${log.url?.startsWith('https')?'100':'0'}</div><div class="comp-lbl">HTTPS</div></div>
-  <div class="comp-box"><div class="comp-score" style="color:#d97706">${r.mobile_readiness==='Good'?90:r.mobile_readiness==='Needs Work'?60:30}</div><div class="comp-lbl">Mobile</div></div>
-  <div class="comp-box"><div class="comp-score" style="color:#0891b2">${r.security_compliance?.accessibility_score||50}</div><div class="comp-lbl">Accessibility</div></div>
-  <div class="comp-box"><div class="comp-score" style="color:#7c3aed">${r.security_compliance?.security_score||55}</div><div class="comp-lbl">Security</div></div>
+  <div class="comp-grid">
+    <div class="comp-box">
+      <h4>Why Clients Choose Competitors</h4>
+      <p>${r.competitive_intelligence?.where_losing_clients||'—'}</p>
+    </div>
+    <div class="comp-box">
+      <h4>Biggest Competitor Advantage</h4>
+      <p>${r.competitive_intelligence?.biggest_competitor_advantage||r.competitive_intelligence?.market_position||'—'}</p>
+    </div>
+  </div>
+  <div class="comp-box" style="margin:4mm 0">
+    <h4>Your Opportunity To Win</h4>
+    <p>${r.competitive_intelligence?.opportunity_to_win||'—'}</p>
+  </div>
+
+  ${r.metadata?.competitors_scanned?.length ? `
+  <div class="section-title">Sites Compared In This Analysis</div>
+  <p style="font-size:9pt;color:#64748b">${(r.metadata?.competitors_scanned||log.metadata?.competitors_scanned||[]).join(' · ')}</p>` : ''}
+
+  <div class="section-title">What This Site Does Well</div>
+  <ul class="strengths">${(r.strengths||[]).map(s=>`<li>${s}</li>`).join('')}</ul>
+  ${footerHtml(3,5)}
 </div>
 
-${r.executive_brief?.urgency ? `<p style="font-size:13px"><span class="tag ${r.executive_brief.urgency==='Critical'?'red':r.executive_brief.urgency==='High'?'yellow':'green'}">⚡ Urgency: ${r.executive_brief.urgency}</span> <span class="tag yellow">Industry: ${r.industry||'—'}</span></p>` : ''}
+<!-- PAGE 4: SECURITY & COMPLIANCE -->
+<div class="page">
+  <div class="page-label">KLARO PULSE SECURITY & COMPLIANCE &nbsp;·&nbsp; Page 4 of 5 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">Compliance Surface Scan</div>
+  <div class="compliance-grid">
+    <div class="comp-score-box">
+      <div class="comp-score-num" style="color:${r.security_compliance?.https?'#16a34a':'#dc2626'}">${r.security_compliance?.https?'100':'0'}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">HTTPS / SSL</div>
+      <div class="comp-score-desc">${r.security_compliance?.https?'Valid SSL certificate, HTTPS enforced':'SSL not enforced'}</div>
+    </div>
+    <div class="comp-score-box">
+      <div class="comp-score-num" style="color:#d97706">${mobile}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">Mobile / ADA</div>
+      <div class="comp-score-desc">${r.mobile_readiness||'Needs Work'}</div>
+    </div>
+    <div class="comp-score-box">
+      <div class="comp-score-num" style="color:${r.security_compliance?.cookie_consent?'#16a34a':'#dc2626'}">${r.security_compliance?.cookie_consent?'90':'0'}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">Cookie Consent</div>
+      <div class="comp-score-desc">${r.security_compliance?.cookie_consent?'Cookie consent banner detected':'No consent banner found'}</div>
+    </div>
+    <div class="comp-score-box">
+      <div class="comp-score-num" style="color:${r.security_compliance?.privacy_policy?'#16a34a':'#dc2626'}">${r.security_compliance?.privacy_policy?'90':'0'}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">Privacy Policy</div>
+      <div class="comp-score-desc">${r.security_compliance?.privacy_policy?'Privacy policy page found':'No privacy policy found'}</div>
+    </div>
+    <div class="comp-score-box">
+      <div class="comp-score-num" style="color:#d97706">${r.security_compliance?.security_score||60}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">SOC2 Readiness</div>
+      <div class="comp-score-desc">${r.security_compliance?.soc2_readiness||'Not assessed'}</div>
+    </div>
+    <div class="comp-score-box">
+      <div class="comp-score-num" style="color:#d97706">${r.security_compliance?.accessibility_score||60}</div>
+      <div style="font-size:8pt;font-weight:700;margin-top:1mm">GDPR Status</div>
+      <div class="comp-score-desc">${r.security_compliance?.gdpr_compliance||'Not assessed'}</div>
+    </div>
+  </div>
 
-<h2>Problems Found</h2>
-<ul>${(r.ux_conversion_audit?.friction_points||r.ux_conversion_audit?.quick_wins||[]).map(p=>`<li>${typeof p==='object'?p.issue||JSON.stringify(p):p}</li>`).join('') || '<li>No critical issues detected</li>'}</ul>
+  <div class="section-title">ADA / WCAG 2.1 Accessibility Audit</div>
+  <div style="display:flex;gap:6mm;align-items:center;margin:4mm 0">
+    <div style="text-align:center;background:#fef2f2;border:2px solid #fecaca;border-radius:8px;padding:5mm 8mm">
+      <div style="font-size:24pt;font-weight:900;color:#dc2626">${r.security_compliance?.accessibility_score||60}</div>
+      <div style="font-size:7.5pt;color:#dc2626;font-weight:700">/100</div>
+    </div>
+    <div>
+      <div style="font-size:10pt;font-weight:900;color:#dc2626">HIGH RISK</div>
+      <div style="font-size:9pt;color:#374151;margin-top:1mm">ADA compliance failures expose US businesses to lawsuit risk.</div>
+    </div>
+  </div>
 
-<h2>90-Day Action Roadmap</h2>
-<h3>Week 1 — Quick Wins</h3>
-<ul>${(r.ninety_day_roadmap?.week_1?.actions||[]).map(a=>`<li>${a}</li>`).join('') || '<li>—</li>'}</ul>
-<h3>Month 1</h3>
-<ul>${(r.ninety_day_roadmap?.month_1?.actions||[]).map(a=>`<li>${a}</li>`).join('') || '<li>—</li>'}</ul>
-<h3>Month 2-3</h3>
-<ul>${(r.ninety_day_roadmap?.month_2_3?.actions||[]).map(a=>`<li>${a}</li>`).join('') || '<li>—</li>'}</ul>
+  ${(r.security_compliance?.legal_risks||[]).length ? `
+  <div class="section-title">Legal Risks Identified</div>
+  ${r.security_compliance.legal_risks.map(l=>`<div class="risk-item"><span class="risk-icon" style="color:#dc2626">!</span><span>${l}</span></div>`).join('')}` : ''}
 
-<h2>Competitive Intelligence</h2>
-${r.competitive_intelligence?.market_position ? `<p style="font-size:13px"><strong>Market Position:</strong> ${r.competitive_intelligence.market_position}</p>` : ''}
-${r.competitive_intelligence?.where_losing_clients ? `<p style="font-size:13px"><strong>Where Losing Clients:</strong> ${r.competitive_intelligence.where_losing_clients}</p>` : ''}
-${r.competitive_intelligence?.opportunity_to_win ? `<p style="font-size:13px"><strong>Opportunity:</strong> ${r.competitive_intelligence.opportunity_to_win}</p>` : ''}
+  ${(r.security_compliance?.security_issues||[]).length ? `
+  <div class="section-title">Security Issues</div>
+  ${r.security_compliance.security_issues.map(l=>`<div class="risk-item"><span class="risk-icon" style="color:#d97706">-</span><span>${l}</span></div>`).join('')}` : ''}
 
-<h2>Strengths</h2>
-<ul>${(r.strengths||[]).map(s=>`<li>${s}</li>`).join('') || '<li>—</li>'}</ul>
-
-<div class="footer">
-  Generated by Klaro Pulse AI · klaro.services/pulse · ${new Date().toLocaleDateString()} · Confidential — for internal use only
+  ${(r.security_compliance?.recommendations||[]).length ? `
+  <div class="section-title">Remediation Recommendations</div>
+  <ol style="padding-left:5mm">${r.security_compliance.recommendations.map(l=>`<li style="font-size:9pt;color:#374151;margin-bottom:2mm;padding-left:2mm">${l}</li>`).join('')}</ol>` : ''}
+  ${footerHtml(4,5)}
 </div>
-</body>
-</html>`;
+
+<!-- PAGE 5: 90-DAY ROADMAP -->
+<div class="page">
+  <div class="page-label">KLARO PULSE 90-DAY ACTION ROADMAP &nbsp;·&nbsp; Page 5 of 5 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
+  <div class="section-title">Your 90-Day Digital Transformation Plan</div>
+
+  <div class="roadmap-phase" style="border-left:4px solid #16a34a">
+    <h3>Week 1 — Quick Wins &nbsp;<span style="color:#16a34a">Target: ${Math.min(score+15,100)}/100</span></h3>
+    <div class="target">No developer needed &nbsp;·&nbsp; Cost: ${r.ninety_day_roadmap?.week_1?.cost||'Free'}</div>
+    <ol>${(r.ninety_day_roadmap?.week_1?.actions||[]).map((a,i)=>`<li>${a}</li>`).join('')}</ol>
+  </div>
+
+  <div class="roadmap-phase" style="border-left:4px solid #d97706">
+    <h3>Month 1 — Foundation &nbsp;<span style="color:#d97706">Target: ${Math.min(score+25,100)}/100</span></h3>
+    <div class="target">Basic developer needed &nbsp;·&nbsp; Cost: ${r.ninety_day_roadmap?.month_1?.cost||'Under 500 dollars'}</div>
+    <ol>${(r.ninety_day_roadmap?.month_1?.actions||[]).map((a,i)=>`<li>${a}</li>`).join('')}</ol>
+  </div>
+
+  <div class="roadmap-phase" style="border-left:4px solid #7c3aed">
+    <h3>Month 2-3 — Growth &nbsp;<span style="color:#7c3aed">Target: ${Math.min(score+40,100)}/100</span></h3>
+    <div class="target">Content & SEO investment &nbsp;·&nbsp; Cost: ${r.ninety_day_roadmap?.month_2_3?.cost||'500 to 2000 dollars'}</div>
+    <ol>${(r.ninety_day_roadmap?.month_2_3?.actions||[]).map((a,i)=>`<li>${a}</li>`).join('')}</ol>
+  </div>
+
+  ${r.ninety_day_roadmap?.expected_outcome ? `
+  <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:5mm;margin:4mm 0;font-size:9pt;color:#166534">
+    <strong>Expected in 90 Days:</strong> ${r.ninety_day_roadmap.expected_outcome}
+  </div>` : ''}
+
+  <div class="cta-box">
+    <div style="font-size:12pt;font-weight:900;margin-bottom:2mm">Ready to implement this roadmap?</div>
+    <div style="font-size:9pt;opacity:0.8;margin-bottom:4mm">Klaro Pulse monitors your site continuously and alerts you when competitors change strategy.</div>
+    <div style="font-size:10pt;font-weight:700">klaro.services/pulse &nbsp;·&nbsp; Monthly monitoring from $149/month</div>
+  </div>
+  ${footerHtml(5,5)}
+</div>
+
+</body></html>`;
 
   const win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
-  setTimeout(() => win.print(), 500);
+  setTimeout(() => win.print(), 800);
 }
+
 
 async function cancelLAM(runId, ghRunId) {
   if (!confirm('Cancel this LAM scan?')) return;
