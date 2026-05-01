@@ -134,8 +134,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .compliance-score{font-size:16px;font-weight:900}
 .compliance-label{font-size:9px;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;font-weight:600}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -778,407 +776,560 @@ function showUpgradePrompt(message) {
 async function downloadLAMReport(runId) {
   const { data: r, error } = await sb.from('lam_runs').select('*').eq('id', runId).single();
   if (error || !r) return alert('LAM report not found');
-  const hostname = r.url.replace('https://','').replace('http://','').split('/')[0];
-  const today = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  const scanDate = new Date(r.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
-  const css = `
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1e293b;background:white}
-    .page{width:210mm;padding:20mm 18mm 16mm;break-after:page;page-break-after:always;position:relative;border-bottom:1px solid #e2e8f0}
-    .page:last-child{break-after:auto;page-break-after:auto;border-bottom:none}
-    .page-label{font-size:8pt;color:#7c3aed;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4mm;font-weight:700}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8mm;border-bottom:3px solid #1e1b4b;padding-bottom:6mm}
-    .header-left h1{font-size:26pt;font-weight:900;color:#1e1b4b;line-height:1}
-    .header-left .url{font-size:9pt;color:#64748b;margin-top:2mm}
-    .lam-badge{background:#1e1b4b;color:#a5b4fc;padding:2mm 4mm;border-radius:4px;font-size:8pt;font-weight:700;display:inline-block;margin-bottom:3mm;letter-spacing:0.08em}
-    .score-box-main{text-align:center;background:#1e1b4b;color:white;border-radius:8px;padding:8mm 10mm}
-    .score-box-main .big{font-size:36pt;font-weight:900;line-height:1}
-    .score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:5mm 0}
-    .score-box{border:2px solid #e2e8f0;border-radius:6px;padding:4mm;text-align:center}
-    .score-num{font-size:20pt;font-weight:900}
-    .score-lbl{font-size:7pt;color:#64748b;text-transform:uppercase;font-weight:700;margin-top:1mm}
-    .section-title{font-size:11pt;font-weight:900;color:#1e1b4b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid #e2e8f0;padding-bottom:3mm;margin:7mm 0 4mm}
-    .verdict{background:#fef9c3;border-left:5px solid #f59e0b;padding:4mm 6mm;border-radius:0 6px 6px 0;font-size:11pt;font-weight:700;margin:4mm 0;font-style:italic}
-    .summary-box{background:#f5f3ff;border-left:4px solid #7c3aed;padding:5mm 7mm;border-radius:0 6px 6px 0;font-size:9.5pt;line-height:1.7;margin:4mm 0}
-    .revenue{background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3mm 5mm;font-size:9pt;color:#991b1b;margin:3mm 0}
-    .narrative{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5mm;font-size:9.5pt;line-height:1.8;color:#374151;margin:4mm 0;font-style:italic}
-    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin:4mm 0}
-    .info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5mm}
-    .info-box h4{font-size:8.5pt;font-weight:700;color:#1e1b4b;text-transform:uppercase;margin-bottom:3mm;letter-spacing:0.05em}
-    .info-box p,.info-box li{font-size:9pt;color:#374151;line-height:1.7;margin-bottom:1mm}
-    .priority-table{width:100%;border-collapse:collapse;margin:4mm 0;font-size:9pt}
-    .priority-table th{background:#1e1b4b;color:white;padding:3mm 4mm;text-align:left;font-size:8pt;text-transform:uppercase}
-    .priority-table td{padding:3mm 4mm;border-bottom:1px solid #e2e8f0;vertical-align:top}
-    .priority-table tr:nth-child(even) td{background:#f8fafc}
-    .pill{display:inline-block;padding:1mm 3mm;border-radius:20px;font-size:7.5pt;font-weight:700}
-    .pill-red{background:#fee2e2;color:#991b1b}
-    .pill-yellow{background:#fef9c3;color:#854d0e}
-    .pill-green{background:#dcfce7;color:#166534}
-    .check-row{display:flex;justify-content:space-between;align-items:center;padding:2.5mm 0;border-bottom:1px solid #f1f5f9;font-size:9pt}
-    .check-label{color:#374151}
-    .check-val{font-weight:700}
-    .compliance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin:4mm 0}
-    .comp-score-box{border:1px solid #e2e8f0;border-radius:6px;padding:4mm;text-align:center}
-    .roadmap-phase{border:1px solid #e2e8f0;border-radius:8px;padding:5mm;margin:3mm 0}
-    .roadmap-phase h3{font-size:10pt;font-weight:900;color:#1e1b4b;margin-bottom:1mm}
-    .roadmap-phase .sub{font-size:8pt;color:#64748b;margin-bottom:3mm}
-    .roadmap-phase li{font-size:9pt;color:#374151;margin-bottom:2mm;padding-left:3mm}
-    .cta-box{background:#1e1b4b;color:white;border-radius:8px;padding:6mm;text-align:center;margin-top:6mm}
-    .footer{position:absolute;bottom:8mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3mm}
-    @media print{
-      body{margin:0}
-      .page{padding:15mm;border-bottom:none;page-break-after:always;break-after:page}
-      .page:last-child{page-break-after:avoid;break-after:avoid}
-      .footer{position:fixed;bottom:5mm;left:15mm;right:15mm}
-    }
-  `;
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Generating PDF...'; }
 
-  const footer = () => `<div class="footer"><span>${hostname} | ${r.url}</span><span>Klaro Pulse LAM Audit · klaro.services/pulse · (c) 2026 Klaro Global</span></div>`;
+  try {
+    const hostname = r.url.replace('https://','').replace('http://','').split('/')[0].replace('www.','');
+    const name = hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
+    const scanDate = new Date(r.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>Klaro Pulse LAM Report — ${hostname}</title>
-<style>${css}</style></head><body>
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = 210, M = 18, CW = W - M*2;
 
-<!-- PAGE 1: COVER & EXECUTIVE BRIEF -->
-<div class="page">
-  <div class="page-label">⚡ KLARO PULSE — LARGE ACTION MODEL AUDIT &nbsp;·&nbsp; Page 1 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="header">
-    <div class="header-left">
-      <div class="lam-badge">⚡ LARGE ACTION MODEL AUDIT</div>
-      <h1>${hostname}</h1>
-      <div class="url">${r.url}</div>
-      <div class="url" style="margin-top:2mm">LAM Agent v4 · Browser-based audit · ${scanDate}</div>
-    </div>
-    <div class="score-box-main">
-      <div class="big">${r.overall_score||'—'}</div>
-      <div style="font-size:9pt;opacity:0.7">/100</div>
-      <div style="font-size:11pt;font-weight:700;margin-top:2mm">${r.grade||'—'}</div>
-    </div>
-  </div>
+    const scoreColor = (s) => (s||0) >= 75 ? [22,163,74] : (s||0) >= 50 ? [217,119,6] : [220,38,38];
 
-  <div class="score-grid">
-    <div class="score-box"><div class="score-num" style="color:${(r.overall_score||0)>=75?'#16a34a':(r.overall_score||0)>=50?'#d97706':'#dc2626'}">${r.overall_score||0}</div><div class="score-lbl">Overall</div></div>
-    <div class="score-box"><div class="score-num" style="color:#7c3aed">${r.ada_score||0}</div><div class="score-lbl">ADA</div></div>
-    <div class="score-box"><div class="score-num" style="color:#0891b2">${r.soc_score||0}</div><div class="score-lbl">SOC</div></div>
-    <div class="score-box"><div class="score-num" style="color:#6366f1">${r.lam_score||0}</div><div class="score-lbl">LAM</div></div>
-  </div>
+    const addPage = (pageNum, total, label) => {
+      if (pageNum > 1) doc.addPage();
+      doc.setFillColor(30,27,75);
+      doc.rect(0,0,W,28,'F');
+      doc.setTextColor(165,180,252);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','bold');
+      doc.text(`⚡ KLARO PULSE LAM AUDIT  ·  ${label}  ·  PAGE ${pageNum} OF 8  ·  ${scanDate}  ·  CONFIDENTIAL`, M, 10);
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica','bold');
+      doc.text(name, M, 21);
+      // Score badge
+      const sc = r.overall_score||0;
+      doc.setFillColor(...scoreColor(sc));
+      doc.roundedRect(W-M-20, 4, 20, 20, 3, 3, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(14);
+      doc.setFont('helvetica','bold');
+      doc.text(String(sc), W-M-10, 14, {align:'center'});
+      doc.setFontSize(7);
+      doc.text(r.grade||'—', W-M-10, 20, {align:'center'});
+      // Footer
+      doc.setDrawColor(226,232,240);
+      doc.line(M, 284, W-M, 284);
+      doc.setTextColor(148,163,184);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','normal');
+      doc.text(`${name} | ${r.url}`, M, 288);
+      doc.text('Klaro Pulse LAM Audit · klaro.services/pulse · (c) 2026 Klaro Global', W-M, 288, {align:'right'});
+      return 34;
+    };
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4mm;margin:2mm 0 5mm">
-    <div class="score-box"><div class="score-num" style="color:#059669;font-size:18pt">${r.client_experience?.conversion_probability||'—'}</div><div class="score-lbl">Conversion Prob.</div></div>
-    <div class="score-box"><div class="score-num" style="font-size:16pt;color:${r.executive_brief?.urgency==='Critical'?'#dc2626':r.executive_brief?.urgency==='High'?'#d97706':'#16a34a'}">${r.executive_brief?.urgency||'—'}</div><div class="score-lbl">Urgency</div></div>
-  </div>
+    const sectionTitle = (y, text, color=[30,27,75]) => {
+      doc.setFillColor(238,242,255);
+      doc.rect(M, y, CW, 7, 'F');
+      doc.setTextColor(...color);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','bold');
+      doc.text(text.toUpperCase(), M+3, y+5);
+      return y + 10;
+    };
 
-  ${r.executive_brief?.one_line_verdict ? `<div class="verdict">"${r.executive_brief.one_line_verdict}"</div>` : ''}
-  ${r.executive_brief?.plain_english_summary ? `<div class="summary-box">${r.executive_brief.plain_english_summary}</div>` : ''}
-  ${r.executive_brief?.estimated_monthly_revenue_lost ? `<div class="revenue">💸 Estimated monthly revenue impact: <strong>${r.executive_brief.estimated_monthly_revenue_lost}</strong></div>` : ''}
+    const bodyText = (y, text, maxW=CW, color=[55,65,81]) => {
+      if (!text) return y;
+      doc.setTextColor(...color);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','normal');
+      const lines = doc.splitTextToSize(String(text), maxW);
+      doc.text(lines, M, y);
+      return y + lines.length * 5 + 2;
+    };
 
-  <div class="section-title">Top 3 Immediate Actions</div>
-  <table class="priority-table">
-    <tr><th>Timeframe</th><th>Action</th></tr>
-    ${(r.executive_brief?.top_3_actions||[]).map((a,i)=>`<tr><td><span class="pill ${i===0?'pill-red':i===1?'pill-yellow':'pill-green'}">${i===0?'THIS WEEK':i===1?'THIS MONTH':'THIS QUARTER'}</span></td><td>${a}</td></tr>`).join('')}
-  </table>
-  ${footer()}
-</div>
+    const scoreBox4 = (scores) => {
+      const bw = (CW-9)/4;
+      scores.forEach(([label, val], i) => {
+        const x = M + i*(bw+3);
+        doc.setDrawColor(226,232,240);
+        doc.roundedRect(x, 0, bw, 20, 2, 2, 'S');
+        doc.setTextColor(...scoreColor(val));
+        doc.setFontSize(16);
+        doc.setFont('helvetica','bold');
+        doc.text(String(val||0), x+bw/2, 12, {align:'center'});
+        doc.setTextColor(100,116,139);
+        doc.setFontSize(7);
+        doc.setFont('helvetica','normal');
+        doc.text(label, x+bw/2, 18, {align:'center'});
+      });
+    };
 
-<!-- PAGE 2: VISIT NARRATIVE -->
-<div class="page">
-  <div class="page-label">⚡ LAM AUDIT &nbsp;·&nbsp; Page 2 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">The LAM Agent Visit — First Person Narrative</div>
-  <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:6px;padding:5mm;margin:4mm 0;font-size:8.5pt;color:#374151;line-height:1.6">
-    <em style="color:#7c3aed;font-weight:700">How our AI agent experienced your website as a real potential client:</em>
-  </div>
-  ${r.executive_brief?.plain_english_summary ? `<div class="narrative">${r.executive_brief.plain_english_summary}</div>` : ''}
-  ${r.client_experience?.what_agent_experienced ? `<div class="narrative" style="margin-top:4mm">${r.client_experience.what_agent_experienced}</div>` : ''}
+    // PAGE 1: COVER & EXECUTIVE BRIEF
+    let y = addPage(1, 8, 'EXECUTIVE BRIEF');
 
-  <div class="section-title">Key Visit Metrics</div>
-  <div class="two-col">
-    <div class="info-box">
-      <h4>Time & Navigation</h4>
-      <p><strong>Time to understand business:</strong> ${r.client_experience?.time_to_understand_business||'—'}</p>
-      <p><strong>Time to find contact:</strong> ${r.client_experience?.time_to_find_contact||'—'}</p>
-      <p><strong>Contact form experience:</strong> ${r.client_experience?.contact_form_experience||'—'}</p>
-    </div>
-    <div class="info-box">
-      <h4>Conversion Verdict</h4>
-      <p><strong>Would convert:</strong> ${r.client_experience?.would_real_client_convert ? '✅ Yes' : '❌ Unlikely'}</p>
-      <p><strong>Probability:</strong> ${r.client_experience?.conversion_probability||'—'}</p>
-    </div>
-  </div>
-
-  <div class="two-col" style="margin-top:4mm">
-    <div class="info-box">
-      <h4>Trust Signals Found</h4>
-      <ul>${(r.client_experience?.trust_signals_found||['None identified']).map(s=>`<li>✓ ${s}</li>`).join('')}</ul>
-    </div>
-    <div class="info-box">
-      <h4>Trust Signals Missing</h4>
-      <ul>${(r.client_experience?.trust_signals_missing||[]).map(s=>`<li>✗ ${s}</li>`).join('')}</ul>
-    </div>
-  </div>
-
-  <div class="section-title">Conversion Blockers</div>
-  ${(r.client_experience?.conversion_blockers||[]).map((b,i)=>`<div style="display:flex;gap:3mm;align-items:flex-start;padding:2.5mm 0;border-bottom:1px solid #f1f5f9"><span style="color:#dc2626;font-weight:900;flex-shrink:0">${i+1}.</span><span style="font-size:9pt">${b}</span></div>`).join('')}
-  ${footer()}
-</div>
-
-<!-- PAGE 3: AUTH FLOW TEST -->
-<div class="page">
-  <div class="page-label">⚡ LAM AUDIT — AUTH FLOW TEST &nbsp;·&nbsp; Page 3 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">Signin / Signup Experience Test</div>
-  <div style="background:#f0f9ff;border-left:4px solid #0891b2;padding:4mm 6mm;border-radius:0 6px 6px 0;font-size:9pt;margin:4mm 0">
-    Our LAM agent attempted to create an account and sign in to test the authentication experience.
-  </div>
-
-  <div class="two-col">
-    <div class="info-box">
-      <h4>Signup Flow</h4>
-      <p>${r.auth_flow_report?.signup_experience||'Not tested'}</p>
-      <p style="margin-top:3mm"><strong>Social Login:</strong> ${r.auth_flow_report?.has_social_login ? '✅ Available' : '❌ Not available'}</p>
-    </div>
-    <div class="info-box">
-      <h4>Signin Flow</h4>
-      <p>${r.auth_flow_report?.signin_experience||'Not tested'}</p>
-      <p style="margin-top:3mm"><strong>Auth Score:</strong> ${r.auth_flow_report?.auth_score||r.auth_score||0}/100</p>
-    </div>
-  </div>
-
-  ${(r.auth_flow_report?.issues||[]).length ? `
-  <div class="section-title">Auth Issues Found</div>
-  ${r.auth_flow_report.issues.map(i=>`<div style="padding:2.5mm 0;border-bottom:1px solid #f1f5f9;font-size:9pt">⚠ ${i}</div>`).join('')}` : ''}
-
-  ${(r.auth_flow_report?.recommendations||[]).length ? `
-  <div class="section-title">Auth Recommendations</div>
-  <ol style="padding-left:5mm">${r.auth_flow_report.recommendations.map(rec=>`<li style="font-size:9pt;margin-bottom:2mm">${rec}</li>`).join('')}</ol>` : ''}
-
-  <div class="section-title">Pages Audited</div>
-  <table class="priority-table">
-    <tr><th>Page</th><th>Score</th><th>Key Finding</th></tr>
-    ${(r.raw_data?.pages||[]).slice(0,6).map(p=>`<tr><td>${p.page_name||p.url||'—'}</td><td>${p.score||'—'}</td><td>${p.first_impression||p.findings||'—'}</td></tr>`).join('')||'<tr><td colspan="3" style="color:#64748b">Browser data not available for this scan</td></tr>'}
-  </table>
-  ${footer()}
-</div>
-
-<!-- PAGE 4: ADA COMPLIANCE -->
-<div class="page">
-  <div class="page-label">⚡ LAM AUDIT — ADA / WCAG 2.1 COMPLIANCE &nbsp;·&nbsp; Page 4 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">ADA / WCAG 2.1 AA Accessibility Audit</div>
-
-  <div style="display:flex;gap:6mm;align-items:stretch;margin:4mm 0">
-    <div style="text-align:center;background:${(r.ada_score||0)>=75?'#f0fdf4':(r.ada_score||0)>=50?'#fef9c3':'#fef2f2'};border:2px solid ${(r.ada_score||0)>=75?'#86efac':(r.ada_score||0)>=50?'#fde047':'#fecaca'};border-radius:8px;padding:6mm 8mm;min-width:35mm">
-      <div style="font-size:30pt;font-weight:900;color:${(r.ada_score||0)>=75?'#16a34a':(r.ada_score||0)>=50?'#d97706':'#dc2626'}">${r.ada_score||0}</div>
-      <div style="font-size:8pt;font-weight:700;color:#64748b">/100 ADA SCORE</div>
-      <div style="font-size:9pt;font-weight:700;margin-top:2mm;color:${(r.ada_report?.risk_level==='Critical'||r.ada_report?.risk_level==='High')?'#dc2626':'#d97706'}">${r.ada_report?.risk_level||'—'} RISK</div>
-    </div>
-    <div style="flex:1">
-      <div class="check-row"><span class="check-label">WCAG Level Achieved</span><span class="check-val">${r.ada_report?.wcag_level_achieved||'—'}</span></div>
-      <div class="check-row"><span class="check-label">Keyboard Navigation</span><span class="check-val">${r.ada_report?.keyboard_navigation||'—'}</span></div>
-      <div class="check-row"><span class="check-label">Screen Reader Compatible</span><span class="check-val">${r.ada_report?.screen_reader_compatible ? '✅ Yes' : '❌ No'}</span></div>
-      <div class="check-row"><span class="check-label">Images Missing Alt Text</span><span class="check-val">${r.ada_report?.images_missing_alt ? '❌ Yes' : '✅ No'}</span></div>
-      <div class="check-row"><span class="check-label">Color Contrast Issues</span><span class="check-val">${r.ada_report?.color_contrast_issues ? '❌ Yes' : '✅ No'}</span></div>
-    </div>
-  </div>
-
-  ${r.ada_report?.ada_narrative ? `<div class="summary-box">${r.ada_report.ada_narrative}</div>` : ''}
-  ${r.ada_report?.legal_exposure ? `<div class="revenue">⚖ Legal Exposure: ${r.ada_report.legal_exposure}</div>` : ''}
-
-  ${(r.ada_report?.critical_violations||[]).length ? `
-  <div class="section-title">Critical Violations</div>
-  <table class="priority-table">
-    <tr><th>Violation</th><th>Impact</th><th>Recommended Fix</th></tr>
-    ${r.ada_report.critical_violations.map(v => {
-      const vObj = typeof v === 'object' ? v : {issue:v, impact:'High', fix:'Requires developer'};
-      return `<tr><td>${vObj.issue||v}</td><td><span class="pill pill-red">${vObj.impact||'High'}</span></td><td>${vObj.fix||'—'}</td></tr>`;
-    }).join('')}
-  </table>` : ''}
-
-  <div class="two-col">
-    <div class="info-box">
-      <h4>Remediation Estimate</h4>
-      <p><strong>Cost:</strong> ${r.ada_report?.remediation_cost||'—'}</p>
-      <p><strong>Time:</strong> ${r.ada_report?.remediation_time||'—'}</p>
-    </div>
-    <div class="info-box">
-      <h4>Why This Matters</h4>
-      <p>US businesses face real ADA lawsuit risk from accessibility failures. India DPDP and EU WCAG directives are increasingly enforced.</p>
-    </div>
-  </div>
-  ${footer()}
-</div>
-
-<!-- PAGE 5: SOC COMPLIANCE -->
-<div class="page">
-  <div class="page-label">⚡ LAM AUDIT — SOC / SECURITY COMPLIANCE &nbsp;·&nbsp; Page 5 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">SOC / Security Compliance Audit</div>
-
-  <div class="compliance-grid">
-    <div class="comp-score-box">
-      <div style="font-size:22pt;font-weight:900;color:${(r.soc_score||0)>=75?'#16a34a':(r.soc_score||0)>=50?'#d97706':'#dc2626'}">${r.soc_score||0}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">SOC Score</div>
-    </div>
-    <div class="comp-score-box">
-      <div style="font-size:22pt;font-weight:900;color:${r.soc_report?.https_enforced?'#16a34a':'#dc2626'}">${r.soc_report?.https_enforced?'✅':'❌'}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">HTTPS</div>
-    </div>
-    <div class="comp-score-box">
-      <div style="font-size:22pt;font-weight:900;color:${r.soc_report?.cookie_consent_compliant?'#16a34a':'#dc2626'}">${r.soc_report?.cookie_consent_compliant?'✅':'❌'}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">Cookie Consent</div>
-    </div>
-    <div class="comp-score-box">
-      <div style="font-size:22pt;font-weight:900;color:${r.soc_report?.gdpr_compliant?'#16a34a':'#dc2626'}">${r.soc_report?.gdpr_compliant?'✅':'❌'}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">GDPR</div>
-    </div>
-    <div class="comp-score-box">
-      <div style="font-size:22pt;font-weight:900;color:${r.soc_report?.ccpa_compliant?'#16a34a':'#dc2626'}">${r.soc_report?.ccpa_compliant?'✅':'❌'}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">CCPA</div>
-    </div>
-    <div class="comp-score-box">
-      <div style="font-size:22pt;font-weight:900;color:${r.soc_report?.india_dpdp_compliant?'#16a34a':'#dc2626'}">${r.soc_report?.india_dpdp_compliant?'✅':'❌'}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">India DPDP</div>
-    </div>
-  </div>
-
-  ${r.soc_report?.soc_narrative ? `<div class="summary-box">${r.soc_report.soc_narrative}</div>` : ''}
-  ${r.soc_report?.legal_risk_level ? `<div class="revenue">⚖ Legal Risk Level: <strong>${r.soc_report.legal_risk_level}</strong></div>` : ''}
-
-  ${(r.soc_report?.compliance_gaps||[]).length ? `
-  <div class="section-title">Compliance Gaps</div>
-  <table class="priority-table">
-    <tr><th>Gap</th><th>Risk</th></tr>
-    ${r.soc_report.compliance_gaps.map(g=>`<tr><td>${g}</td><td><span class="pill pill-red">Must Fix</span></td></tr>`).join('')}
-  </table>` : ''}
-
-  ${(r.soc_report?.third_party_trackers_found||[]).length ? `
-  <div class="section-title">Third Party Trackers Found</div>
-  <div style="font-size:9pt;color:#374151">${r.soc_report.third_party_trackers_found.join(' · ')}</div>` : ''}
-
-  <div class="section-title">Compliance Summary</div>
-  <div class="check-row"><span class="check-label">Privacy Policy Adequate</span><span class="check-val">${r.soc_report?.privacy_policy_adequate ? '✅ Yes' : '❌ No'}</span></div>
-  <div class="check-row"><span class="check-label">Cookie Consent Compliant</span><span class="check-val">${r.soc_report?.cookie_consent_compliant ? '✅ Yes' : '❌ No'}</span></div>
-  <div class="check-row"><span class="check-label">HTTPS Enforced</span><span class="check-val">${r.soc_report?.https_enforced ? '✅ Yes' : '❌ No'}</span></div>
-  <div class="check-row"><span class="check-label">GDPR Compliant</span><span class="check-val">${r.soc_report?.gdpr_compliant ? '✅ Yes' : '❌ No'}</span></div>
-  <div class="check-row"><span class="check-label">CCPA Compliant</span><span class="check-val">${r.soc_report?.ccpa_compliant ? '✅ Yes' : '❌ No'}</span></div>
-  <div class="check-row"><span class="check-label">India DPDP Compliant</span><span class="check-val">${r.soc_report?.india_dpdp_compliant ? '✅ Yes' : '❌ No'}</span></div>
-  ${footer()}
-</div>
-
-<!-- PAGE 6: COMPETITIVE INTELLIGENCE -->
-<div class="page">
-  <div class="page-label">⚡ LAM AUDIT — COMPETITIVE INTELLIGENCE &nbsp;·&nbsp; Page 6 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">Market Position Analysis</div>
-  ${r.competitive_intel?.market_position ? `<div class="summary-box">${r.competitive_intel.market_position}</div>` : ''}
-
-  <div class="two-col">
-    <div class="info-box">
-      <h4>Where Losing Clients</h4>
-      <p>${r.competitive_intel?.where_losing_clients_to_competitors||r.competitive_intel?.where_losing_clients||'—'}</p>
-    </div>
-    <div class="info-box">
-      <h4>Biggest Competitive Weakness</h4>
-      <p>${r.competitive_intel?.biggest_competitive_weakness||'—'}</p>
-    </div>
-  </div>
-
-  <div class="info-box" style="margin-top:4mm">
-    <h4>Your Opportunity To Win</h4>
-    <p>${r.competitive_intel?.opportunity_to_win||'—'}</p>
-  </div>
-
-  ${(r.strengths||[]).length ? `
-  <div class="section-title">Strengths Identified</div>
-  <ul style="padding-left:5mm">${r.strengths.map(s=>`<li style="font-size:9pt;color:#374151;margin-bottom:2mm">✓ ${s}</li>`).join('')}</ul>` : ''}
-
-  <div class="section-title">Additional Metrics</div>
-  <div class="check-row"><span class="check-label">Mobile Readiness</span><span class="check-val">${r.mobile_readiness||'—'}</span></div>
-  <div class="check-row"><span class="check-label">Pricing Clarity</span><span class="check-val">${r.pricing_clarity||'—'}</span></div>
-  <div class="check-row"><span class="check-label">CTA Effectiveness</span><span class="check-val">${r.cta_effectiveness||'—'}</span></div>
-  <div class="check-row"><span class="check-label">Load Speed</span><span class="check-val">${r.load_speed_impression||'—'}</span></div>
-  <div class="check-row"><span class="check-label">Content Quality</span><span class="check-val">${r.content_quality||'—'}</span></div>
-  ${footer()}
-</div>
-
-<!-- PAGE 7: 90-DAY ROADMAP -->
-<div class="page">
-  <div class="page-label">⚡ LAM AUDIT — 90-DAY ACTION ROADMAP &nbsp;·&nbsp; Page 7 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">Your 90-Day Digital Transformation Plan</div>
-
-  <div class="roadmap-phase" style="border-left:4px solid #16a34a">
-    <h3>Week 1 — ${r.roadmap?.week_1?.title||'Quick Wins'} &nbsp;<span style="color:#16a34a;font-weight:400;font-size:9pt">+${r.roadmap?.week_1?.expected_score_improvement||15} points expected</span></h3>
-    <div class="sub">No developer needed &nbsp;·&nbsp; Cost: ${r.roadmap?.week_1?.estimated_cost||'Free'}</div>
-    <ol>${(r.roadmap?.week_1?.actions||[]).map(a=>`<li>${a}</li>`).join('')||'<li>Review and update contact information visibility</li>'}</ol>
-  </div>
-
-  <div class="roadmap-phase" style="border-left:4px solid #d97706">
-    <h3>Month 1 — ${r.roadmap?.month_1?.title||'Conversion Fixes'} &nbsp;<span style="color:#d97706;font-weight:400;font-size:9pt">+${r.roadmap?.month_1?.expected_score_improvement||20} points expected</span></h3>
-    <div class="sub">Minor development &nbsp;·&nbsp; Cost: ${r.roadmap?.month_1?.estimated_cost||'$500-2,000'}</div>
-    <ol>${(r.roadmap?.month_1?.actions||[]).map(a=>`<li>${a}</li>`).join('')||'<li>Improve conversion pathways and trust signals</li>'}</ol>
-  </div>
-
-  <div class="roadmap-phase" style="border-left:4px solid #7c3aed">
-    <h3>Month 2-3 — ${r.roadmap?.month_2_3?.title||'Strategic Improvements'} &nbsp;<span style="color:#7c3aed;font-weight:400;font-size:9pt">+${r.roadmap?.month_2_3?.expected_score_improvement||25} points expected</span></h3>
-    <div class="sub">Strategic investment &nbsp;·&nbsp; Cost: ${r.roadmap?.month_2_3?.estimated_cost||'$2,000-10,000'}</div>
-    <ol>${(r.roadmap?.month_2_3?.actions||[]).map(a=>`<li>${a}</li>`).join('')||'<li>Full ADA/SOC compliance implementation</li>'}</ol>
-  </div>
-
-  ${r.roadmap?.expected_outcome_90_days ? `
-  <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:5mm;margin:4mm 0;font-size:9pt;color:#166534;line-height:1.6">
-    <strong>Expected in 90 Days:</strong> ${r.roadmap.expected_outcome_90_days}
-  </div>` : ''}
-  ${footer()}
-</div>
-
-<!-- PAGE 8: METHODOLOGY & CTA -->
-<div class="page">
-  <div class="page-label">⚡ LAM AUDIT — METHODOLOGY &nbsp;·&nbsp; Page 8 of 8 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">About This LAM Audit</div>
-
-  <div class="summary-box" style="background:#faf5ff;border-color:#7c3aed">
-    Unlike standard AI reports that only read your website's HTML, our <strong>Large Action Model (LAM)</strong> actually visits your website as a real potential client would. It navigates pages, attempts to contact you, tests your signin/signup flow, and reports every moment of friction it experiences.
-  </div>
-
-  <div class="section-title">What Our LAM Agent Did</div>
-  <table class="priority-table">
-    <tr><th>Task</th><th>What Was Tested</th></tr>
-    <tr><td>Site Exploration</td><td>Visited homepage, about, services, pricing, contact pages as a potential client</td></tr>
-    <tr><td>Conversion Attempt</td><td>Tried to contact the business — found phone, email, filled contact form</td></tr>
-    <tr><td>Auth Flow Test</td><td>Attempted to create account and sign in, noted all friction points</td></tr>
-    <tr><td>ADA/WCAG Audit</td><td>Full WCAG 2.1 AA check — keyboard nav, screen reader, contrast, alt text</td></tr>
-    <tr><td>SOC/Compliance</td><td>Scanned all public pages for HTTPS, cookie consent, privacy policy, GDPR signals</td></tr>
-    <tr><td>Executive Report</td><td>AI synthesized all findings into business-focused recommendations</td></tr>
-  </table>
-
-  <div class="section-title">Scan Details</div>
-  <div class="check-row"><span class="check-label">Target URL</span><span class="check-val">${r.url}</span></div>
-  <div class="check-row"><span class="check-label">Scan Date</span><span class="check-val">${scanDate}</span></div>
-  <div class="check-row"><span class="check-label">Agent Version</span><span class="check-val">LAM v4 — Browser Use + Multi-LLM</span></div>
-  <div class="check-row"><span class="check-label">Report ID</span><span class="check-val" style="font-family:monospace;font-size:8pt">${r.id}</span></div>
-  <div class="check-row"><span class="check-label">Triggered By</span><span class="check-val">${r.triggered_by||'Manual'}</span></div>
-
-  <div class="cta-box">
-    <div style="font-size:13pt;font-weight:900;margin-bottom:2mm">Ready to fix these issues?</div>
-    <div style="font-size:9pt;opacity:0.8;margin-bottom:4mm">Klaro Pulse LAM monitors your site weekly and alerts you when competitors change strategy. We also audit your competitors so you stay one step ahead.</div>
-    <div style="font-size:10pt;font-weight:700">klaro.services/pulse &nbsp;·&nbsp; LAM Monthly from $499/month</div>
-  </div>
-  ${footer()}
-</div>
-
-</body></html>`;
-
-  const win = window.open('', '_blank');
-  if (win) {
-    win.document.write(html);
-    win.document.close();
-    setTimeout(() => win.print(), 800);
-  } else {
-    const blob = new Blob([html], {type: 'text/html'});
-    const a = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(blob),
-      download: `Klaro_Pulse_Report_${name}.html`
+    // Score grid
+    const bw = (CW-9)/4;
+    [[String(r.overall_score||0),'OVERALL',r.overall_score],[String(r.ada_score||0),'ADA',r.ada_score],
+     [String(r.soc_score||0),'SOC',r.soc_score],[String(r.lam_score||0),'LAM',r.lam_score]].forEach(([v,l,s],i) => {
+      const x = M + i*(bw+3);
+      doc.setDrawColor(226,232,240);
+      doc.roundedRect(x, y, bw, 20, 2, 2, 'S');
+      doc.setTextColor(...scoreColor(s));
+      doc.setFontSize(16);
+      doc.setFont('helvetica','bold');
+      doc.text(v, x+bw/2, y+12, {align:'center'});
+      doc.setTextColor(100,116,139);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','normal');
+      doc.text(l, x+bw/2, y+18, {align:'center'});
     });
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    y += 26;
+
+    doc.setTextColor(100,116,139);
+    doc.setFontSize(9);
+    doc.text(`Grade: ${r.grade||'—'}   ·   Urgency: ${r.executive_brief?.urgency||'—'}   ·   LAM Agent v4`, M, y);
+    y += 8;
+
+    if (r.executive_brief?.one_line_verdict) {
+      doc.setFillColor(254,249,195);
+      const vlines = doc.splitTextToSize(`"${r.executive_brief.one_line_verdict}"`, CW-8);
+      doc.rect(M, y-2, CW, vlines.length*5+8, 'F');
+      doc.setTextColor(120,80,0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica','bolditalic');
+      doc.text(vlines, M+4, y+4);
+      y += vlines.length*5+12;
+    }
+
+    if (r.executive_brief?.plain_english_summary) {
+      const slines = doc.splitTextToSize(r.executive_brief.plain_english_summary, CW-8);
+      doc.setFillColor(245,243,255);
+      doc.rect(M, y-2, CW, slines.length*5+8, 'F');
+      doc.setFillColor(124,58,237);
+      doc.rect(M, y-2, 2, slines.length*5+8, 'F');
+      doc.setTextColor(30,41,59);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','normal');
+      doc.text(slines, M+5, y+4);
+      y += slines.length*5+12;
+    }
+
+    if (r.executive_brief?.estimated_monthly_revenue_lost) {
+      doc.setFillColor(254,242,242);
+      doc.rect(M, y, CW, 10, 'F');
+      doc.setTextColor(153,27,27);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','bold');
+      doc.text('Revenue Impact: ', M+3, y+6.5);
+      doc.setFont('helvetica','normal');
+      doc.text(String(r.executive_brief.estimated_monthly_revenue_lost), M+37, y+6.5);
+      y += 14;
+    }
+
+    y = sectionTitle(y, 'Top 3 Immediate Actions');
+    const actions = r.executive_brief?.top_3_actions || [];
+    const tcolors = [[153,27,27],[133,77,14],[30,64,175]];
+    const tframes = ['THIS WEEK','THIS MONTH','THIS QUARTER'];
+    actions.forEach((a, i) => {
+      doc.setFillColor(i===0?254:i===1?254:239, i===0?226:i===1?249:246, i===0?226:i===1?195:255);
+      doc.rect(M, y, 28, 8, 'F');
+      doc.setTextColor(...tcolors[i]);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','bold');
+      doc.text(tframes[i], M+14, y+5.5, {align:'center'});
+      doc.setTextColor(30,41,59);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','normal');
+      const alines = doc.splitTextToSize(String(a), CW-32);
+      doc.text(alines[0], M+32, y+5.5);
+      y += 10;
+    });
+
+    // PAGE 2: VISIT NARRATIVE
+    y = addPage(2, 8, 'VISIT NARRATIVE');
+    y = sectionTitle(y, 'The LAM Agent Visit — First Person Experience');
+    doc.setFillColor(250,245,255);
+    doc.setDrawColor(124,58,237);
+    doc.rect(M, y, CW, 8, 'F');
+    doc.setTextColor(124,58,237);
+    doc.setFontSize(8);
+    doc.setFont('helvetica','bold');
+    doc.text('How our AI agent experienced this website as a real potential client:', M+3, y+5.5);
+    y += 12;
+    y = bodyText(y, r.executive_brief?.plain_english_summary);
+    y = bodyText(y+4, r.client_experience?.what_agent_experienced);
+
+    y = sectionTitle(y+4, 'Key Visit Metrics');
+    const metrics = [
+      ['Time to understand business', r.client_experience?.time_to_understand_business||'—'],
+      ['Time to find contact', r.client_experience?.time_to_find_contact||'—'],
+      ['Contact form experience', r.client_experience?.contact_form_experience||'—'],
+      ['Would real client convert?', r.client_experience?.would_real_client_convert?'✓ Yes':'✗ Unlikely'],
+      ['Conversion probability', r.client_experience?.conversion_probability||'—'],
+    ];
+    metrics.forEach(([l,v], i) => {
+      doc.setFillColor(i%2===0?255:248, i%2===0?255:250, i%2===0?255:252);
+      doc.rect(M, y, CW, 8, 'F');
+      doc.setTextColor(71,85,105);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','bold');
+      doc.text(l, M+3, y+5.5);
+      doc.setFont('helvetica','normal');
+      doc.setTextColor(30,41,59);
+      doc.text(String(v), W-M-3, y+5.5, {align:'right'});
+      y += 9;
+    });
+
+    y = sectionTitle(y+4, 'Conversion Blockers');
+    (r.client_experience?.conversion_blockers||[]).forEach((b,i) => {
+      doc.setTextColor(220,38,38);
+      doc.setFontSize(9);
+      doc.text(`${i+1}.`, M+2, y+3.5);
+      doc.setTextColor(55,65,81);
+      doc.setFont('helvetica','normal');
+      const blines = doc.splitTextToSize(String(b), CW-10);
+      doc.text(blines[0], M+10, y+3.5);
+      y += 7;
+    });
+
+    // PAGE 3: AUTH FLOW
+    y = addPage(3, 8, 'AUTH FLOW TEST');
+    y = sectionTitle(y, 'Signin / Signup Experience Test');
+    doc.setFillColor(240,249,255);
+    doc.setDrawColor(8,145,178);
+    doc.rect(M, y, CW, 8, 'F');
+    doc.setTextColor(7,89,133);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica','normal');
+    doc.text('Our LAM agent attempted to create an account and sign in to test the authentication experience.', M+3, y+5.5);
+    y += 12;
+
+    const authBoxW = (CW-6)/2;
+    [[`Signup Flow`, r.auth_flow_report?.signup_experience||'Not tested'],
+     [`Signin Flow`, r.auth_flow_report?.signin_experience||'Not tested']].forEach(([t,v],i) => {
+      const bx = M + i*(authBoxW+6);
+      doc.setDrawColor(226,232,240);
+      doc.roundedRect(bx, y, authBoxW, 28, 2, 2, 'S');
+      doc.setFillColor(30,27,75);
+      doc.rect(bx, y, authBoxW, 7, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica','bold');
+      doc.text(t, bx+authBoxW/2, y+5, {align:'center'});
+      doc.setTextColor(55,65,81);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica','normal');
+      const vlines = doc.splitTextToSize(String(v), authBoxW-6);
+      doc.text(vlines.slice(0,3), bx+3, y+12);
+    });
+    y += 34;
+
+    y = sectionTitle(y, 'Auth Score & Details');
+    doc.setTextColor(30,41,59);
+    doc.setFontSize(9);
+    doc.text(`Auth Score: ${r.auth_flow_report?.auth_score||r.auth_score||0}/100`, M, y+4);
+    doc.text(`Social Login: ${r.auth_flow_report?.has_social_login?'✓ Available':'✗ Not available'}`, M+60, y+4);
+    y += 10;
+
+    // PAGE 4: ADA COMPLIANCE
+    y = addPage(4, 8, 'ADA / WCAG 2.1 COMPLIANCE');
+    y = sectionTitle(y, 'ADA / WCAG 2.1 AA Accessibility Audit');
+
+    const ada = r.ada_report || {};
+    // Score circle area
+    doc.setFillColor(r.ada_score>=75?240:r.ada_score>=50?254:254, r.ada_score>=75?253:r.ada_score>=50?249:242,
+                     r.ada_score>=75?244:r.ada_score>=50?195:242);
+    doc.roundedRect(M, y, 40, 30, 3, 3, 'F');
+    doc.setTextColor(...scoreColor(r.ada_score));
+    doc.setFontSize(22);
+    doc.setFont('helvetica','bold');
+    doc.text(String(r.ada_score||0), M+20, y+16, {align:'center'});
+    doc.setFontSize(8);
+    doc.text('/100 ADA', M+20, y+23, {align:'center'});
+    doc.setTextColor(r.ada_report?.risk_level==='High'||r.ada_report?.risk_level==='Critical'?220:217, 38, 38);
+    doc.setFontSize(10);
+    doc.setFont('helvetica','bold');
+    doc.text(`${ada.risk_level||'—'} RISK`, M+50, y+10);
+    doc.setTextColor(55,65,81);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica','normal');
+    doc.text(`WCAG Level: ${ada.wcag_level_achieved||'—'}`, M+50, y+17);
+    doc.text(`Keyboard Nav: ${ada.keyboard_navigation||'—'}`, M+50, y+24);
+    doc.text(`Screen Reader: ${ada.screen_reader_compatible?'✓':'✗'}   Alt Text Missing: ${ada.images_missing_alt?'✗':'✓'}`, M+50, y+31);
+    y += 38;
+
+    if (ada.ada_narrative) y = bodyText(y, ada.ada_narrative) + 6;
+    if (ada.legal_exposure) {
+      doc.setFillColor(254,242,242);
+      doc.rect(M, y, CW, 9, 'F');
+      doc.setTextColor(153,27,27);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','bold');
+      doc.text('Legal Exposure: ', M+3, y+6);
+      doc.setFont('helvetica','normal');
+      doc.text(String(ada.legal_exposure), M+35, y+6);
+      y += 13;
+    }
+
+    if ((ada.critical_violations||[]).length) {
+      y = sectionTitle(y, 'Critical Violations');
+      ada.critical_violations.forEach(v => {
+        const vt = typeof v==='object'?v.issue||JSON.stringify(v):v;
+        doc.setTextColor(220,38,38);
+        doc.text('✗', M+2, y+3.5);
+        doc.setTextColor(55,65,81);
+        doc.setFontSize(9);
+        doc.text(doc.splitTextToSize(String(vt),CW-10)[0], M+9, y+3.5);
+        y += 7;
+      });
+    }
+
+    const bxw2 = (CW-6)/2;
+    doc.setDrawColor(226,232,240);
+    doc.roundedRect(M, y, bxw2, 20, 2, 2, 'S');
+    doc.setTextColor(30,27,75);
+    doc.setFontSize(8);
+    doc.setFont('helvetica','bold');
+    doc.text('Remediation Estimate', M+bxw2/2, y+6, {align:'center'});
+    doc.setTextColor(55,65,81);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica','normal');
+    doc.text(`Cost: ${ada.remediation_cost||'—'}`, M+3, y+12);
+    doc.text(`Time: ${ada.remediation_time||'—'}`, M+3, y+18);
+
+    // PAGE 5: SOC COMPLIANCE
+    y = addPage(5, 8, 'SOC / SECURITY COMPLIANCE');
+    y = sectionTitle(y, 'SOC / Security Compliance Audit');
+
+    const soc = r.soc_report || {};
+    const compItems = [
+      ['SOC Score', r.soc_score||0],['HTTPS', soc.https_enforced?100:0],
+      ['Cookie Consent', soc.cookie_consent_compliant?100:0],['GDPR', soc.gdpr_compliant?100:0],
+      ['CCPA', soc.ccpa_compliant?100:0],['India DPDP', soc.india_dpdp_compliant?100:0],
+    ];
+    const cw3 = (CW-10)/3;
+    compItems.forEach((item, i) => {
+      const cx = M + (i%3)*(cw3+5);
+      const cy = y + Math.floor(i/3)*26;
+      doc.setDrawColor(226,232,240);
+      doc.roundedRect(cx, cy, cw3, 23, 2, 2, 'S');
+      doc.setTextColor(...scoreColor(item[1]));
+      doc.setFontSize(item[1]>9?16:12);
+      doc.setFont('helvetica','bold');
+      doc.text(item[1]===100?'✅':item[1]===0?'❌':String(item[1]), cx+cw3/2, cy+12, {align:'center'});
+      doc.setTextColor(30,41,59);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica','bold');
+      doc.text(item[0], cx+cw3/2, cy+19, {align:'center'});
+    });
+    y += 56;
+
+    if (soc.soc_narrative) y = bodyText(y, soc.soc_narrative) + 6;
+    if (soc.legal_risk_level) {
+      doc.setFillColor(254,242,242);
+      doc.rect(M, y, CW, 9, 'F');
+      doc.setTextColor(153,27,27);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','bold');
+      doc.text(`Legal Risk Level: ${soc.legal_risk_level}`, M+3, y+6);
+      y += 13;
+    }
+
+    if ((soc.compliance_gaps||[]).length) {
+      y = sectionTitle(y, 'Compliance Gaps');
+      soc.compliance_gaps.forEach(g => {
+        doc.setTextColor(220,38,38);
+        doc.text('✗', M+2, y+3.5);
+        doc.setTextColor(55,65,81);
+        doc.setFontSize(9);
+        doc.text(doc.splitTextToSize(String(g),CW-10)[0], M+9, y+3.5);
+        y += 7;
+      });
+    }
+
+    // PAGE 6: COMPETITIVE INTEL
+    y = addPage(6, 8, 'COMPETITIVE INTELLIGENCE');
+    y = sectionTitle(y, 'Market Position Analysis');
+    y = bodyText(y, r.competitive_intel?.market_position) + 6;
+
+    const ci = r.competitive_intel || {};
+    const ciBoxes = [
+      ['Where Losing Clients', ci.where_losing_clients_to_competitors||ci.where_losing_clients||'—'],
+      ['Biggest Weakness', ci.biggest_competitive_weakness||'—'],
+    ];
+    ciBoxes.forEach(([t,v],i) => {
+      const bx = M + i*((CW-6)/2+6);
+      const bxw3 = (CW-6)/2;
+      doc.setDrawColor(226,232,240);
+      doc.roundedRect(bx, y, bxw3, 28, 2, 2, 'S');
+      doc.setFillColor(30,27,75);
+      doc.rect(bx, y, bxw3, 7, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica','bold');
+      doc.text(t, bx+bxw3/2, y+5, {align:'center'});
+      doc.setTextColor(55,65,81);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica','normal');
+      doc.text(doc.splitTextToSize(String(v),bxw3-6).slice(0,3), bx+3, y+12);
+    });
+    y += 34;
+
+    if (ci.opportunity_to_win) {
+      y = sectionTitle(y, 'Opportunity To Win');
+      y = bodyText(y, ci.opportunity_to_win) + 6;
+    }
+
+    if ((r.strengths||[]).length) {
+      y = sectionTitle(y, 'Strengths Identified');
+      r.strengths.forEach(s => {
+        doc.setTextColor(22,101,52);
+        doc.text('✓', M+2, y+3.5);
+        doc.setTextColor(55,65,81);
+        doc.setFontSize(9);
+        doc.text(doc.splitTextToSize(String(s),CW-10)[0], M+9, y+3.5);
+        y += 7;
+      });
+    }
+
+    // PAGE 7: 90-DAY ROADMAP
+    y = addPage(7, 8, '90-DAY ACTION ROADMAP');
+    doc.setTextColor(30,27,75);
+    doc.setFontSize(14);
+    doc.setFont('helvetica','bold');
+    doc.text('Your 90-Day Digital Transformation Plan', M, y);
+    y += 10;
+
+    const phases = [
+      { title: 'Week 1 — '+(r.roadmap?.week_1?.title||'Quick Wins'), color: [22,163,74],
+        target: r.roadmap?.week_1?.expected_score_improvement||'+15 pts',
+        sub: `Cost: ${r.roadmap?.week_1?.estimated_cost||'Free'}`,
+        actions: r.roadmap?.week_1?.actions||[] },
+      { title: 'Month 1 — '+(r.roadmap?.month_1?.title||'Conversion Fixes'), color: [217,119,6],
+        target: r.roadmap?.month_1?.expected_score_improvement||'+20 pts',
+        sub: `Cost: ${r.roadmap?.month_1?.estimated_cost||'$500-2,000'}`,
+        actions: r.roadmap?.month_1?.actions||[] },
+      { title: 'Month 2-3 — '+(r.roadmap?.month_2_3?.title||'Strategic Improvements'), color: [124,58,237],
+        target: r.roadmap?.month_2_3?.expected_score_improvement||'+25 pts',
+        sub: `Cost: ${r.roadmap?.month_2_3?.estimated_cost||'$2,000-10,000'}`,
+        actions: r.roadmap?.month_2_3?.actions||[] },
+    ];
+
+    phases.forEach(ph => {
+      const ph_h = Math.max(28, (ph.actions||[]).length*8+18);
+      doc.setDrawColor(...ph.color);
+      doc.setLineWidth(1.5);
+      doc.roundedRect(M, y, CW, ph_h, 2, 2, 'S');
+      doc.setFillColor(...ph.color);
+      doc.rect(M, y, 2, ph_h, 'F');
+      doc.setTextColor(...ph.color);
+      doc.setFontSize(11);
+      doc.setFont('helvetica','bold');
+      doc.text(ph.title, M+6, y+8);
+      doc.setTextColor(30,27,75);
+      doc.setFontSize(9);
+      doc.text(`Expected: ${ph.target}`, W-M-2, y+8, {align:'right'});
+      doc.setTextColor(100,116,139);
+      doc.setFontSize(8);
+      doc.setFont('helvetica','normal');
+      doc.text(ph.sub, M+6, y+14);
+      (ph.actions||[]).forEach((a,ai) => {
+        doc.setTextColor(55,65,81);
+        doc.setFontSize(9);
+        doc.text(`${ai+1}.`, M+6, y+21+ai*8);
+        doc.text(doc.splitTextToSize(String(a),CW-18)[0], M+13, y+21+ai*8);
+      });
+      y += ph_h + 5;
+    });
+
+    if (r.roadmap?.expected_outcome_90_days) {
+      doc.setFillColor(240,253,244);
+      doc.rect(M, y, CW, 14, 'F');
+      doc.setTextColor(22,101,52);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica','bold');
+      doc.text('Expected in 90 Days: ', M+3, y+5.5);
+      doc.setFont('helvetica','normal');
+      const elines = doc.splitTextToSize(r.roadmap.expected_outcome_90_days, CW-42);
+      doc.text(elines[0], M+40, y+5.5);
+      y += 18;
+    }
+
+    // PAGE 8: METHODOLOGY
+    y = addPage(8, 8, 'METHODOLOGY & ABOUT');
+    y = sectionTitle(y, 'About This LAM Audit');
+
+    doc.setFillColor(250,245,255);
+    doc.setDrawColor(124,58,237);
+    doc.rect(M, y, CW, 18, 'F');
+    doc.setFillColor(124,58,237);
+    doc.rect(M, y, 2, 18, 'F');
+    doc.setTextColor(30,41,59);
+    doc.setFontSize(9);
+    doc.setFont('helvetica','normal');
+    const aboutText = 'Unlike standard AI reports that only read HTML, our Large Action Model (LAM) actually visits your website as a real potential client would — navigating pages, attempting contact, testing auth flows, and reporting every moment of friction it experiences.';
+    doc.text(doc.splitTextToSize(aboutText, CW-8), M+5, y+6);
+    y += 22;
+
+    y = sectionTitle(y, 'What Our LAM Agent Tested');
+    const tasks = [
+      ['Site Exploration', 'Visited homepage, about, services, pricing, contact as a potential client'],
+      ['Conversion Attempt', 'Tried to contact the business — phone, email, contact form'],
+      ['Auth Flow Test', 'Attempted account creation and signin, noted all friction points'],
+      ['ADA/WCAG Audit', 'Full WCAG 2.1 AA check — keyboard nav, screen reader, contrast, alt text'],
+      ['SOC/Compliance', 'Scanned all public pages for HTTPS, cookie consent, privacy, GDPR signals'],
+      ['Executive Report', 'AI synthesised all findings into business-focused recommendations'],
+    ];
+    tasks.forEach(([t,d],i) => {
+      doc.setFillColor(i%2===0?255:248, i%2===0?255:250, i%2===0?255:252);
+      doc.rect(M, y, CW, 9, 'F');
+      doc.setTextColor(30,27,75);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','bold');
+      doc.text(t, M+3, y+5.5);
+      doc.setTextColor(55,65,81);
+      doc.setFont('helvetica','normal');
+      doc.text(d, M+50, y+5.5);
+      y += 10;
+    });
+
+    y = sectionTitle(y+4, 'Scan Details');
+    [[`Target URL`, r.url],[`Scan Date`, scanDate],['Agent Version','LAM v4 — Browser Use + Multi-LLM'],
+     ['Report ID', r.id]].forEach(([l,v],i) => {
+      doc.setFillColor(i%2===0?255:248, i%2===0?255:250, i%2===0?255:252);
+      doc.rect(M, y, CW, 8, 'F');
+      doc.setTextColor(71,85,105);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','bold');
+      doc.text(l, M+3, y+5.5);
+      doc.setFont('helvetica','normal');
+      doc.setTextColor(30,41,59);
+      doc.text(String(v), W-M-3, y+5.5, {align:'right'});
+      y += 9;
+    });
+
+    // CTA
+    y += 8;
+    doc.setFillColor(30,27,75);
+    doc.roundedRect(M, y, CW, 28, 3, 3, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica','bold');
+    doc.text('Ready to fix these issues?', W/2, y+9, {align:'center'});
+    doc.setTextColor(165,180,252);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica','normal');
+    doc.text('Klaro Pulse LAM monitors your site weekly and alerts you when competitors change strategy.', W/2, y+16, {align:'center'});
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica','bold');
+    doc.text('klaro.services/pulse · LAM Monthly from $499/month', W/2, y+23, {align:'center'});
+
+    doc.save(`Klaro_Pulse_LAM_${name.replace(/[^a-z0-9]/gi,'_')}.pdf`);
+
+  } catch(e) {
+    console.error('LAM PDF error:', e);
+    alert('PDF generation failed: ' + e.message);
   }
+
+  if (btn) { btn.disabled = false; btn.textContent = '⬇ Download PDF'; }
 }
 
 
@@ -1298,7 +1449,8 @@ async function downloadReport(logId, name) {
     doc.setTextColor(100,116,139);
     doc.setFontSize(9);
     doc.setFont('helvetica','normal');
-    doc.text(`Grade: ${r.grade||'—'}   ·   Urgency: ${r.executive_brief?.urgency||'—'}   ·   Industry: ${r.industry||'—'}`, M, y);
+    const calcGrade = (s) => s>=90?'A':s>=80?'B':s>=70?'C':s>=60?'D':'F';
+    doc.text(`Grade: ${calcGrade(score)}   ·   Urgency: ${r.executive_brief?.urgency||'—'}   ·   Industry: ${r.industry||'—'}`, M, y);
     y += 8;
 
     y = sectionTitle(y, 'Executive Verdict');
