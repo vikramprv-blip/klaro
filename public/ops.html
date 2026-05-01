@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Klaro Pulse — Site Intelligence</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#080c14;color:#94a3b8;min-height:100vh}
@@ -132,6 +134,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .compliance-score{font-size:16px;font-weight:900}
 .compliance-label{font-size:9px;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;font-weight:600}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -1181,300 +1185,491 @@ async function downloadLAMReport(runId) {
 async function downloadReport(logId, name) {
   const log = allLogs.find(l => l.id === logId);
   if (!log) return alert('Report data not found');
-  const r = log.metadata?.full_report || {};
-  const score = r.overall_score || 0;
-  const trust = r.ux_conversion_audit?.trust_score || 0;
-  const conv = r.ux_conversion_audit?.conversion_score || 0;
-  const sec = r.security_compliance?.security_score || 0;
-  const mobile = r.mobile_readiness === 'Good' ? 90 : r.mobile_readiness === 'Needs Work' ? 60 : 30;
-  const hostname = name;
-  const today = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  const scanDate = new Date(log.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
-  const css = `
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1e293b;background:white}
-    .page{width:210mm;padding:20mm 18mm 16mm;break-after:page;page-break-after:always;position:relative;border-bottom:1px solid #e2e8f0}
-    .page:last-child{break-after:auto;page-break-after:auto;border-bottom:none}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10mm;border-bottom:3px solid #1e1b4b;padding-bottom:6mm}
-    .header-left h1{font-size:28pt;font-weight:900;color:#1e1b4b;line-height:1}
-    .header-left .url{font-size:9pt;color:#64748b;margin-top:3mm}
-    .header-right{text-align:center;background:#1e1b4b;color:white;border-radius:8px;padding:8mm 10mm;min-width:30mm}
-    .header-right .big{font-size:36pt;font-weight:900;line-height:1}
-    .header-right .lbl{font-size:8pt;opacity:0.7;margin-top:1mm}
-    .page-label{font-size:8pt;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4mm;font-weight:700}
-    .section-title{font-size:13pt;font-weight:900;color:#1e1b4b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid #e2e8f0;padding-bottom:3mm;margin:8mm 0 5mm}
-    .score-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4mm;margin:6mm 0}
-    .score-box{border:2px solid #e2e8f0;border-radius:6px;padding:5mm;text-align:center}
-    .score-num{font-size:22pt;font-weight:900}
-    .score-lbl{font-size:7pt;color:#64748b;text-transform:uppercase;font-weight:700;margin-top:1mm}
-    .verdict{background:#fef9c3;border-left:5px solid #f59e0b;padding:5mm 7mm;border-radius:0 6px 6px 0;font-size:12pt;font-weight:700;margin:5mm 0;font-style:italic}
-    .summary-box{background:#f0f9ff;border-left:4px solid #1e1b4b;padding:5mm 7mm;border-radius:0 6px 6px 0;font-size:9.5pt;line-height:1.7;margin:4mm 0}
-    .revenue{background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:4mm 6mm;font-size:9pt;color:#991b1b;margin:4mm 0}
-    .priority-table{width:100%;border-collapse:collapse;margin:4mm 0;font-size:9pt}
-    .priority-table th{background:#1e1b4b;color:white;padding:3mm 4mm;text-align:left;font-size:8pt;text-transform:uppercase;letter-spacing:0.05em}
-    .priority-table td{padding:3mm 4mm;border-bottom:1px solid #e2e8f0;vertical-align:top}
-    .priority-table tr:nth-child(even) td{background:#f8fafc}
-    .pill{display:inline-block;padding:1mm 3mm;border-radius:20px;font-size:7.5pt;font-weight:700}
-    .pill-red{background:#fee2e2;color:#991b1b}
-    .pill-yellow{background:#fef9c3;color:#854d0e}
-    .pill-green{background:#dcfce7;color:#166534}
-    .pill-blue{background:#eff6ff;color:#1d4ed8}
-    .quick-wins{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:5mm;margin:4mm 0}
-    .quick-wins h4{font-size:9pt;font-weight:700;color:#166534;margin-bottom:3mm;text-transform:uppercase}
-    .quick-wins li{font-size:9pt;color:#166534;margin-bottom:2mm;list-style:none;padding-left:4mm}
-    .quick-wins li:before{content:"+ ";font-weight:900}
-    .comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin:4mm 0}
-    .comp-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5mm}
-    .comp-box h4{font-size:8.5pt;font-weight:700;color:#1e1b4b;text-transform:uppercase;margin-bottom:2mm;letter-spacing:0.05em}
-    .comp-box p{font-size:9pt;color:#374151;line-height:1.6}
-    .strengths li{font-size:9pt;color:#374151;margin-bottom:2mm;list-style:none;padding-left:4mm}
-    .strengths li:before{content:"+ ";color:#16a34a;font-weight:900}
-    .compliance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin:4mm 0}
-    .comp-score-box{border:1px solid #e2e8f0;border-radius:6px;padding:4mm;text-align:center}
-    .comp-score-num{font-size:20pt;font-weight:900}
-    .comp-score-desc{font-size:7.5pt;color:#64748b;margin-top:1mm}
-    .risk-item{display:flex;align-items:flex-start;gap:3mm;padding:2mm 0;border-bottom:1px solid #f1f5f9;font-size:9pt}
-    .risk-icon{font-weight:900;flex-shrink:0}
-    .roadmap-phase{border:1px solid #e2e8f0;border-radius:8px;padding:6mm;margin:4mm 0}
-    .roadmap-phase h3{font-size:10pt;font-weight:900;color:#1e1b4b;margin-bottom:1mm}
-    .roadmap-phase .target{font-size:8pt;color:#64748b;margin-bottom:3mm}
-    .roadmap-phase li{font-size:9pt;color:#374151;margin-bottom:2mm;padding-left:4mm}
-    .roadmap-phase .cost{font-size:8pt;color:#64748b;margin-top:2mm;font-style:italic}
-    .cta-box{background:#1e1b4b;color:white;border-radius:8px;padding:6mm;text-align:center;margin-top:8mm}
-    .footer{position:absolute;bottom:10mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3mm}
-    @media print{.page{margin:0;padding:15mm 15mm 20mm}}
-  `;
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Generating PDF...'; }
 
-  const footerHtml = (page, total) => `
-    <div class="footer">
-      <span>${hostname} | ${log.url}</span>
-      <span>Klaro Pulse Site Intelligence klaro.services/pulse | (c) 2026 Klaro Global</span>
-    </div>`;
+  try {
+    const r = log.metadata?.full_report || {};
+    const score = r.overall_score || 0;
+    const trust = r.ux_conversion_audit?.trust_score || 0;
+    const conv = r.ux_conversion_audit?.conversion_score || 0;
+    const sec = r.security_compliance?.security_score || 0;
+    const mobile = r.mobile_readiness === 'Good' ? 90 : r.mobile_readiness === 'Needs Work' ? 60 : 30;
+    const scanDate = new Date(log.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>Klaro Pulse Report — ${hostname}</title>
-<style>${css}</style></head><body>
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = 210, M = 18, CW = W - M*2;
 
-<!-- PAGE 1: EXECUTIVE BRIEF -->
-<div class="page">
-  <div class="page-label">KLARO PULSE EXECUTIVE BRIEF &nbsp;·&nbsp; Page 1 of 5 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="header">
-    <div class="header-left">
-      <h1>${hostname}</h1>
-      <div class="url">${log.url}</div>
-      <div class="url" style="margin-top:2mm">${r.industry||''}</div>
-    </div>
-    <div class="header-right">
-      <div class="big">${score}</div>
-      <div class="lbl">OVERALL</div>
-      <div style="margin-top:3mm;font-size:9pt;font-weight:700">Grade: ${r.grade||'—'}</div>
-    </div>
-  </div>
+    const scoreColor = (s) => s >= 75 ? [22,163,74] : s >= 50 ? [217,119,6] : [220,38,38];
+    const hex2rgb = (h) => [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
 
-  <div class="score-grid">
-    <div class="score-box"><div class="score-num" style="color:${score>=75?'#16a34a':score>=50?'#d97706':'#dc2626'}">${score}</div><div class="score-lbl">OVERALL</div></div>
-    <div class="score-box"><div class="score-num" style="color:#3730a3">${trust}</div><div class="score-lbl">TRUST</div></div>
-    <div class="score-box"><div class="score-num" style="color:#0891b2">${conv}</div><div class="score-lbl">CONVERSION</div></div>
-    <div class="score-box"><div class="score-num" style="color:#059669">${sec}</div><div class="score-lbl">SECURITY</div></div>
-    <div class="score-box"><div class="score-num" style="color:#7c3aed">${mobile}</div><div class="score-lbl">MOBILE</div></div>
-  </div>
-  <div style="text-align:center;font-size:9pt;color:#64748b;margin-bottom:5mm">Grade: <strong>${r.grade||'—'}</strong> &nbsp;·&nbsp; Urgency: <strong>${r.executive_brief?.urgency||'—'}</strong></div>
+    const addPage = (pageNum, total, label) => {
+      if (pageNum > 1) doc.addPage();
+      // Header bar
+      doc.setFillColor(30,27,75);
+      doc.rect(0,0,W,28,'F');
+      doc.setTextColor(165,180,252);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','bold');
+      doc.text(`KLARO PULSE — ${label}  ·  PAGE ${pageNum} OF ${total}  ·  ${scanDate}  ·  CONFIDENTIAL`, M, 10);
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica','bold');
+      doc.text(name, M, 21);
+      // Score badge
+      doc.setFillColor(...scoreColor(score));
+      doc.roundedRect(W-M-20, 4, 20, 20, 3, 3, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(14);
+      doc.setFont('helvetica','bold');
+      doc.text(String(score), W-M-10, 14, {align:'center'});
+      doc.setFontSize(7);
+      doc.text('/100', W-M-10, 20, {align:'center'});
+      // Footer
+      doc.setDrawColor(226,232,240);
+      doc.setLineWidth(0.3);
+      doc.line(M, 284, W-M, 284);
+      doc.setTextColor(148,163,184);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','normal');
+      doc.text(`${name} | ${log.url}`, M, 288);
+      doc.text('Klaro Pulse Site Intelligence klaro.services/pulse | (c) 2026 Klaro Global', W-M, 288, {align:'right'});
+      return 34; // return Y position after header
+    };
 
-  <div class="section-title">Executive Verdict</div>
-  ${r.executive_brief?.one_line_verdict ? `<div class="verdict">"${r.executive_brief.one_line_verdict}"</div>` : ''}
-  ${r.executive_brief?.plain_english_summary ? `<div class="summary-box">${r.executive_brief.plain_english_summary}</div>` : ''}
-  ${r.executive_brief?.estimated_revenue_impact ? `<div class="revenue">Revenue Impact: ${r.executive_brief.estimated_revenue_impact}</div>` : ''}
+    const sectionTitle = (y, text) => {
+      doc.setFillColor(238,242,255);
+      doc.rect(M, y, CW, 7, 'F');
+      doc.setTextColor(30,27,75);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','bold');
+      doc.text(text.toUpperCase(), M+3, y+5);
+      return y + 10;
+    };
 
-  <div class="section-title">Priority Actions</div>
-  <table class="priority-table">
-    <tr><th>Timeframe</th><th>Action</th></tr>
-    ${(r.executive_brief?.top_3_actions||[]).map((a,i)=>`<tr><td><span class="pill ${i===0?'pill-red':i===1?'pill-yellow':'pill-blue'}">${i===0?'THIS WEEK':i===1?'THIS MONTH':'THIS QUARTER'}</span></td><td>${a}</td></tr>`).join('')}
-  </table>
-  ${footerHtml(1,5)}
-</div>
+    const bodyText = (y, text, maxW = CW, color = [55,65,81]) => {
+      doc.setTextColor(...color);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','normal');
+      const lines = doc.splitTextToSize(text, maxW);
+      doc.text(lines, M, y);
+      return y + lines.length * 5;
+    };
 
-<!-- PAGE 2: UX & CONVERSION -->
-<div class="page">
-  <div class="page-label">KLARO PULSE UX & CONVERSION AUDIT &nbsp;·&nbsp; Page 2 of 5 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">Performance Scores</div>
-  <table class="priority-table">
-    <tr><th>Metric</th><th>Score</th></tr>
-    <tr><td>Overall Score</td><td><strong>${score}/100</strong></td></tr>
-    <tr><td>Trust & Credibility</td><td><strong>${trust}/100</strong></td></tr>
-    <tr><td>Conversion Rate</td><td><strong>${conv}/100</strong></td></tr>
-    <tr><td>Security Surface</td><td><strong>${sec}/100</strong></td></tr>
-  </table>
+    const scoreBox = (x, y, w, h, label, val, color) => {
+      doc.setDrawColor(226,232,240);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(x, y, w, h, 2, 2, 'S');
+      doc.setTextColor(...color);
+      doc.setFontSize(18);
+      doc.setFont('helvetica','bold');
+      doc.text(String(val), x+w/2, y+h/2+2, {align:'center'});
+      doc.setTextColor(100,116,139);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','normal');
+      doc.text(label, x+w/2, y+h-3, {align:'center'});
+    };
 
-  <div class="section-title">Conversion Killers — Detailed Analysis</div>
-  <table class="priority-table">
-    <tr><th>Priority</th><th>Issue</th><th>Fix</th><th>Impact</th><th>Effort</th></tr>
-    ${(r.ux_conversion_audit?.friction_points||[]).map(f => {
-      const issue = typeof f === 'object' ? f : {issue:f, fix:'', priority:'Medium', effort:'', cost:'', business_impact:''};
-      return `<tr>
-        <td><span class="pill ${issue.priority==='Critical'?'pill-red':issue.priority==='High'?'pill-yellow':'pill-green'}">${issue.priority||'Medium'}</span></td>
-        <td>${issue.issue||''}</td>
-        <td>${issue.fix||''}</td>
-        <td style="color:#64748b;font-size:8.5pt">${issue.business_impact||''}</td>
-        <td style="white-space:nowrap;font-size:8.5pt">${issue.effort||''} · ${issue.cost||''}</td>
-      </tr>`;
-    }).join('')}
-  </table>
+    const bulletItem = (y, text, color = [55,65,81]) => {
+      doc.setTextColor(...scoreColor(0));
+      doc.setFontSize(9);
+      doc.circle(M+2, y-1.5, 1, 'F');
+      doc.setTextColor(...color);
+      const lines = doc.splitTextToSize(text, CW-8);
+      doc.text(lines, M+7, y);
+      return y + lines.length * 5 + 1;
+    };
 
-  ${(r.ux_conversion_audit?.quick_wins||[]).length ? `
-  <div class="quick-wins">
-    <h4>Quick Wins — Free, Under 1 Hour</h4>
-    <ul>${r.ux_conversion_audit.quick_wins.map(q=>`<li>${q}</li>`).join('')}</ul>
-  </div>` : ''}
-  ${footerHtml(2,5)}
-</div>
+    // ── PAGE 1: EXECUTIVE BRIEF ──
+    let y = addPage(1, 5, 'EXECUTIVE BRIEF');
 
-<!-- PAGE 3: COMPETITIVE INTELLIGENCE -->
-<div class="page">
-  <div class="page-label">KLARO PULSE COMPETITIVE INTELLIGENCE &nbsp;·&nbsp; Page 3 of 5 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">Market Position Analysis</div>
-  ${r.competitive_intelligence?.market_position ? `<div class="summary-box">${r.competitive_intelligence.market_position}</div>` : ''}
+    // Score grid
+    const bw = (CW-12)/5;
+    scoreBox(M, y, bw, 22, 'OVERALL', score, scoreColor(score));
+    scoreBox(M+bw+3, y, bw, 22, 'TRUST', trust, scoreColor(trust));
+    scoreBox(M+bw*2+6, y, bw, 22, 'CONVERSION', conv, scoreColor(conv));
+    scoreBox(M+bw*3+9, y, bw, 22, 'SECURITY', sec, scoreColor(sec));
+    scoreBox(M+bw*4+12, y, bw, 22, 'MOBILE', mobile, scoreColor(mobile));
+    y += 28;
 
-  <div class="comp-grid">
-    <div class="comp-box">
-      <h4>Why Clients Choose Competitors</h4>
-      <p>${r.competitive_intelligence?.where_losing_clients||'—'}</p>
-    </div>
-    <div class="comp-box">
-      <h4>Biggest Competitor Advantage</h4>
-      <p>${r.competitive_intelligence?.biggest_competitor_advantage||r.competitive_intelligence?.market_position||'—'}</p>
-    </div>
-  </div>
-  <div class="comp-box" style="margin:4mm 0">
-    <h4>Your Opportunity To Win</h4>
-    <p>${r.competitive_intelligence?.opportunity_to_win||'—'}</p>
-  </div>
+    // Grade & Urgency
+    doc.setTextColor(100,116,139);
+    doc.setFontSize(9);
+    doc.setFont('helvetica','normal');
+    doc.text(`Grade: ${r.grade||'—'}   ·   Urgency: ${r.executive_brief?.urgency||'—'}   ·   Industry: ${r.industry||'—'}`, M, y);
+    y += 8;
 
-  ${r.metadata?.competitors_scanned?.length ? `
-  <div class="section-title">Sites Compared In This Analysis</div>
-  <p style="font-size:9pt;color:#64748b">${(r.metadata?.competitors_scanned||log.metadata?.competitors_scanned||[]).join(' · ')}</p>` : ''}
+    y = sectionTitle(y, 'Executive Verdict');
+    if (r.executive_brief?.one_line_verdict) {
+      doc.setFillColor(254,249,195);
+      const vlines = doc.splitTextToSize(`"${r.executive_brief.one_line_verdict}"`, CW-8);
+      doc.rect(M, y-2, CW, vlines.length*5+6, 'F');
+      doc.setTextColor(120,80,0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica','bolditalic');
+      doc.text(vlines, M+4, y+3);
+      y += vlines.length*5+10;
+    }
 
-  <div class="section-title">What This Site Does Well</div>
-  <ul class="strengths">${(r.strengths||[]).map(s=>`<li>${s}</li>`).join('')}</ul>
-  ${footerHtml(3,5)}
-</div>
+    if (r.executive_brief?.plain_english_summary) {
+      doc.setFillColor(240,249,255);
+      const slines = doc.splitTextToSize(r.executive_brief.plain_english_summary, CW-8);
+      doc.rect(M, y-2, CW, slines.length*5+6, 'F');
+      doc.setFillColor(30,27,75);
+      doc.rect(M, y-2, 1.5, slines.length*5+6, 'F');
+      doc.setTextColor(30,41,59);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','normal');
+      doc.text(slines, M+5, y+3);
+      y += slines.length*5+12;
+    }
 
-<!-- PAGE 4: SECURITY & COMPLIANCE -->
-<div class="page">
-  <div class="page-label">KLARO PULSE SECURITY & COMPLIANCE &nbsp;·&nbsp; Page 4 of 5 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">Compliance Surface Scan</div>
-  <div class="compliance-grid">
-    <div class="comp-score-box">
-      <div class="comp-score-num" style="color:${r.security_compliance?.https?'#16a34a':'#dc2626'}">${r.security_compliance?.https?'100':'0'}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">HTTPS / SSL</div>
-      <div class="comp-score-desc">${r.security_compliance?.https?'Valid SSL certificate, HTTPS enforced':'SSL not enforced'}</div>
-    </div>
-    <div class="comp-score-box">
-      <div class="comp-score-num" style="color:#d97706">${mobile}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">Mobile / ADA</div>
-      <div class="comp-score-desc">${r.mobile_readiness||'Needs Work'}</div>
-    </div>
-    <div class="comp-score-box">
-      <div class="comp-score-num" style="color:${r.security_compliance?.cookie_consent?'#16a34a':'#dc2626'}">${r.security_compliance?.cookie_consent?'90':'0'}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">Cookie Consent</div>
-      <div class="comp-score-desc">${r.security_compliance?.cookie_consent?'Cookie consent banner detected':'No consent banner found'}</div>
-    </div>
-    <div class="comp-score-box">
-      <div class="comp-score-num" style="color:${r.security_compliance?.privacy_policy?'#16a34a':'#dc2626'}">${r.security_compliance?.privacy_policy?'90':'0'}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">Privacy Policy</div>
-      <div class="comp-score-desc">${r.security_compliance?.privacy_policy?'Privacy policy page found':'No privacy policy found'}</div>
-    </div>
-    <div class="comp-score-box">
-      <div class="comp-score-num" style="color:#d97706">${r.security_compliance?.security_score||60}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">SOC2 Readiness</div>
-      <div class="comp-score-desc">${r.security_compliance?.soc2_readiness||'Not assessed'}</div>
-    </div>
-    <div class="comp-score-box">
-      <div class="comp-score-num" style="color:#d97706">${r.security_compliance?.accessibility_score||60}</div>
-      <div style="font-size:8pt;font-weight:700;margin-top:1mm">GDPR Status</div>
-      <div class="comp-score-desc">${r.security_compliance?.gdpr_compliance||'Not assessed'}</div>
-    </div>
-  </div>
+    if (r.executive_brief?.estimated_revenue_impact) {
+      doc.setFillColor(254,242,242);
+      doc.rect(M, y, CW, 10, 'F');
+      doc.setTextColor(153,27,27);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','bold');
+      doc.text('Revenue Impact: ', M+3, y+6.5);
+      doc.setFont('helvetica','normal');
+      doc.text(r.executive_brief.estimated_revenue_impact, M+35, y+6.5);
+      y += 15;
+    }
 
-  <div class="section-title">ADA / WCAG 2.1 Accessibility Audit</div>
-  <div style="display:flex;gap:6mm;align-items:center;margin:4mm 0">
-    <div style="text-align:center;background:#fef2f2;border:2px solid #fecaca;border-radius:8px;padding:5mm 8mm">
-      <div style="font-size:24pt;font-weight:900;color:#dc2626">${r.security_compliance?.accessibility_score||60}</div>
-      <div style="font-size:7.5pt;color:#dc2626;font-weight:700">/100</div>
-    </div>
-    <div>
-      <div style="font-size:10pt;font-weight:900;color:#dc2626">HIGH RISK</div>
-      <div style="font-size:9pt;color:#374151;margin-top:1mm">ADA compliance failures expose US businesses to lawsuit risk.</div>
-    </div>
-  </div>
-
-  ${(r.security_compliance?.legal_risks||[]).length ? `
-  <div class="section-title">Legal Risks Identified</div>
-  ${r.security_compliance.legal_risks.map(l=>`<div class="risk-item"><span class="risk-icon" style="color:#dc2626">!</span><span>${l}</span></div>`).join('')}` : ''}
-
-  ${(r.security_compliance?.security_issues||[]).length ? `
-  <div class="section-title">Security Issues</div>
-  ${r.security_compliance.security_issues.map(l=>`<div class="risk-item"><span class="risk-icon" style="color:#d97706">-</span><span>${l}</span></div>`).join('')}` : ''}
-
-  ${(r.security_compliance?.recommendations||[]).length ? `
-  <div class="section-title">Remediation Recommendations</div>
-  <ol style="padding-left:5mm">${r.security_compliance.recommendations.map(l=>`<li style="font-size:9pt;color:#374151;margin-bottom:2mm;padding-left:2mm">${l}</li>`).join('')}</ol>` : ''}
-  ${footerHtml(4,5)}
-</div>
-
-<!-- PAGE 5: 90-DAY ROADMAP -->
-<div class="page">
-  <div class="page-label">KLARO PULSE 90-DAY ACTION ROADMAP &nbsp;·&nbsp; Page 5 of 5 &nbsp;·&nbsp; ${scanDate} &nbsp;·&nbsp; CONFIDENTIAL</div>
-  <div class="section-title">Your 90-Day Digital Transformation Plan</div>
-
-  <div class="roadmap-phase" style="border-left:4px solid #16a34a">
-    <h3>Week 1 — Quick Wins &nbsp;<span style="color:#16a34a">Target: ${Math.min(score+15,100)}/100</span></h3>
-    <div class="target">No developer needed &nbsp;·&nbsp; Cost: ${r.ninety_day_roadmap?.week_1?.cost||'Free'}</div>
-    <ol>${(r.ninety_day_roadmap?.week_1?.actions||[]).map((a,i)=>`<li>${a}</li>`).join('')}</ol>
-  </div>
-
-  <div class="roadmap-phase" style="border-left:4px solid #d97706">
-    <h3>Month 1 — Foundation &nbsp;<span style="color:#d97706">Target: ${Math.min(score+25,100)}/100</span></h3>
-    <div class="target">Basic developer needed &nbsp;·&nbsp; Cost: ${r.ninety_day_roadmap?.month_1?.cost||'Under 500 dollars'}</div>
-    <ol>${(r.ninety_day_roadmap?.month_1?.actions||[]).map((a,i)=>`<li>${a}</li>`).join('')}</ol>
-  </div>
-
-  <div class="roadmap-phase" style="border-left:4px solid #7c3aed">
-    <h3>Month 2-3 — Growth &nbsp;<span style="color:#7c3aed">Target: ${Math.min(score+40,100)}/100</span></h3>
-    <div class="target">Content & SEO investment &nbsp;·&nbsp; Cost: ${r.ninety_day_roadmap?.month_2_3?.cost||'500 to 2000 dollars'}</div>
-    <ol>${(r.ninety_day_roadmap?.month_2_3?.actions||[]).map((a,i)=>`<li>${a}</li>`).join('')}</ol>
-  </div>
-
-  ${r.ninety_day_roadmap?.expected_outcome ? `
-  <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:5mm;margin:4mm 0;font-size:9pt;color:#166534">
-    <strong>Expected in 90 Days:</strong> ${r.ninety_day_roadmap.expected_outcome}
-  </div>` : ''}
-
-  <div class="cta-box">
-    <div style="font-size:12pt;font-weight:900;margin-bottom:2mm">Ready to implement this roadmap?</div>
-    <div style="font-size:9pt;opacity:0.8;margin-bottom:4mm">Klaro Pulse monitors your site continuously and alerts you when competitors change strategy.</div>
-    <div style="font-size:10pt;font-weight:700">klaro.services/pulse &nbsp;·&nbsp; Monthly monitoring from $149/month</div>
-  </div>
-  ${footerHtml(5,5)}
-</div>
-
-</body></html>`;
-
-  const win = window.open('', '_blank');
-  if (win) {
-    win.document.write(html);
-    win.document.close();
-    setTimeout(() => win.print(), 800);
-  } else {
-    const blob = new Blob([html], {type: 'text/html'});
-    const a = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(blob),
-      download: `Klaro_Pulse_Report_${name}.html`
+    y = sectionTitle(y, 'Priority Actions');
+    const actions = r.executive_brief?.top_3_actions || [];
+    const timeframes = ['THIS WEEK','THIS MONTH','THIS QUARTER'];
+    const tcolors = [[153,27,27],[133,77,14],[30,64,175]];
+    actions.forEach((a, i) => {
+      doc.setFillColor(i===0?254:i===1?254:239, i===0?226:i===1?249:246, i===0?226:i===1?195:255);
+      doc.rect(M, y, 28, 8, 'F');
+      doc.setTextColor(...tcolors[i]);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','bold');
+      doc.text(timeframes[i], M+14, y+5.5, {align:'center'});
+      doc.setTextColor(30,41,59);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','normal');
+      const alines = doc.splitTextToSize(a, CW-32);
+      doc.text(alines, M+32, y+5.5);
+      y += Math.max(10, alines.length*5+3);
     });
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+
+    // ── PAGE 2: UX & CONVERSION ──
+    y = addPage(2, 5, 'UX & CONVERSION AUDIT');
+
+    y = sectionTitle(y, 'Performance Scores');
+    const metrics = [['Overall Score',score],['Trust & Credibility',trust],['Conversion Rate',conv],['Security Surface',sec]];
+    metrics.forEach(([label, val]) => {
+      doc.setTextColor(30,41,59);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','normal');
+      doc.text(label, M, y+4);
+      doc.setFillColor(226,232,240);
+      doc.rect(M+60, y, CW-80, 5, 'F');
+      doc.setFillColor(...scoreColor(val));
+      doc.rect(M+60, y, (CW-80)*(val/100), 5, 'F');
+      doc.setTextColor(...scoreColor(val));
+      doc.setFont('helvetica','bold');
+      doc.text(`${val}/100`, W-M, y+4.5, {align:'right'});
+      y += 9;
+    });
+    y += 4;
+
+    y = sectionTitle(y, 'Conversion Killers — Detailed Analysis');
+    const frictions = r.ux_conversion_audit?.friction_points || [];
+    if (frictions.length) {
+      // Table header
+      doc.setFillColor(30,27,75);
+      doc.rect(M, y, CW, 7, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica','bold');
+      doc.text('PRIORITY', M+2, y+5);
+      doc.text('ISSUE', M+24, y+5);
+      doc.text('FIX', M+90, y+5);
+      doc.text('EFFORT', M+150, y+5);
+      y += 9;
+      frictions.forEach((f, fi) => {
+        const fp = typeof f === 'object' ? f : {issue:f,fix:'',priority:'Medium',effort:'',cost:''};
+        const pcolor = fp.priority==='Critical'?[153,27,27]:fp.priority==='High'?[133,77,14]:[22,101,52];
+        doc.setFillColor(fi%2===0?255:248,fi%2===0?255:250,fi%2===0?255:252);
+        doc.rect(M, y-1, CW, 9, 'F');
+        doc.setFillColor(...pcolor);
+        doc.roundedRect(M+1, y, 18, 6, 1, 1, 'F');
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica','bold');
+        doc.text((fp.priority||'Med').substring(0,4).toUpperCase(), M+10, y+4.5, {align:'center'});
+        doc.setTextColor(30,41,59);
+        doc.setFontSize(8);
+        doc.setFont('helvetica','normal');
+        const ilines = doc.splitTextToSize(fp.issue||'', 60);
+        doc.text(ilines[0]||'', M+24, y+4.5);
+        const flines = doc.splitTextToSize(fp.fix||'', 58);
+        doc.text(flines[0]||'', M+90, y+4.5);
+        doc.setTextColor(100,116,139);
+        doc.setFontSize(7.5);
+        doc.text(`${fp.effort||''} · ${fp.cost||''}`, M+150, y+4.5);
+        y += 11;
+      });
+    } else {
+      y = bodyText(y, 'No critical conversion issues detected.', CW, [100,116,139]);
+    }
+    y += 4;
+
+    if ((r.ux_conversion_audit?.quick_wins||[]).length) {
+      y = sectionTitle(y, 'Quick Wins — Free, Under 1 Hour');
+      doc.setFillColor(240,253,244);
+      const qws = r.ux_conversion_audit.quick_wins;
+      doc.rect(M, y-2, CW, qws.length*7+6, 'F');
+      qws.forEach(q => {
+        doc.setTextColor(22,101,52);
+        doc.setFontSize(9);
+        doc.setFont('helvetica','bold');
+        doc.text('+', M+3, y+3.5);
+        doc.setFont('helvetica','normal');
+        doc.text(doc.splitTextToSize(q, CW-10)[0], M+9, y+3.5);
+        y += 7;
+      });
+    }
+
+    // ── PAGE 3: COMPETITIVE INTELLIGENCE ──
+    y = addPage(3, 5, 'COMPETITIVE INTELLIGENCE');
+
+    y = sectionTitle(y, 'Market Position Analysis');
+    if (r.competitive_intelligence?.market_position) {
+      y = bodyText(y, r.competitive_intelligence.market_position) + 6;
+    }
+
+    const ci = r.competitive_intelligence || {};
+    const boxes = [
+      ['Why Clients Choose Competitors', ci.where_losing_clients||'—'],
+      ['Biggest Competitor Advantage', ci.biggest_competitor_advantage||'—'],
+    ];
+    const bxw = (CW-6)/2;
+    boxes.forEach(([t,v], i) => {
+      const bx = M + i*(bxw+6);
+      doc.setDrawColor(226,232,240);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(bx, y, bxw, 28, 2, 2, 'S');
+      doc.setFillColor(30,27,75);
+      doc.rect(bx, y, bxw, 7, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica','bold');
+      doc.text(t, bx+bxw/2, y+5, {align:'center'});
+      doc.setTextColor(55,65,81);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica','normal');
+      const vlines = doc.splitTextToSize(v, bxw-6);
+      doc.text(vlines, bx+3, y+12);
+    });
+    y += 34;
+
+    if (ci.opportunity_to_win) {
+      doc.setDrawColor(99,102,241);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(M, y, CW, 20, 2, 2, 'S');
+      doc.setFillColor(30,27,75);
+      doc.rect(M, y, CW, 7, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica','bold');
+      doc.text('Your Opportunity To Win', M+CW/2, y+5, {align:'center'});
+      doc.setTextColor(55,65,81);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica','normal');
+      const olines = doc.splitTextToSize(ci.opportunity_to_win, CW-6);
+      doc.text(olines, M+3, y+12);
+      y += 26;
+    }
+
+    if ((r.strengths||[]).length) {
+      y = sectionTitle(y, 'What This Site Does Well');
+      r.strengths.forEach(s => { y = bulletItem(y, s, [22,101,52]); });
+    }
+
+    // ── PAGE 4: SECURITY & COMPLIANCE ──
+    y = addPage(4, 5, 'SECURITY & COMPLIANCE');
+
+    y = sectionTitle(y, 'Compliance Surface Scan');
+    const sc = r.security_compliance || {};
+    const compItems = [
+      ['HTTPS / SSL', sc.https?100:0, sc.https?'Valid SSL certificate, HTTPS enforced':'SSL not enforced'],
+      ['Mobile / ADA', mobile, r.mobile_readiness||'Needs Work'],
+      ['Cookie Consent', sc.cookie_consent?90:0, sc.cookie_consent?'Cookie consent banner detected':'No consent banner found'],
+      ['Privacy Policy', sc.privacy_policy?90:0, sc.privacy_policy?'Privacy policy page found':'No privacy policy found'],
+      ['SOC2 Readiness', 60, sc.soc2_readiness||'Not assessed'],
+      ['GDPR Status', 60, sc.gdpr_compliance||'Not assessed'],
+    ];
+    const cw3 = CW/3;
+    compItems.forEach((item, i) => {
+      const cx = M + (i%3)*(cw3+2);
+      const cy = y + Math.floor(i/3)*28;
+      doc.setDrawColor(226,232,240);
+      doc.roundedRect(cx, cy, cw3-2, 25, 2, 2, 'S');
+      doc.setTextColor(...scoreColor(item[1]));
+      doc.setFontSize(16);
+      doc.setFont('helvetica','bold');
+      doc.text(String(item[1]), cx+cw3/2-1, cy+11, {align:'center'});
+      doc.setTextColor(30,41,59);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica','bold');
+      doc.text(item[0], cx+cw3/2-1, cy+17, {align:'center'});
+      doc.setTextColor(100,116,139);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','normal');
+      const dlines = doc.splitTextToSize(item[2], cw3-6);
+      doc.text(dlines[0]||'', cx+cw3/2-1, cy+22, {align:'center'});
+    });
+    y += 62;
+
+    // ADA
+    doc.setFillColor(254,242,242);
+    doc.rect(M, y, CW, 14, 'F');
+    doc.setTextColor(220,38,38);
+    doc.setFontSize(20);
+    doc.setFont('helvetica','bold');
+    doc.text(String(sc.accessibility_score||60), M+14, y+10, {align:'center'});
+    doc.setFontSize(8);
+    doc.text('/100', M+14, y+13, {align:'center'});
+    doc.setFontSize(11);
+    doc.text('HIGH RISK', M+30, y+7);
+    doc.setTextColor(55,65,81);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica','normal');
+    doc.text('ADA compliance failures expose US businesses to lawsuit risk.', M+30, y+12);
+    y += 18;
+
+    if ((sc.legal_risks||[]).length) {
+      y = sectionTitle(y, 'Legal Risks Identified');
+      sc.legal_risks.forEach(l => {
+        doc.setTextColor(220,38,38);
+        doc.setFontSize(10);
+        doc.text('!', M+2, y+3.5);
+        doc.setTextColor(55,65,81);
+        doc.setFontSize(9);
+        doc.setFont('helvetica','normal');
+        doc.text(doc.splitTextToSize(l, CW-10)[0], M+8, y+3.5);
+        y += 7;
+      });
+    }
+
+    if ((sc.security_issues||[]).length) {
+      y = sectionTitle(y, 'Security Issues');
+      sc.security_issues.forEach(l => {
+        doc.setTextColor(217,119,6);
+        doc.text('-', M+2, y+3.5);
+        doc.setTextColor(55,65,81);
+        doc.setFontSize(9);
+        doc.text(doc.splitTextToSize(l, CW-10)[0], M+8, y+3.5);
+        y += 7;
+      });
+    }
+
+    if ((sc.recommendations||[]).length) {
+      y = sectionTitle(y, 'Remediation Recommendations');
+      sc.recommendations.forEach((l, i) => {
+        doc.setTextColor(30,27,75);
+        doc.setFontSize(9);
+        doc.setFont('helvetica','bold');
+        doc.text(`${i+1}.`, M+2, y+3.5);
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(55,65,81);
+        doc.text(doc.splitTextToSize(l, CW-12)[0], M+10, y+3.5);
+        y += 7;
+      });
+    }
+
+    // ── PAGE 5: 90-DAY ROADMAP ──
+    y = addPage(5, 5, '90-DAY ACTION ROADMAP');
+
+    doc.setTextColor(30,27,75);
+    doc.setFontSize(14);
+    doc.setFont('helvetica','bold');
+    doc.text('Your 90-Day Digital Transformation Plan', M, y);
+    y += 10;
+
+    const phases = [
+      { title: 'Week 1 — Quick Wins', color: [22,163,74], target: Math.min(score+15,100),
+        sub: `No developer needed · Cost: ${r.ninety_day_roadmap?.week_1?.cost||'Free'}`,
+        actions: r.ninety_day_roadmap?.week_1?.actions||[] },
+      { title: 'Month 1 — Foundation', color: [217,119,6], target: Math.min(score+25,100),
+        sub: `Basic developer needed · Cost: ${r.ninety_day_roadmap?.month_1?.cost||'Under 500 dollars'}`,
+        actions: r.ninety_day_roadmap?.month_1?.actions||[] },
+      { title: 'Month 2-3 — Growth', color: [124,58,237], target: Math.min(score+40,100),
+        sub: `Content & SEO investment · Cost: ${r.ninety_day_roadmap?.month_2_3?.cost||'500 to 2000 dollars'}`,
+        actions: r.ninety_day_roadmap?.month_2_3?.actions||[] },
+    ];
+
+    phases.forEach(ph => {
+      const ph_h = Math.max(30, ph.actions.length*8+18);
+      doc.setDrawColor(...ph.color);
+      doc.setLineWidth(1.5);
+      doc.roundedRect(M, y, CW, ph_h, 2, 2, 'S');
+      doc.setFillColor(...ph.color);
+      doc.rect(M, y, 2, ph_h, 'F');
+      doc.setTextColor(...ph.color);
+      doc.setFontSize(11);
+      doc.setFont('helvetica','bold');
+      doc.text(ph.title, M+6, y+8);
+      doc.setTextColor(30,27,75);
+      doc.setFontSize(10);
+      doc.text(`Target: ${ph.target}/100`, W-M-2, y+8, {align:'right'});
+      doc.setTextColor(100,116,139);
+      doc.setFontSize(8);
+      doc.setFont('helvetica','normal');
+      doc.text(ph.sub, M+6, y+14);
+      ph.actions.forEach((a, ai) => {
+        doc.setTextColor(55,65,81);
+        doc.setFontSize(9);
+        doc.text(`${ai+1}.`, M+6, y+21+ai*8);
+        doc.text(doc.splitTextToSize(a, CW-18)[0], M+13, y+21+ai*8);
+      });
+      y += ph_h + 6;
+    });
+
+    if (r.ninety_day_roadmap?.expected_outcome) {
+      doc.setFillColor(240,253,244);
+      doc.rect(M, y, CW, 14, 'F');
+      doc.setTextColor(22,101,52);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica','bold');
+      doc.text('Expected in 90 Days: ', M+3, y+5.5);
+      doc.setFont('helvetica','normal');
+      const elines = doc.splitTextToSize(r.ninety_day_roadmap.expected_outcome, CW-40);
+      doc.text(elines[0], M+38, y+5.5);
+      y += 18;
+    }
+
+    // CTA box
+    doc.setFillColor(30,27,75);
+    doc.roundedRect(M, y, CW, 24, 3, 3, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica','bold');
+    doc.text('Ready to implement this roadmap?', W/2, y+9, {align:'center'});
+    doc.setTextColor(165,180,252);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica','normal');
+    doc.text('Klaro Pulse monitors your site and alerts you when competitors change strategy.', W/2, y+15, {align:'center'});
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica','bold');
+    doc.text('klaro.services/pulse · Monthly monitoring from $149/month', W/2, y+21, {align:'center'});
+
+    // Save PDF
+    doc.save(`Klaro_Pulse_${name.replace(/[^a-z0-9]/gi,'_')}.pdf`);
+
+  } catch(e) {
+    console.error('PDF error:', e);
+    alert('PDF generation failed: ' + e.message);
   }
+
+  if (btn) { btn.disabled = false; btn.textContent = '⬇ Download PDF'; }
 }
 
 
